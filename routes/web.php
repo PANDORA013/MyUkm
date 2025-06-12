@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\UkmController;
+use App\Http\Controllers\ProfileController;
 
 // Auth routes
 Route::get('register', [AuthController::class, 'showRegister'])->name('register');
@@ -23,4 +24,11 @@ Route::middleware(['auth'])->group(function () {
     // Chat Functionality
     Route::post('/chat/send', [ChatController::class, 'sendChat'])->name('chat.send');
     Route::post('/chat/logout', [ChatController::class, 'logoutGroup'])->name('chat.logout');
+    Route::post('/chat/mark-read', [ChatController::class, 'markRead'])->name('chat.mark-read');
+    Route::get('/chat/unread-count', [ChatController::class, 'getUnreadCount'])->name('chat.unread-count');
+
+    // Profile Management
+    Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
+    Route::post('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.updatePassword');
+    Route::post('/profile/photo', [ProfileController::class, 'updatePhoto'])->name('profile.updatePhoto');
 });

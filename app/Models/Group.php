@@ -13,13 +13,15 @@ class Group extends Model
         'referral_code'
     ];
 
+    // Users relationship (many-to-many)
     public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'group_user');
     }
 
+    // Chats relationship (one-to-many)
     public function chats(): HasMany
     {
-        return $this->hasMany(Chat::class, 'group_code', 'referral_code');
+        return $this->hasMany(Chat::class);
     }
 }

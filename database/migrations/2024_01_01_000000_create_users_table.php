@@ -13,6 +13,7 @@ class CreateUsersTable extends Migration
             $table->string('name');
             $table->string('nim')->unique();
             $table->string('password');
+            $table->softDeletes(); // Add soft deletes support
             $table->timestamps();
         });
     }
