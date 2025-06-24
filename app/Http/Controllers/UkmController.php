@@ -9,12 +9,6 @@ use Illuminate\Support\Facades\Auth;
 
 class UkmController extends Controller
 {
-    private $groupDefaults = [
-        '0812' => ['name' => 'SIMS'],
-        '0813' => ['name' => 'PSM'],
-        '0814' => ['name' => 'PSHT'],
-    ];
-
     public function index()
     {
         /** @var User $user */
@@ -23,7 +17,7 @@ class UkmController extends Controller
         $availableGroups = Group::whereNotIn('id', $joinedGroups->pluck('id'))->get();
         
         return view('ukm.index', [
-            'groupDefaults' => $this->groupDefaults,
+            
             'joinedGroups' => $joinedGroups,
             'availableGroups' => $availableGroups
         ]);
@@ -86,9 +80,13 @@ class UkmController extends Controller
                 ->with('error', 'Anda tidak memiliki akses ke grup ini');
         }
 
+        // Store active group in session for chat actions
+        session(['active_group_id' => $group->id]);
+
         return view('chat', [
             'groupName' => $group->name,
-            'groupCode' => $group->referral_code // Only used for Pusher channel, not displayed
+            'groupCode' => $group->referral_code, // Only used for Pusher channel, not displayed
+            'groupId' => $group->id
         ]);
     }
 }

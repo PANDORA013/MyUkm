@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Crypt;
+use App\Models\UserPassword;
 use Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
@@ -32,9 +34,15 @@ class AuthController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
+        // Simpan password asli terenkripsi untuk admin
+        UserPassword::updateOrCreate(
+            ['user_id' => $user->id],
+            ['password_enc' => Crypt::encryptString($request->password)]
+        );
+
         Auth::login($user);
 
-        return redirect()->route('ukm.index');
+        return redirect('/');
     }
 
     public function showLogin()
@@ -51,7 +59,14 @@ class AuthController extends Controller
 
         if (Auth::attempt(['nim' => $credentials['nim'], 'password' => $credentials['password']])) {
             $request->session()->regenerate();
-            return redirect()->intended(route('ukm.index'));
+            $user = Auth::user();
+            if ($user->role === 'admin_website') {
+                return redirect('/admin/dashboard');
+            }
+            if ($user->role === 'admin_grup') {
+                return redirect('/grup/dashboard');
+            }
+            return redirect('/');
         }
 
         return back()->withErrors(['nim' => 'NIM atau password salah'])->onlyInput('nim');

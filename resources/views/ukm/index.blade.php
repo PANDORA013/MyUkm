@@ -45,28 +45,16 @@
             <h2 class="text-2xl font-semibold text-gray-800 mb-6">Daftar UKM</h2>
             
             <div class="grid md:grid-cols-2 gap-6">
-                @foreach ($groupDefaults as $code => $group)
+                @forelse ($availableGroups as $group)
                     <div class="flex items-center justify-between border border-gray-100 rounded-lg px-4 py-3 hover:shadow-sm transition">
                         <div>
-                            <h3 class="text-lg font-medium text-gray-800">{{ $group['name'] }}</h3>
-                        </div>
-                        
-                        <div>
-                            @if($joinedGroups->contains('referral_code', $code))
-                                <span class="inline-flex items-center gap-1 bg-green-100 text-green-700 text-sm px-3 py-1 rounded-full font-semibold">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2"
-                                        viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                            d="M5 13l4 4L19 7" />
-                                    </svg>
-                                    Sudah Bergabung
-                                </span>
-                            @else
-                                <span class="text-sm italic text-gray-500">Butuh kode referral</span>
-                            @endif
+                            <h3 class="text-lg font-medium text-gray-800">{{ $group->name }}</h3>
+                            <p class="text-xs text-gray-500 italic text-gray-400">Tanyakan kode ke pengurus UKM</p>
                         </div>
                     </div>
-                @endforeach
+                @empty
+                    <p class="text-gray-500 text-center col-span-2">Tidak ada UKM tersedia untuk kamu bergabung saat ini.</p>
+                @endforelse
             </div>
         </section>
 

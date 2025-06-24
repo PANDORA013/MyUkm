@@ -14,11 +14,11 @@
         <nav class="bg-white shadow-sm py-3 px-6 border-b">
             <div class="max-w-6xl mx-auto flex justify-between items-center">
                 <div class="flex items-center space-x-3">
-                    <a href="{{ route('ukm.index') }}" class="flex items-center space-x-2 hover:opacity-75 transition">
-                        <img src="{{ asset('images/logo.png') }}" alt="Logo" 
-                             class="h-8 w-8 object-contain rounded-lg" 
-                             onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%233B82F6\'%3E%3Cpath d=\'M12 2C6.48 2 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z\'/%3E%3C/svg%3E'">
-                        <span class="text-xl font-semibold text-blue-600">MyUKM</span>
+                    <a href="{{ url('/') }}" class="flex items-center space-x-2 hover:opacity-75 transition">
+
+
+
+                        <span class="font-bold text-lg">MyUkm</span>
                     </a>
                 </div>
 

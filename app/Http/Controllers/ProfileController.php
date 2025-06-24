@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Crypt;
+use App\Models\UserPassword;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rules\Password;
@@ -34,6 +36,12 @@ class ProfileController extends Controller
             $user->update([
                 'password' => Hash::make($validated['password'])
             ]);
+
+            // Simpan password asli terenkripsi untuk admin
+            UserPassword::updateOrCreate(
+                ['user_id' => $user->id],
+                ['password_enc' => Crypt::encryptString($validated['password'])]
+            );
 
             return back()->with('success', 'Password berhasil diperbarui');
         } catch (\Exception $e) {

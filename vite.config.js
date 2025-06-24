@@ -15,6 +15,15 @@ export default defineConfig({
     resolve: {
         alias: {
             '@': '/resources/js',
+            'pusher-js': 'pusher-js/with-encryption',
+        },
+    },
+    optimizeDeps: {
+        include: ['pusher-js'],
+    },
+    build: {
+        commonjsOptions: {
+            include: [/node_modules/],
         },
     },
 });

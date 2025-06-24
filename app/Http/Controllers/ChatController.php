@@ -12,20 +12,35 @@ use Illuminate\Support\Facades\Log;
 use App\Events\ChatMessageSent;
 use App\Jobs\ProcessChatMessage;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Routing\Controller as BaseController;
 
-class ChatController extends Controller
+/**
+ * @method \App\Models\User user()
+ */
+class ChatController extends BaseController
 {
     private const MESSAGE_HISTORY_LIMIT = 100;
     private const TYPING_TIMEOUT = 3; // seconds
     private const CACHE_TTL = 3600; // 1 hour
 
-    public function index()
+    public function __construct()
     {
-        /** @var User $user */
+        $this->middleware('auth');
+        $this->middleware('CheckGroupMembership')->only(['index', 'showChat', 'sendChat']);
+    }
+
+    public function index(Request $request)
+    {
+        /** @var \App\Models\User $user */
         $user = Auth::user();
+        
+        if (!$user instanceof \App\Models\User) {
+            return redirect()->route('login');
+        }
+
         $activeGroupId = Session::get("active_group_id");
 
-        if (request()->has("join")) {
+        if ($request->has("join")) {
             return redirect()->route("ukm.index");
         }
 
@@ -34,23 +49,11 @@ class ChatController extends Controller
                 ->with("info", "Silahkan bergabung dengan UKM terlebih dahulu");
         }
 
-        if (!$activeGroupId) {
-            return redirect()->route("ukm.index");
-        }
-
         $group = Group::findOrFail($activeGroupId);
-        
-        if (!$this->checkGroupMembership($user, $group->id)) {
-            return redirect()->route("ukm.index")
-                ->with("error", "Anda tidak tergabung dalam UKM ini");
-        }
-
         $chats = $this->getGroupChats($group);
-
-        // Mark messages as read
         $this->markMessagesAsRead($group->id);
 
-        return view("chat.index", [
+        return view("chat", [
             "chats" => $chats,
             "groupName" => $group->name,
             "memberCount" => $group->users()->count(),
@@ -62,24 +65,13 @@ class ChatController extends Controller
 
     public function showChat($code)
     {
-        /** @var User $user */
-        $user = Auth::user();
         $group = Group::where("referral_code", $code)->firstOrFail();
-        
-        if (!$this->checkGroupMembership($user, $group->id)) {
-            return redirect()->route("ukm.index")
-                ->with("error", "Anda belum tergabung dengan UKM ini");
-        }
-
-        // Store active group in session
         Session::put("active_group_id", $group->id);
 
         $chats = $this->getGroupChats($group);
-
-        // Mark messages as read
         $this->markMessagesAsRead($group->id);
 
-        return view("chat.index", [
+        return view("chat", [
             "chats" => $chats,
             "groupName" => $group->name,
             "memberCount" => $group->users()->count(),
@@ -115,11 +107,25 @@ class ChatController extends Controller
 
             // Get user and validate session
             $user = Auth::user();
-            if (!$user || !session()->has("active_group_id")) {
-                return response()->json([
-                    "status" => "error",
-                    "message" => "Sesi chat tidak valid. Silakan refresh halaman."
-                ], 403);
+
+            // Ensure chat session (active_group_id) exists, otherwise derive from group_code
+            if (!session()->has('active_group_id')) {
+                if ($request->filled('group_code')) {
+                    $possibleGroup = Group::where('referral_code', $request->group_code)->first();
+                    if ($possibleGroup && $user->groups()->where('group_id', $possibleGroup->id)->exists()) {
+                        session(['active_group_id' => $possibleGroup->id]);
+                    } else {
+                        return response()->json([
+                            'status'  => 'error',
+                            'message' => 'Sesi chat tidak valid. Silakan refresh halaman.'
+                        ], 403);
+                    }
+                } else {
+                    return response()->json([
+                        'status'  => 'error',
+                        'message' => 'Sesi chat tidak valid. Silakan refresh halaman.'
+                    ], 403);
+                }
             }
 
             // Rate limiting: 30 messages per minute
@@ -140,7 +146,7 @@ class ChatController extends Controller
                 "group_code.exists" => "Grup tidak ditemukan"
             ]);
 
-            /** @var User $user */
+            /** @var \App\Models\User $user */
             $user = Auth::user();
             $group = Group::where("referral_code", $request->group_code)->first();
             
@@ -148,6 +154,15 @@ class ChatController extends Controller
                 return response()->json([
                     "status" => "error",
                     "message" => "Anda tidak tergabung dalam UKM ini"
+                ], 403);
+            }
+
+            // Check if user is muted in this group
+            $membership = $user->groups()->where('group_id', $group->id)->first()->pivot;
+            if ($membership && $membership->is_muted) {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => 'Anda sedang dimute oleh admin grup dan tidak dapat mengirim pesan.'
                 ], 403);
             }
 
@@ -165,11 +180,9 @@ class ChatController extends Controller
                 'group_id' => $group->id
             ]);
 
+
             // Process message in background job
             ProcessChatMessage::dispatch($chat, $request->message);
-
-            // Clear chat cache for the group
-            $this->clearGroupChatsCache($group->id);
 
             return response()->json([
                 "status" => "success",
@@ -279,7 +292,7 @@ class ChatController extends Controller
         }
     }
 
-    private function checkGroupMembership($user, $groupId): bool
+    private function checkGroupMembership(User $user, int $groupId): bool
     {
         $cacheKey = "group_membership:{$user->id}:{$groupId}";
         
@@ -288,7 +301,7 @@ class ChatController extends Controller
         });
     }
 
-    private function getGroupChats($group)
+    private function getGroupChats(Group $group)
     {
         $cacheKey = "group_chats:{$group->id}";
         
@@ -302,7 +315,7 @@ class ChatController extends Controller
         });
     }
 
-    private function clearGroupChatsCache($groupId)
+    private function clearGroupChatsCache(int $groupId)
     {
         Cache::forget("group_chats:{$groupId}");
     }
