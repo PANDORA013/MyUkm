@@ -61,4 +61,18 @@ class UserTest extends TestCase
         // Simulasi admin login dan akses halaman anggota UKM
         $this->assertTrue(true); // Placeholder
     }
+
+    #[Test]
+    public function user_cannot_login_with_wrong_password()
+    {
+        $user = User::factory()->create([
+            'password' => bcrypt('password'),
+        ]);
+        $response = $this->post('/login', [
+            'nim' => $user->nim,
+            'password' => 'wrongpassword',
+        ]);
+        $response->assertSessionHasErrors();
+        $this->assertGuest();
+    }
 }

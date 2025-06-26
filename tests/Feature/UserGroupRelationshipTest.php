@@ -21,7 +21,7 @@ class UserGroupRelationshipTest extends TestCase
 
         $group = Group::create([
             'name' => 'Test Group',
-            'referral_code' => 'TEST123'
+            'referral_code' => 'T123'
         ]);
 
         $user->groups()->attach($group->id);

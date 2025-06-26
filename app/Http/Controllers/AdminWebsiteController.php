@@ -49,16 +49,15 @@ class AdminWebsiteController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
+            'nim' => 'required|string|max:32|unique:users',
             'password' => 'required|string|min:8|confirmed',
             'role' => 'required|string',
         ]);
 
         $user = User::create([
             'name' => $validated['name'],
-            'email' => $validated['email'],
+            'nim' => $validated['nim'],
             'password' => Hash::make($validated['password']),
-            'password_plain' => $validated['password'], // Simpan password plain
             'role' => $validated['role'],
         ]);
         return back()->with('success', 'UKM berhasil ditambahkan');

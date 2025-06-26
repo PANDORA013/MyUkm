@@ -33,6 +33,7 @@ class GroupTest extends TestCase
     public function user_can_join_group_with_valid_code()
     {
         $user = User::factory()->create();
+        $user = User::find($user->id); // pastikan instance User
         $group = Group::factory()->create(['referral_code' => '0812']);
 
         $response = $this->actingAs($user)->post('/ukm/join', [
@@ -50,6 +51,7 @@ class GroupTest extends TestCase
     public function user_cannot_join_group_with_invalid_code()
     {
         $user = User::factory()->create();
+        $user = User::find($user->id); // pastikan instance User
 
         $response = $this->actingAs($user)->post('/ukm/join', [
             'group_code' => '9999',
@@ -65,6 +67,7 @@ class GroupTest extends TestCase
     public function user_can_leave_group()
     {
         $user = User::factory()->create();
+        $user = User::find($user->id); // pastikan instance User
         $group = Group::factory()->create();
         $user->groups()->attach($group->id); // Join dulu
 

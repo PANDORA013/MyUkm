@@ -14,6 +14,14 @@ class ExampleTest extends TestCase
     {
         $response = $this->get('/');
 
+        $response->assertStatus(302);
+        $response->assertRedirect('/login');
+    }
+
+    public function test_authenticated_user_can_access_dashboard()
+    {
+        $user = \App\Models\User::factory()->create();
+        $response = $this->actingAs($user)->get('/home');
         $response->assertStatus(200);
     }
 }
