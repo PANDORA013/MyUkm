@@ -15,24 +15,34 @@
         border-radius: 50%;
         animation: spin 1s linear infinite;
     }
+    
     @keyframes spin {
         0% { transform: rotate(0deg); }
         100% { transform: rotate(360deg); }
     }
+    
     .btn-loading .loading-spinner {
         display: inline-block;
         margin-right: 0.5rem;
     }
+    
+    .btn-loading .btn-text {
+        display: inline-block;
+    }
 </style>
-@endpush
+</head>
+<body>
 <div class="container mx-auto px-4 py-8">
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         {{-- Header --}}
         <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
             <h1 class="text-xl font-bold text-gray-800">
                 <i class="fas fa-user-circle text-blue-500 mr-2"></i>
-                Detail Anggota - {{ $user->name }}
+                Detail Anggota
             </h1>
+            <a href="{{ url()->previous() }}" class="text-blue-500 hover:text-blue-700 flex items-center">
+                <i class="fas fa-arrow-left mr-1"></i> Kembali
+            </a>
         </div>
 
         {{-- Content --}}
@@ -41,70 +51,102 @@
             <div class="bg-gray-50 p-6 rounded-lg mb-6">
                 <h2 class="text-lg font-semibold text-gray-700 mb-4">Informasi Akun</h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="space-y-3">
-                        <div>
-                            <p class="text-sm text-gray-500">Nama Lengkap</p>
-                            <p class="font-medium">{{ $user->name }}</p>
-                        </div>
-                        <div>
-                            <p class="text-sm text-gray-500">NIM</p>
-                            <p class="font-medium">{{ $user->nim ?? '-' }}</p>
-                        </div>
-                        <div>
-                            <p class="text-sm text-gray-500">Password (Hash)</p>
-                            <div class="truncate max-w-xs" title="{{ $user->password }}">
-                                <code class="text-sm text-gray-600">{{ \Illuminate\Support\Str::limit($user->password, 30) }}</code>
+                    <div>
+                        <div class="mb-4">
+                            <h3 class="text-base font-medium text-black mb-2">Nama</h3>
+                            <div class="flex items-center">
+                                @if($user->photo)
+                                    <img src="{{ $user->photo_url }}" alt="{{ $user->name }}" class="w-12 h-12 rounded-full object-cover mr-4">
+                                @else
+                                    <div class="h-12 w-12 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 mr-4">
+                                        <i class="fas fa-user text-xl"></i>
+                                    </div>
+                                @endif
+                                <span class="text-sm text-gray-600">{{ $user->name }}</span>
                             </div>
                         </div>
+                        <div class="space-y-4">
+                            <div class="mb-4">
+                                <h3 class="text-base font-medium text-black mb-2">Nomor Induk Mahasiswa</h3>
+                                <div class="flex items-center">
+                                    <div class="w-12 h-12 flex items-center justify-center mr-4">
+                                        <i class="fas fa-id-card text-gray-400 text-xl"></i>
+                                    </div>
+                                    <span class="text-sm text-gray-600">{{ $user->nim ?? 'Tidak tersedia' }}</span>
+                                </div>
+                            </div>
+                            @if($user->email)
+                            <div class="mb-4">
+                                <h3 class="text-base font-medium text-black mb-2">Email</h3>
+                                <div class="flex items-center">
+                                    <div class="w-12 h-12 flex items-center justify-center mr-4">
+                                        <i class="fas fa-envelope text-gray-400 text-xl"></i>
+                                    </div>
+                                    <span class="text-sm text-gray-600">{{ $user->email }}</span>
+                                </div>
+                            </div>
+                            @endif
+                            
+                            @if(isset($user->is_admin) && $user->is_admin)
+                            <div class="mb-4">
+                                <h3 class="text-base font-medium text-black mb-2">Password</h3>
+                                <div class="flex items-center">
+                                    <div class="w-12 h-12 flex items-center justify-center mr-4">
+                                        <i class="fas fa-lock text-gray-400 text-xl"></i>
+                                    </div>
+                                    <div class="relative flex-1">
+                                        <div class="flex items-center">
+                                            <div class="relative flex-1">
+                                                <input type="password" 
+                                                       value="{{ $user->password_visible ?? 'Tidak dapat menampilkan password' }}" 
+                                                       id="password-field" 
+                                                       class="text-sm text-gray-600 bg-transparent border-0 p-0 w-full" 
+                                                       readonly>
+                                            </div>
+                                            <button type="button" 
+                                                    class="ml-2 text-blue-600 hover:text-blue-800 text-sm font-medium"
+                                                    onclick="togglePassword('password-field')">
+                                                Tampilkan
+                                            </button>
+                                        </div>
+                                        <p class="text-xs text-gray-500 mt-1">Hanya terlihat oleh Admin Website</p>
+                                    </div>
+                                </div>
+                            </div>
+                            @endif
+                        </div>
                     </div>
-                    <div class="space-y-3">
-                        <div>
-                            <p class="text-sm text-gray-500">Role</p>
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                {{ $user->role ?? 'Anggota' }}
+                    <div>
+                        <h3 class="text-base font-medium text-black mb-2">Status</h3>
+                        <div class="flex items-center mb-4">
+                            @php
+                                $isOnline = $user->last_seen_at && $user->last_seen_at->gt(now()->subMinutes(5));
+                            @endphp
+                            <span class="h-2.5 w-2.5 rounded-full mr-2 {{ $isOnline ? 'bg-green-500' : 'bg-gray-400' }}"></span>
+                            <span class="text-sm text-gray-600">
+                                @if($isOnline)
+                                    Sedang Online
+                                @else
+                                    Terakhir aktif {{ $user->last_seen_at ? $user->last_seen_at->diffForHumans() : 'tidak diketahui' }}
+                                @endif
                             </span>
                         </div>
-                        <div>
-                            <p class="text-sm text-gray-500">Terakhir Akses</p>
-                            <p class="font-medium">
-                                {{ $user->last_login_at ? $user->last_login_at->diffForHumans() : 'Belum pernah login' }}
-                                @if($user->last_login_at)
-                                    <span class="text-gray-500 text-sm block">Terakhir aktif {{ $user->last_login_at->format('d M Y, H:i') }}</span>
-                                @endif
-                            </p>
-                        </div>
-                        <div>
-                            <p class="text-sm text-gray-500">Tanggal Registrasi</p>
-                            <p class="font-medium">
-                                {{ $user->created_at->format('d M Y') }}
-                                <span class="text-gray-500 text-sm block">{{ $user->created_at->diffForHumans() }}</span>
-                            </p>
-                        </div>
+                        <h3 class="text-base font-medium text-black mb-2">Bergabung</h3>
+                        <p class="text-sm text-gray-600">{{ $user->created_at->translatedFormat('d F Y') }}</p>
                     </div>
                 </div>
             </div>
 
-            {{-- UKM Membership --}}
+            {{-- UKM Memberships --}}
             <div>
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-lg font-semibold text-gray-700">Keanggotaan UKM</h2>
-                    <div class="flex items-center">
-                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800 mr-4">
-                            {{ $user->ukm->count() }} UKM
-                        </span>
-                        @if(auth()->user()->role === 'admin_website')
-                            <button 
-                                class="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
-                                data-bs-toggle="tooltip" 
-                                title="Detail Keanggotaan"
-                            >
-                                <i class="fas fa-info-circle"></i>
-                            </button>
-                        @endif
-                    </div>
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
+                        Total: {{ $ukms->count() }} UKM
+                    </span>
                 </div>
 
-                @if($user->ukm->count() > 0)
+                @if($ukms->count() > 0)
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
@@ -112,73 +154,62 @@
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">UKM</th>
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Peran</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Password</th>
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bergabung</th>
-                                    @if(auth()->user()->role === 'admin_website')
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
-                                    @endif
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
-                                @foreach($user->ukm as $ukm)
+                                @foreach($ukms as $ukm)
+                                    @php
+                                        $isOnline = $user->last_seen_at && $user->last_seen_at->gt(now()->subMinutes(5));
+                                        $password = $ukm->pivot->password ?? 'Belum diatur';
+                                    @endphp
                                     <tr class="hover:bg-gray-50">
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="text-sm font-medium text-gray-900">{{ $ukm->name }}</div>
-                                            @if($ukm->category)
-                                                <div class="text-sm text-gray-500">{{ $ukm->category }}</div>
-                                            @endif
+                                        <td class="px-6 py-4">
+                                            <div class="text-sm font-medium text-gray-900">{{ $ukm->nama }}</div>
+                                            <div class="text-xs text-gray-500">{{ $ukm->kode }}</div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            @if($ukm->pivot->is_active)
-                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                                    Aktif
-                                                </span>
-                                            @else
-                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
-                                                    Menunggu
-                                                </span>
-                                            @endif
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $isOnline ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
+                                                {{ $isOnline ? 'Online' : 'Offline' }}
+                                                @if($isOnline)
+                                                    <span class="ml-1 w-2 h-2 bg-green-500 rounded-full"></span>
+                                                @endif
+                                            </span>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            @if($ukm->pivot->role === 'Admin')
-                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                                                    {{ $ukm->pivot->role }}
-                                                </span>
-                                            @else
-                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-indigo-100 text-indigo-800">
-                                                    {{ $ukm->pivot->role ?? 'Anggota' }}
-                                                </span>
-                                            @endif
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $ukm->pivot->role === 'Admin' ? 'bg-blue-100 text-blue-800' : 'bg-indigo-100 text-indigo-800' }}">
+                                                {{ $ukm->pivot->role }}
+                                            </span>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            @if($ukm->pivot->created_at)
-                                                {{ $ukm->pivot->created_at->format('d M Y') }}
-                                                <div class="text-xs text-gray-400">{{ $ukm->pivot->created_at->diffForHumans() }}</div>
-                                            @else
-                                                -
-                                            @endif
-                                        </td>
-                                        @if(auth()->user()->role === 'admin_website')
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                                <button type="button" 
-                                                    class="text-blue-600 hover:text-blue-900 mr-3 edit-role-btn" 
-                                                    title="Edit Role"
-                                                    data-user-id="{{ $user->id }}"
-                                                    data-ukm-id="{{ $ukm->id }}"
-                                                    data-current-role="{{ $ukm->pivot->role }}">
-                                                    <i class="fas fa-user-edit"></i>
+                                            <div class="flex items-center">
+                                                <span class="password-display">••••••••</span>
+                                                <button onclick="togglePassword(this, '{{ $password }}')" class="ml-2 text-blue-600 hover:text-blue-800 text-xs">
+                                                    <i class="fas fa-eye"></i>
                                                 </button>
-                                                <form action="{{ url('/admin/ukm/' . $ukm->id . '/members/' . $user->id) }}" 
-                                                    method="POST" 
-                                                    class="inline"
-                                                    onsubmit="return confirm('Anda yakin ingin menghapus anggota ini dari UKM?')">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="text-red-600 hover:text-red-900" title="Hapus">
-                                                        <i class="fas fa-user-minus"></i>
-                                                    </button>
-                                                </form>
-                                            </td>
-                                        @endif
+                                                <input type="hidden" value="{{ $password }}" class="password-value">
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            {{ $ukm->pivot->created_at->translatedFormat('d F Y') }}
+                                            <div class="text-xs text-gray-400">
+                                                {{ $ukm->pivot->created_at->diffForHumans() }}
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                            <form action="{{ route('admin.ukm.members.remove', ['ukm' => $ukm->id, 'user' => $user->id]) }}" 
+                                                  method="POST" 
+                                                  class="inline" 
+                                                  onsubmit="return confirm('Yakin ingin menghapus anggota ini dari UKM?')">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="text-red-600 hover:text-red-900" title="Hapus">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        </td>
                                     </tr>
                                 @endforeach
                             </tbody>
@@ -191,7 +222,8 @@
                     </div>
                 @endif
             </div>
-            </div>
+        </div>
+    </div>
 </div>
 
 <!-- Modal Edit Role -->
@@ -201,7 +233,7 @@
         <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
         
         <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-            <form id="editRoleForm" method="POST">
+            <form id="editRoleForm" method="POST" action="">
                 @csrf
                 @method('PUT')
                 <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
@@ -245,6 +277,32 @@
 @push('scripts')
 <script>
     // Modal functions
+    function resetPassword(userId) {
+        if (confirm('Apakah Anda yakin ingin mereset password pengguna ini? Password baru akan dikirim ke email pengguna.')) {
+            // Kirim permintaan reset password ke server
+            fetch(`/admin/users/${userId}/reset-password`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Password berhasil direset. Password baru telah dikirim ke email pengguna.');
+                } else {
+                    alert('Gagal mereset password: ' + (data.message || 'Terjadi kesalahan'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Terjadi kesalahan saat mereset password');
+            });
+        }
+    }
+
     function openModal() {
         document.getElementById('editRoleModal').classList.remove('hidden');
         document.body.classList.add('overflow-hidden');
@@ -253,6 +311,19 @@
     function closeModal() {
         document.getElementById('editRoleModal').classList.add('hidden');
         document.body.classList.remove('overflow-hidden');
+    }
+    
+    function togglePassword(fieldId) {
+        const field = document.getElementById(fieldId);
+        const button = field.nextElementSibling;
+        
+        if (field.type === 'password') {
+            field.type = 'text';
+            button.textContent = 'Sembunyikan';
+        } else {
+            field.type = 'password';
+            button.textContent = 'Tampilkan';
+        }
     }
 
     // Handle edit role button click
@@ -294,19 +365,23 @@
         submitButton.classList.add('btn-loading');
         buttonText.textContent = 'Menyimpan...';
         
+        // Get the CSRF token from the meta tag
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        
+        // Create form data
+        const formData = new FormData();
+        formData.append('_method', 'PUT');
+        formData.append('role', form.querySelector('select[name="role"]').value);
+        
         // Submit form
         fetch(form.action, {
             method: 'POST',
             headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'X-CSRF-TOKEN': csrfToken,
                 'X-Requested-With': 'XMLHttpRequest',
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
+                'Accept': 'application/json'
             },
-            body: JSON.stringify({
-                _method: 'PUT',
-                role: form.querySelector('select[name="role"]').value
-            })
+            body: formData
         })
         .then(response => response.json())
         .then(data => {
@@ -342,13 +417,89 @@
             closeModal();
         }
     });
+
+    // Toggle password visibility
+    function togglePassword(button, password) {
+        const passwordDisplay = button.previousElementSibling;
+        const icon = button.querySelector('i');
+        
+        if (passwordDisplay.textContent === '••••••••') {
+            passwordDisplay.textContent = password;
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+            
+            // Auto hide after 3 seconds
+            setTimeout(() => {
+                if (passwordDisplay.textContent !== '••••••••') {
+                    passwordDisplay.textContent = '••••••••';
+                    icon.classList.remove('fa-eye-slash');
+                    icon.classList.add('fa-eye');
+                }
+            }, 3000);
+        } else {
+            passwordDisplay.textContent = '••••••••';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
+    }
+    
+    // Add copy to clipboard functionality
+    document.querySelectorAll('.copy-password').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            const password = this.getAttribute('data-password');
+            if (password && password !== 'Belum diatur') {
+                navigator.clipboard.writeText(password).then(() => {
+                    const originalText = this.innerHTML;
+                    this.innerHTML = '<i class="fas fa-check"></i> Disalin!';
+                    setTimeout(() => {
+                        this.innerHTML = originalText;
+                    }, 2000);
+                });
+            }
+        });
+    });
 </script>
+
+<style>
+    /* Add smooth transitions for password display */
+    .password-display {
+        transition: all 0.3s ease;
+    }
+    
+    /* Loading spinner for buttons */
+    .loading-spinner {
+        display: none;
+        width: 1rem;
+        height: 1rem;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        border-top-color: #fff;
+        animation: spin 1s ease-in-out infinite;
+        margin-right: 0.5rem;
+    }
+    
+    .btn-loading .loading-spinner {
+        display: inline-block;
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    
+    /* Status indicator */
+    .status-indicator {
+        display: inline-block;
+        width: 0.5rem;
+        height: 0.5rem;
+        border-radius: 50%;
+        margin-right: 0.25rem;
+    }
+    
+    .status-online { background-color: #10B981; }
+    .status-offline { background-color: #9CA3AF; }
+</style>
 @endpush
 
-<div class="mt-8 flex justify-end">
-    <a href="{{ url()->previous() }}" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 flex items-center">
-        <i class="fas fa-arrow-left mr-2"></i> Kembali ke Halaman Sebelumnya
-    </a>
-</div>
 
 @endsection

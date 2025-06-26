@@ -8,6 +8,9 @@ use App\Models\Group;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Auth as AuthFacade;
 
 class AdminWebsiteController extends Controller
 {
@@ -42,6 +45,25 @@ class AdminWebsiteController extends Controller
     }
 
     /* -------------------- UKM Management -------------------- */
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users',
+            'password' => 'required|string|min:8|confirmed',
+            'role' => 'required|string',
+        ]);
+
+        $user = User::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
+            'password_plain' => $validated['password'], // Simpan password plain
+            'role' => $validated['role'],
+        ]);
+        return back()->with('success', 'UKM berhasil ditambahkan');
+    }
+
     public function tambahUKM(Request $request)
     {
         $request->validate([
@@ -146,9 +168,68 @@ class AdminWebsiteController extends Controller
         ]);
     }
 
+    /**
+     * Show the UKM memberships for a specific user.
+     *
+     * @param  int  $userId
+     * @return \Illuminate\View\View
+     */
     public function showMemberUkms($userId)
     {
-        $user = User::with('ukm')->findOrFail($userId);
-        return view('admin.member_ukms', compact('user'));
+        // Eager load the user with their groups and the related UKM for each group
+        $user = User::with(['groups' => function($query) {
+            $query->with(['ukm' => function($q) {
+                $q->select('id', 'nama', 'kode');
+            }])
+            ->select('groups.*', 'group_user.created_at as pivot_created_at', 'group_user.is_muted')
+            ->withPivot('created_at', 'is_muted');
+        }])->findOrFail($userId);
+        
+        // For admin website, show the actual password (not recommended for production)
+        $authUser = AuthFacade::user();
+        if ($authUser && $authUser->role === 'admin_website') {
+            try {
+                // Cek dulu kolom yang ada di tabel users
+                $columns = Schema::getColumnListing('users');
+                $selectColumns = in_array('password_plain', $columns) 
+                    ? ['password_plain', 'password'] 
+                    : ['password'];
+                
+                $userData = DB::table('users')->where('id', $user->id)->first($selectColumns);
+                
+                if (isset($userData->password_plain)) {
+                    $user->password_visible = $userData->password_plain;
+                } elseif (isset($userData->password)) {
+                    $user->password_visible = 'Password terenkripsi: ' . substr($userData->password, 0, 15) . '...';
+                } else {
+                    $user->password_visible = 'Tidak ada password tersimpan';
+                }
+                
+                $user->is_admin = true;
+            } catch (\Exception $e) {
+                $user->password_visible = 'Tidak dapat mengambil data password';
+            }
+        }
+        
+        // Prepare the data for the view, filtering out groups without a UKM
+        $ukms = $user->groups->filter(function($group) {
+            return $group->ukm !== null;
+        })->map(function($group) {
+            return (object)[
+                'id' => $group->id,
+                'nama' => $group->ukm->nama,
+                'kode' => $group->ukm->kode,
+                'pivot' => (object)[
+                    'role' => $group->pivot->is_muted ? 'Muted' : 'Anggota',
+                    'created_at' => $group->pivot->created_at,
+                    'updated_at' => $group->pivot->updated_at ?? $group->pivot->created_at
+                ]
+            ];
+        });
+        
+        return view('admin.member_ukms', [
+            'user' => $user,
+            'ukms' => $ukms
+        ]);
     }
 }

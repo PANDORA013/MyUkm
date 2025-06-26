@@ -9,6 +9,11 @@ use Illuminate\Support\Facades\Auth;
 
 class UkmController extends Controller
 {
+    /**
+     * Display list of UKMs
+     *
+     * @return \Illuminate\View\View
+     */
     public function index()
     {
         /** @var User $user */

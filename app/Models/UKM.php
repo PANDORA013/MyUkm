@@ -4,20 +4,47 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class UKM extends Model
 {
-    // Explicit table name to avoid Laravel pluralisation (u_k_m_s)
+    /**
+     * The table associated with the model.
+     *
+     * @var string
+     */
     protected $table = 'ukms';
+
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<int, string>
+     */
     protected $fillable = [
         'nama',
-        'kode'
+        'kode',
+        'logo',
+        'kategori',
+        'deskripsi',
+        'status'
     ];
 
-    // Users relationship (one-to-many)
-    public function users(): HasMany
+    /**
+     * Get the groups that belong to this UKM.
+     */
+    public function groups(): HasMany
     {
-        // explicitly set foreign key to match column 'ukm_id' on users table
-        return $this->hasMany(User::class, 'ukm_id');
+        return $this->hasMany(Group::class);
+    }
+
+    /**
+     * The users that belong to the UKM through groups.
+     */
+    public function users(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'group_user', 'group_id', 'user_id')
+            ->using(GroupUser::class)
+            ->withPivot(['is_muted', 'created_at', 'updated_at'])
+            ->withTimestamps();
     }
 }

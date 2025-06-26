@@ -39,19 +39,7 @@
                         <div class="flex flex-col items-end">
                             <span class="text-sm font-medium text-gray-700">{{ auth()->user()->name }}</span>
                         </div>
-                        <div class="h-8 w-8 rounded-full overflow-hidden ring-2 ring-gray-100">
-                            @if(auth()->user()->photo)
-                                <img src="{{ Storage::url(auth()->user()->photo) }}" 
-                                     alt="{{ auth()->user()->name }}" 
-                                     class="h-full w-full object-cover">
-                            @else
-                                <div class="h-full w-full flex items-center justify-center bg-blue-50">
-                                    <span class="text-sm font-medium text-blue-600">
-                                        {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
-                                    </span>
-                                </div>
-                            @endif
-                        </div>
+
                     </a>
 
                     <form method="POST" action="{{ route('logout') }}">

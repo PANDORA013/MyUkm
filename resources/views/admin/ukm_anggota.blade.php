@@ -29,9 +29,9 @@
                             <tr>
                                 <th class="px-4 py-2 text-left font-medium text-gray-600">Nama</th>
                                 <th class="px-4 py-2 text-left font-medium text-gray-600">NIM</th>
-                                <th class="px-4 py-2 text-left font-medium text-gray-600">Password (hash)</th>
                                 <th class="px-4 py-2 text-left font-medium text-gray-600">Role</th>
-                                <th class="px-4 py-2 text-left font-medium text-gray-600">Terakhir Akses</th>
+                                <th class="px-4 py-2 text-left font-medium text-gray-600">Status</th>
+                                <th class="px-4 py-2 text-left font-medium text-gray-600">Terakhir Login</th>
                                 <th class="px-4 py-2 text-left font-medium text-gray-600">Aksi</th>
                             </tr>
                         </thead>
@@ -40,9 +40,25 @@
                                 <tr>
                                     <td class="px-4 py-2">{{ $user->name }}</td>
                                     <td class="px-4 py-2 font-mono">{{ $user->nim }}</td>
-                                    <td class="px-4 py-2 font-mono">{{ $user->plain_password ?? '—' }}</td>
                                     <td class="px-4 py-2 capitalize">{{ str_replace('_', ' ', $user->role) }}</td>
-                                    <td class="px-4 py-2">{{ $user->last_seen_at ? $user->last_seen_at->diffForHumans() : '—' }}</td>
+                                    <td class="px-4 py-2">
+                                        @php
+                                            $isOnline = $user->last_seen_at && $user->last_seen_at->gt(now()->subMinutes(5));
+                                        @endphp
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $isOnline ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
+                                            {{ $isOnline ? 'Online' : 'Offline' }}
+                                        </span>
+                                    </td>
+
+                                    <td class="px-4 py-2">
+                                        @if($user->last_seen_at)
+                                            {{ $user->last_seen_at->format('d M Y, H:i') }}
+                                            <span class="text-xs text-gray-400 block">{{ $user->last_seen_at->diffForHumans() }}</span>
+                                        @else
+                                            <span class="text-gray-400">Belum pernah online</span>
+                                        @endif
+                                    </td>
+
                                     <td class="px-4 py-2 space-x-3 whitespace-nowrap">
                                         <form action="{{ url('/admin/ukm/'.$ukm->id.'/keluarkan/'.$user->id) }}" method="POST" class="inline" onsubmit="return confirm('Keluarkan anggota ini dari UKM?');">
                                             @csrf

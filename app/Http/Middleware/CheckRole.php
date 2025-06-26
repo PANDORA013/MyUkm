@@ -17,8 +17,19 @@ class CheckRole
      */
     public function handle(Request $request, Closure $next, ...$roles)
     {
-        if (!Auth::check() || !in_array(Auth::user()->role, $roles, true)) {
+        /** @var User|null $user */
+        $user = Auth::user();
+
+        if (!$user || !in_array($user->role, $roles, true)) {
             abort(403);
+        }
+
+        // Tambahkan pengecekan group membership jika diperlukan
+        if ($request->has('group_id')) {
+            $groupId = $request->group_id;
+            if (!$user->groups()->where('group_id', $groupId)->exists()) {
+                abort(403, 'Anda bukan anggota grup ini');
+            }
         }
 
         return $next($request);

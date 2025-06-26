@@ -2,18 +2,30 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
 use App\Models\Group;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class AdminGrupController extends Controller
 {
+    /**
+     * Get the group managed by current user
+     * 
+     * @return Group|null
+     */
     private function managedGroup(): ?Group
     {
-        return Auth::user()->groups()->first();
+        /** @var User $user */
+        $user = Auth::user();
+        return $user->groups()->first();
     }
 
+    /**
+     * Display dashboard for group management
+     * 
+     * @return \Illuminate\View\View
+     */
     public function dashboard()
     {
         $group = $this->managedGroup();
@@ -25,11 +37,22 @@ class AdminGrupController extends Controller
         return view('grup.dashboard', compact('anggota'));
     }
 
+    /**
+     * Display list of group members
+     * 
+     * @return \Illuminate\View\View
+     */
     public function lihatAnggota()
     {
         return $this->dashboard();
     }
 
+    /**
+     * Remove a member from the group
+     * 
+     * @param int $id
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function keluarkanAnggota($id)
     {
         $group = $this->managedGroup();
@@ -40,6 +63,12 @@ class AdminGrupController extends Controller
         return back()->with('error', 'Anggota tidak ditemukan');
     }
 
+    /**
+     * Mute or unmute a group member
+     * 
+     * @param int $id
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function muteAnggota($id)
     {
         $group = $this->managedGroup();

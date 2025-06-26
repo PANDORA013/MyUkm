@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Crypt;
 use App\Models\UserPassword;
@@ -18,8 +19,34 @@ class ProfileController extends Controller
 {
     public function show(): View
     {
+        $user = Auth::user();
+        
+        // Ambil data keanggotaan UKM dengan query langsung
+        $memberships = DB::table('group_user')
+            ->join('groups', 'groups.id', '=', 'group_user.group_id')
+            ->leftJoin('ukms', 'ukms.kode', '=', 'groups.referral_code')
+            ->where('group_user.user_id', $user->id)
+            ->select([
+                'ukms.nama as ukm_name',
+                'group_user.created_at as joined_at',
+                'users.last_seen_at'
+            ])
+            ->leftJoin('users', 'users.id', '=', 'group_user.user_id')
+            ->get()
+            ->map(function($item) {
+                $isOnline = $item->last_seen_at && \Carbon\Carbon::parse($item->last_seen_at)->diffInMinutes(now()) < 5;
+                
+                return (object)[
+                    'ukm_name' => $item->ukm_name ?? 'UKM Tidak Ditemukan',
+                    'joined_at' => $item->joined_at,
+                    'is_online' => $isOnline,
+                    'last_seen' => $item->last_seen_at
+                ];
+            });
+
         return view('profile.index', [
-            'user' => Auth::user()
+            'user' => $user,
+            'memberships' => $memberships
         ]);
     }
 
