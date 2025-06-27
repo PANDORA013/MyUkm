@@ -2,25 +2,32 @@
 
 namespace Tests\Feature;
 
-use Tests\TestCase;
+namespace Tests\Feature;
+
 use App\Models\User;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
 class UserManagementTest extends TestCase
 {
     use RefreshDatabase;
 
-    private function createAdminUser()
+    protected function createAdminUser(): Authenticatable
     {
-        return User::factory()->create([
+        /** @var \Illuminate\Contracts\Auth\Authenticatable $user */
+        $user = User::factory()->create([
             'is_admin' => true,
             'password' => bcrypt('admin123')
         ]);
+        
+        return $user;
     }
 
     /** @test */
     public function admin_can_view_users()
     {
+        /** @var \App\Models\User $admin */
         $admin = $this->createAdminUser();
         
         $response = $this->actingAs($admin)
@@ -57,6 +64,7 @@ class UserManagementTest extends TestCase
     /** @test */
     public function non_admin_cannot_access_admin_routes()
     {
+        /** @var \App\Models\User $user */
         $user = User::factory()->create();
         
         $response = $this->actingAs($user)

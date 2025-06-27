@@ -2,10 +2,9 @@
 
 namespace Tests\Feature;
 
-namespace Tests\Feature;
-
 use App\Models\Ukm;
 use App\Models\User;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Http\UploadedFile;
@@ -16,12 +15,15 @@ class UkmTest extends TestCase
 {
     use RefreshDatabase, WithFaker;
 
-    protected function createAdminUser(): User
+    protected function createAdminUser(): Authenticatable
     {
-        return User::factory()->create([
+        /** @var \Illuminate\Contracts\Auth\Authenticatable $user */
+        $user = User::factory()->create([
             'is_admin' => true,
             'password' => bcrypt('admin123')
         ]);
+        
+        return $user;
     }
 
     /** @test */
@@ -69,6 +71,7 @@ class UkmTest extends TestCase
     /** @test */
     public function user_can_view_ukm_list()
     {
+        /** @var \App\Models\User $user */
         $user = User::factory()->create();
         
         $response = $this->actingAs($user)
@@ -81,6 +84,7 @@ class UkmTest extends TestCase
     /** @test */
     public function user_can_join_ukm()
     {
+        /** @var \App\Models\User $user */
         $user = User::factory()->create();
         $ukm = Ukm::factory()->create();
         
@@ -97,6 +101,7 @@ class UkmTest extends TestCase
     /** @test */
     public function user_can_leave_ukm()
     {
+        /** @var \App\Models\User $user */
         $user = User::factory()->create();
         $ukm = Ukm::factory()->create();
         $user->ukms()->attach($ukm->id);
@@ -127,6 +132,7 @@ class UkmTest extends TestCase
     /** @test */
     public function non_admin_cannot_access_admin_ukm_routes()
     {
+        /** @var \App\Models\User $user */
         $user = User::factory()->create();
         $ukm = Ukm::factory()->create();
         

@@ -38,14 +38,21 @@ jobs:
       - name: Verify PHP version
         run: php -v
 
-      - name: Install Composer Dependencies
-        run: composer install --prefer-dist --no-progress --no-suggest
-
       - name: Copy .env
         run: cp .env.example .env
 
       - name: Generate App Key
-        run: php artisan key:generate
+        run: |
+          php -r "
+          file_put_contents(
+              '.env',
+              str_replace(
+                  'APP_KEY=',
+                  'APP_KEY=base64:' . base64_encode(random_bytes(32)),
+                  file_get_contents('.env')
+              )
+          );
+          "
 
       - name: Configure Environment
         run: |
@@ -58,18 +65,39 @@ jobs:
           # Testing Environment
           echo "APP_ENV=testing" >> .env
           
-          # Pusher Configuration for Testing
-          echo "BROADCAST_DRIVER=log" >> .env
+          # Cache and Session Configuration
           echo "CACHE_DRIVER=array" >> .env
           echo "QUEUE_CONNECTION=sync" >> .env
           echo "SESSION_DRIVER=array" >> .env
           echo "SESSION_LIFETIME=120" >> .env
           
-          # Dummy Pusher Credentials (required but not used with log driver)
-          echo "PUSHER_APP_ID=dummy" >> .env
-          echo "PUSHER_APP_KEY=dummy" >> .env
-          echo "PUSHER_APP_SECRET=dummy" >> .env
+          # Broadcasting Configuration
+          echo "BROADCAST_DRIVER=none" >> .env
+          
+          # Dummy Pusher Credentials (to prevent null errors)
+          echo "PUSHER_APP_ID=test" >> .env
+          echo "PUSHER_APP_KEY=test" >> .env
+          echo "PUSHER_APP_SECRET=test" >> .env
           echo "PUSHER_APP_CLUSTER=mt1" >> .env
+          echo "PUSHER_HOST=" >> .env
+          echo "PUSHER_PORT=443" >> .env
+          echo "PUSHER_SCHEME=https" >> .env
+          echo "PUSHER_APP_CLUSTER=" >> .env
+          
+          # Disable Pusher service provider for tests
+          sed -i "s/App\\Providers\\BroadcastServiceProvider::class,//g" config/app.php
+          
+      - name: Install Composer Dependencies
+        env:
+          BROADCAST_DRIVER: 'none'
+          CACHE_DRIVER: array
+          QUEUE_CONNECTION: sync
+          SESSION_DRIVER: array
+          PUSHER_APP_ID: test
+          PUSHER_APP_KEY: test
+          PUSHER_APP_SECRET: test
+          PUSHER_APP_CLUSTER: mt1
+        run: composer install --prefer-dist --no-progress --no-suggest
 
       - name: Run Migrations
         run: php artisan migrate --force

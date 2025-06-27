@@ -32,7 +32,9 @@ jobs:
       - name: Add known hosts
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_KNOWN_HOSTS }}" >> ~/.ssh/known_hosts
+          chmod 700 ~/.ssh
+          echo "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
 
       - name: Deploy to production
         env:
@@ -46,24 +48,3 @@ jobs:
           # Create release directory with timestamp
           RELEASE_DIR="$DEPLOY_PATH/releases/$(date +%Y%m%d%H%M%S)"
           ssh $DEPLOY_USER@$DEPLOY_SERVER "mkdir -p $RELEASE_DIR"
-          
-          # Copy files
-          rsync -avz --exclude='.git' --exclude='node_modules' --exclude='.env' . $DEPLOY_USER@$DEPLOY_SERVER:$RELEASE_DIR/
-          
-          # Run deployment commands
-          ssh $DEPLOY_USER@$DEPLOY_SERVER "
-            cd $RELEASE_DIR && \
-            cp $DEPLOY_PATH/.env . && \
-            composer install --no-dev --optimize-autoloader && \
-            php artisan migrate --force && \
-            php artisan config:cache && \
-            php artisan route:cache && \
-            php artisan view:cache && \
-            ln -sfn $RELEASE_DIR $DEPLOY_PATH/current
-          "
-          
-          # Clean up old releases (keep last 5)
-          ssh $DEPLOY_USER@$DEPLOY_SERVER "
-            cd $DEPLOY_PATH/releases && \
-            ls -t | tail -n +6 | xargs -I{} rm -rf {}
-          "
