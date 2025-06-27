@@ -1,11 +1,13 @@
+import '../css/app.css';
 import './bootstrap';
+// WebSocket functionality is disabled to prevent connection errors
+// If you need real-time features, uncomment and configure the following:
+/*
 import Pusher from 'pusher-js';
 import Echo from 'laravel-echo';
 
-// Initialize Pusher
 window.Pusher = Pusher;
 
-// Initialize Echo with proper configuration
 try {
     window.Echo = new Echo({
         broadcaster: 'pusher',
@@ -24,8 +26,8 @@ try {
             }
         }
     });
-    
     console.log('Echo initialized successfully');
 } catch (error) {
     console.error('Failed to initialize Echo:', error);
 }
+*/

@@ -6,6 +6,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use App\Models\UserPassword;
+use App\Models\Registration;
+use App\Models\UserActivity;
+use App\Models\Message;
+use App\Models\Chat;
+use App\Models\Role;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Auth as AuthFacade;
@@ -79,9 +85,16 @@ class User extends Authenticatable
      */
     public function groups(): BelongsToMany
     {
-        return $this->belongsToMany(Group::class)
-            ->withPivot(['is_muted', 'created_at', 'updated_at'])
-            ->withTimestamps();
+        return $this->belongsToMany(Group::class, 'group_user')
+            ->withPivot([
+                'is_muted',
+                'is_admin',
+                'created_at',
+                'updated_at',
+                'deleted_at'
+            ])
+            ->withTimestamps()
+            ->withTrashed();
     }
 
     /**
@@ -90,16 +103,82 @@ class User extends Authenticatable
     public function ukms(): BelongsToMany
     {
         return $this->belongsToMany(UKM::class, 'group_user', 'user_id', 'group_id')
-            ->withPivot(['is_muted', 'created_at', 'updated_at'])
-            ->withTimestamps();
+            ->using(GroupUser::class)
+            ->withPivot([
+                'is_muted',
+                'is_admin',
+                'created_at',
+                'updated_at',
+                'deleted_at'
+            ])
+            ->withTimestamps()
+            ->withTrashed();
+    }
+
+    /**
+     * Get the user's password encryption record.
+     */
+    public function passwordEncrypted(): HasOne
+    {
+        return $this->hasOne(UserPassword::class);
+    }
+
+    /**
+     * Get the user's registrations.
+     */
+    public function registrations(): HasMany
+    {
+        return $this->hasMany(Registration::class);
+    }
+
+    /**
+     * Get the user's last seen record.
+     */
+    public function lastSeen(): HasOne
+    {
+        return $this->hasOne(UserActivity::class);
+    }
+
+    /**
+     * Get the user's sent messages.
+     */
+    public function sentMessages(): HasMany
+    {
+        return $this->hasMany(Message::class, 'sender_id');
+    }
+
+    /**
+     * Get the user's received messages.
+     */
+    public function receivedMessages(): HasMany
+    {
+        return $this->hasMany(Message::class, 'receiver_id');
     }
 
     /**
      * Get the user's chats.
      */
-    public function chats(): HasMany
+    public function chats(): BelongsToMany
     {
-        return $this->hasMany(Chat::class);
+        return $this->belongsToMany(Chat::class, 'chat_user')
+            ->withTimestamps()
+            ->withTrashed();
+    }
+
+    /**
+     * Get the user's chat messages.
+     */
+    public function chatMessages(): HasMany
+    {
+        return $this->hasMany(Message::class, 'user_id');
+    }
+
+    /**
+     * Get the user's created chats.
+     */
+    public function createdChats(): HasMany
+    {
+        return $this->hasMany(Chat::class, 'created_by');
     }
 
     /**
@@ -108,6 +187,41 @@ class User extends Authenticatable
     public function role(): BelongsTo
     {
         return $this->belongsTo(Role::class);
+    }
+    
+    /**
+     * Check if user has a specific role.
+     *
+     * @param string|array $roles
+     * @return bool
+     */
+    public function hasRole($roles): bool
+    {
+        if (is_string($roles)) {
+            return $this->role->name === $roles;
+        }
+        
+        return in_array($this->role->name, $roles);
+    }
+    
+    /**
+     * Check if user is an admin.
+     *
+     * @return bool
+     */
+    public function isAdmin(): bool
+    {
+        return $this->role && in_array($this->role->name, ['admin_website', 'admin_ukm']);
+    }
+    
+    /**
+     * Check if user is a regular member.
+     *
+     * @return bool
+     */
+    public function isMember(): bool
+    {
+        return $this->role && $this->role->name === 'member';
     }
 
     /**

@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Crypt;
 use App\Models\UserPassword;
+use App\Models\UserDeletionHistory;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rules\Password;
@@ -80,6 +81,79 @@ class ProfileController extends Controller
         }
     }
 
+    public function destroy(Request $request): RedirectResponse
+    {
+        $request->validateWithBag('userDeletion', [
+            'password' => ['required', 'current_password'],
+        ]);
+
+        $user = $request->user();
+        
+        // Mulai transaksi database
+        DB::beginTransaction();
+        
+        try {
+            // Catat riwayat penghapusan
+            UserDeletionHistory::create([
+                'user_id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'nim' => $user->nim,
+                'role' => $user->role,
+                'deletion_reason' => 'Permintaan penghapusan akun oleh pengguna',
+                'deleted_by' => $user->id, // User menghapus akun sendiri
+            ]);
+            
+            // Hapus relasi dan data terkait
+            $user->tokens()->delete();
+            $user->chats()->delete();
+            $user->createdChats()->delete();
+            $user->groups()->detach();
+            
+            // Hapus data registrasi terkait jika ada
+            if (method_exists($user, 'registrations')) {
+                $user->registrations()->delete();
+            }
+            
+            // Hapus data password terenkripsi jika ada
+            if (method_exists($user, 'passwordEncrypted') && $user->passwordEncrypted) {
+                $user->passwordEncrypted()->delete();
+            }
+            
+            // Hapus data aktivitas terakhir jika ada
+            if (method_exists($user, 'lastSeen') && $user->lastSeen) {
+                $user->lastSeen()->delete();
+            }
+            
+            // Hapus user secara permanen
+            $user->forceDelete();
+            
+            // Commit transaksi
+            DB::commit();
+            
+            // Logout user
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+            
+            return redirect()->route('login')
+                ->with('status', 'Akun Anda dan semua data terkait telah berhasil dihapus. Selamat tinggal!');
+                
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            Log::error('Error deleting account', [
+                'user_id' => $request->user()?->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return back()->withErrors([
+                'error' => 'Terjadi kesalahan saat menghapus akun. Silakan coba lagi nanti.'
+            ]);
+        }
+    }
+    
     public function updatePhoto(Request $request): RedirectResponse
     {
         try {

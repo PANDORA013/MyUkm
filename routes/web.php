@@ -52,19 +52,66 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/ukm/{code}/leave', [UkmController::class, 'leave'])->name('ukm.leave');
     Route::get('/ukm/{code}/chat', [UkmController::class, 'chat'])->name('ukm.chat');
 
+    // Profile routes
+    Route::delete('/profile/destroy', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
     // Admin Website routes
-    Route::prefix('admin')->middleware(['role:admin_website'])->group(function () {
+    Route::middleware(['auth', 'role:admin_website', 'verified'])->prefix('admin')->name('admin.')->group(function () {
+        // Dashboard
+        Route::get('/dashboard', [AdminWebsiteController::class, 'dashboard'])->name('dashboard');
+        
+        // Manajemen User
+        Route::post('/users/{id}/make-admin', [AdminWebsiteController::class, 'jadikanAdminGrup'])
+            ->name('users.make-admin')
+            ->middleware('throttle:60,1');
+            
+        Route::post('/users/{id}/remove-admin', [AdminWebsiteController::class, 'hapusAdminGrup'])
+            ->name('users.remove-admin')
+            ->middleware('throttle:60,1');
+            
+        Route::delete('/users/{id}', [AdminWebsiteController::class, 'hapusAkun'])
+            ->name('users.destroy')
+            ->middleware('throttle:60,1');
+        
+        // Manajemen UKM
+        Route::get('/ukm/{id}/anggota', [AdminWebsiteController::class, 'lihatAnggota'])
+            ->name('ukm.anggota')
+            ->whereNumber('id');
+            
+        Route::get('/ukm/edit/{id}', [AdminWebsiteController::class, 'editUKM'])
+            ->name('ukm.edit')
+            ->whereNumber('id');
+            
+        Route::post('/ukm/update/{id}', [AdminWebsiteController::class, 'updateUKM'])
+            ->name('ukm.update')
+            ->whereNumber('id');
+            
+        Route::post('/ukm/{ukmId}/keluarkan/{userId}', [AdminWebsiteController::class, 'keluarkanAnggota'])
+            ->name('ukm.keluarkan')
+            ->whereNumber(['ukmId', 'userId']);
+        
+        // Pencarian
+        Route::get('/search-member', [AdminWebsiteController::class, 'searchMember'])
+            ->name('search-member');
+            
+        Route::get('/member/{userId}/ukms', [AdminWebsiteController::class, 'showMemberUkms'])
+            ->name('member-ukms')
+            ->whereNumber('userId');
+    });
+
+    // Admin Website Routes
+    Route::prefix('admin')->middleware(['auth', 'role:admin_website'])->group(function () {
         Route::get('/dashboard', [AdminWebsiteController::class, 'dashboard'])->name('admin.dashboard');
-        Route::post('/ukm/tambah', [AdminWebsiteController::class, 'tambahUKM'])->name('admin.ukm.tambah');
-        Route::delete('/ukm/hapus/{id}', [AdminWebsiteController::class, 'hapusUKM'])->name('admin.ukm.hapus');
-        Route::get('/ukm/{id}/anggota', [AdminWebsiteController::class, 'lihatAnggota'])->name('admin.ukm.anggota');
-        Route::get('/ukm/edit/{id}', [AdminWebsiteController::class, 'editUKM'])->name('admin.ukm.edit');
-        Route::post('/ukm/update/{id}', [AdminWebsiteController::class, 'updateUKM'])->name('admin.ukm.update');
-        Route::post('/user/jadikan-admin', [AdminWebsiteController::class, 'jadikanAdminGrup'])->name('admin.user.jadikan-admin');
-        Route::post('/user/hapus-admin', [AdminWebsiteController::class, 'hapusAdminGrup'])->name('admin.user.hapus-admin');
-        Route::post('/ukm/{ukmId}/keluarkan/{userId}', [AdminWebsiteController::class, 'keluarkanAnggota'])->name('admin.ukm.keluarkan');
-        Route::get('/search-member', [AdminWebsiteController::class, 'searchMember'])->name('admin.search-member');
-        Route::get('/member/{userId}/ukms', [AdminWebsiteController::class, 'showMemberUkms'])->name('admin.member-ukms');
+        Route::get('/members', [AdminWebsiteController::class, 'members'])->name('admin.members');
+        Route::get('/ukms', [AdminWebsiteController::class, 'ukms'])->name('admin.ukms');
+        Route::get('/ukm-members/{ukm}', [AdminWebsiteController::class, 'ukmMembers'])->name('admin.ukm.members');
+        Route::get('/search-member', [AdminWebsiteController::class, 'searchMember'])->name('admin.member.search');
+        
+        // User Deletion History Routes
+        Route::prefix('user-deletions')->name('admin.user-deletions.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\UserDeletionHistoryController::class, 'index'])->name('index');
+            Route::get('/{userDeletionHistory}', [\App\Http\Controllers\Admin\UserDeletionHistoryController::class, 'show'])->name('show');
+        });
     });
 
     // Admin Grup routes

@@ -158,6 +158,7 @@
                 </div>
 
                 <!-- Tabel Keanggotaan UKM -->
+                @if(count($memberships) > 0)
                 <div class="border-t pt-8">
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="text-lg font-medium text-gray-900">Keanggotaan UKM</h3>
@@ -165,57 +166,92 @@
                             Total: {{ count($memberships) }} UKM
                         </span>
                     </div>
-
-                    @if(count($memberships) > 0)
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200">
-                                <thead class="bg-gray-50">
-                                    <tr>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama UKM</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal Bergabung</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Terakhir Aktif</th>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama UKM</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal Bergabung</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Terakhir Dilihat</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                @foreach($memberships as $membership)
+                                    <tr class="hover:bg-gray-50">
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="flex items-center">
+                                                <div class="flex-shrink-0 h-10 w-10">
+                                                    <img class="h-10 w-10 rounded-full" src="{{ asset('images/default-ukm.png') }}" alt="{{ $membership->ukm_name }}">
+                                                </div>
+                                                <div class="ml-4">
+                                                    <div class="text-sm font-medium text-gray-900">{{ $membership->ukm_name }}</div>
+                                                    <div class="text-sm text-gray-500">{{ $membership->joined_at ? \Carbon\Carbon::parse($membership->joined_at)->format('d/m/Y') : 'N/A' }}</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            {{ $membership->joined_at ? \Carbon\Carbon::parse($membership->joined_at)->translatedFormat('d F Y') : 'N/A' }}
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ Auth::user()->role === 'admin_grup' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800' }}">
+                                                {{ Auth::user()->role === 'admin_grup' ? 'Admin Grup' : 'Anggota' }}
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            @if($membership->is_online)
+                                                <span class="text-green-600 font-medium">Online</span>
+                                            @else
+                                                {{ $membership->last_seen ? \Carbon\Carbon::parse($membership->last_seen)->diffForHumans() : 'Belum pernah online' }}
+                                            @endif
+                                        </td>
                                     </tr>
-                                </thead>
-                                <tbody class="bg-white divide-y divide-gray-200">
-                                    @foreach($memberships as $membership)
-                                        <tr>
-                                            <td class="px-6 py-4 whitespace-nowrap">
-                                                <div class="text-sm font-medium text-gray-900">{{ $membership->ukm_name }}</div>
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap">
-                                                <div class="text-sm text-gray-900">{{ \Carbon\Carbon::parse($membership->joined_at)->format('d M Y H:i') }}</div>
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap">
-                                                @if($membership->is_online)
-                                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                                        Online
-                                                    </span>
-                                                @else
-                                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
-                                                        Offline
-                                                    </span>
-                                                @endif
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                @if($membership->last_seen)
-                                                    {{ \Carbon\Carbon::parse($membership->last_seen)->diffForHumans() }}
-                                                @else
-                                                    -
-                                                @endif
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    @else
-                        <div class="text-center py-12 bg-gray-50 rounded-lg">
-                            <i class="fas fa-users-slash text-gray-400 text-4xl mb-3"></i>
-                            <p class="text-gray-500">Belum terdaftar di UKM manapun</p>
-                        </div>
-                    @endif
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
+                @endif
+
+                <!-- Hapus Akun -->
+                <div class="border-t border-gray-200 pt-8">
+                    <h3 class="text-lg font-medium text-red-700 mb-4">Hapus Akun</h3>
+                    <div class="bg-red-50 border-l-4 border-red-400 p-4 rounded-r">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-exclamation-triangle text-red-400 text-xl"></i>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm text-red-700">
+                                    Setelah akun dihapus, semua data akan dihapus secara permanen. Pastikan Anda telah mencadangkan data penting sebelum melanjutkan.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <form action="{{ route('profile.destroy') }}" method="POST" 
+                              onsubmit="return confirm('Apakah Anda yakin ingin menghapus akun? Tindakan ini tidak dapat dibatalkan.')">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" 
+                                    class="inline-flex items-center px-4 py-2 border border-transparent 
+                                           text-sm font-medium rounded-md shadow-sm text-white 
+                                           bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 
+                                           focus:ring-offset-2 focus:ring-red-500">
+                                <i class="fas fa-trash-alt mr-2"></i> Hapus Akun Saya
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Bottom Navigation -->
+            <div class="px-6 py-4 border-t bg-gray-50 flex justify-between">
+                <a href="{{ route('admin.dashboard') }}" 
+                   class="inline-flex items-center px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
+                    <i class="fas fa-arrow-left mr-2"></i> Kembali ke Dashboard
+                </a>
             </div>
         </div>
     </div>

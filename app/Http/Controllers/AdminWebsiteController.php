@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\UKM;
 use App\Models\Group;
+use App\Models\UserDeletionHistory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -25,23 +26,126 @@ class AdminWebsiteController extends Controller
 
         // Hitung total anggota unik di seluruh group
         $totalMembers = DB::table('group_user')->distinct('user_id')->count('user_id');
-        return view('admin.dashboard', compact('ukms', 'totalMembers'));
+        
+        // Hitung total UKM
+        $totalUkms = $ukms->count();
+        
+        // Hitung total admin grup
+        $totalAdmins = User::where('role', 'admin_grup')->count();
+        
+        // Hitung total pengguna aktif bulan ini
+        $activeUsersThisMonth = DB::table('sessions')
+            ->where('last_activity', '>=', now()->subMonth())
+            ->distinct('user_id')
+            ->count('user_id');
+            
+        // Hitung total pengguna baru bulan ini
+        $newUsersThisMonth = User::where('created_at', '>=', now()->startOfMonth())->count();
+        
+        // Hitung total akun yang sudah dihapus
+        $totalDeletedAccounts = UserDeletionHistory::count();
+        
+        return view('admin.dashboard', compact(
+            'ukms', 
+            'totalMembers', 
+            'totalUkms', 
+            'totalAdmins',
+            'activeUsersThisMonth',
+            'newUsersThisMonth',
+            'totalDeletedAccounts'
+        ));
     }
 
-    public function jadikanAdminGrup(Request $request)
+    /**
+     * Mengubah role user menjadi admin_grup
+     *
+     * @param int $id
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function jadikanAdminGrup($id)
     {
-        $user = User::findOrFail($request->user_id);
-        $user->role = 'admin_grup';
-        $user->save();
-        return back()->with('success', 'User dijadikan admin grup');
+        try {
+            $user = User::findOrFail($id);
+            
+            // Cek apakah user sudah menjadi admin_grup
+            if ($user->role === 'admin_grup') {
+                return back()->with('info', 'User sudah menjadi admin grup');
+            }
+            
+            // Cek apakah user adalah admin_website
+            if ($user->role === 'admin_website') {
+                return back()->with('error', 'Tidak dapat mengubah role admin website');
+            }
+            
+            $user->role = 'admin_grup';
+            $user->save();
+            
+            return back()->with('success', 'User berhasil dijadikan admin grup');
+            
+        } catch (\Exception $e) {
+            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
     }
 
-    public function hapusAdminGrup(Request $request)
+    /**
+     * Menghapus role admin_grup dari user
+     *
+     * @param int $id
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function hapusAdminGrup($id)
     {
-        $user = User::findOrFail($request->user_id);
-        $user->role = 'anggota';
-        $user->save();
-        return back()->with('success', 'Admin grup dihapus');
+        try {
+            $user = User::findOrFail($id);
+            
+            // Cek apakah user adalah admin_website
+            if ($user->role === 'admin_website') {
+                return back()->with('error', 'Tidak dapat mengubah role admin website');
+            }
+            
+            // Cek apakah user bukan admin_grup
+            if ($user->role !== 'admin_grup') {
+                return back()->with('info', 'User bukan admin grup');
+            }
+            
+            $user->role = 'anggota';
+            $user->save();
+            
+            return back()->with('success', 'Admin grup berhasil dihapus');
+            
+        } catch (\Exception $e) {
+            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Hapus akun pengguna
+     */
+    public function hapusAkun($id)
+    {
+        // Cek apakah user yang akan dihapus ada
+        $user = User::findOrFail($id);
+        
+        // Cek role user yang login
+        $currentUser = Auth::user();
+        
+        // Cek apakah yang menghapus adalah admin website
+        if ($currentUser->role !== 'admin_website') {
+            return back()->with('error', 'Anda tidak memiliki izin untuk menghapus akun');
+        }
+        
+        // Cek apakah user yang dihapus adalah admin website lain
+        if ($user->role === 'admin_website') {
+            return back()->with('error', 'Tidak bisa menghapus akun admin website lain');
+        }
+        
+        // Hapus relasi di group_user terlebih dahulu
+        $user->groups()->detach();
+        
+        // Hapus user
+        $user->delete();
+        
+        return back()->with('success', 'Akun berhasil dihapus');
     }
 
     /* -------------------- UKM Management -------------------- */
@@ -177,11 +281,16 @@ class AdminWebsiteController extends Controller
     {
         // Eager load the user with their groups and the related UKM for each group
         $user = User::with(['groups' => function($query) {
-            $query->with(['ukm' => function($q) {
-                $q->select('id', 'nama', 'kode');
-            }])
-            ->select('groups.*', 'group_user.created_at as pivot_created_at', 'group_user.is_muted')
-            ->withPivot('created_at', 'is_muted');
+            $query->leftJoin('ukms', 'ukms.kode', '=', 'groups.referral_code')
+                ->select(
+                    'groups.*',
+                    'group_user.created_at as pivot_created_at',
+                    'group_user.is_muted',
+                    'ukms.nama as ukm_nama',
+                    'ukms.kode as ukm_kode',
+                    'ukms.id as ukm_id'
+                )
+                ->withPivot('created_at', 'is_muted');
         }])->findOrFail($userId);
         
         // For admin website, show the actual password (not recommended for production)
@@ -210,21 +319,21 @@ class AdminWebsiteController extends Controller
             }
         }
         
-        // Prepare the data for the view, filtering out groups without a UKM
-        $ukms = $user->groups->filter(function($group) {
-            return $group->ukm !== null;
-        })->map(function($group) {
-            return (object)[
-                'id' => $group->id,
-                'nama' => $group->ukm->nama,
-                'kode' => $group->ukm->kode,
-                'pivot' => (object)[
-                    'role' => $group->pivot->is_muted ? 'Muted' : 'Anggota',
-                    'created_at' => $group->pivot->created_at,
-                    'updated_at' => $group->pivot->updated_at ?? $group->pivot->created_at
-                ]
-            ];
-        });
+        // Prepare the data for the view and remove duplicates by UKM code
+        $ukms = $user->groups
+            ->unique('ukm_kode') // Ensure unique UKMs by code
+            ->map(function($group) {
+                return (object)[
+                    'id' => $group->id,
+                    'nama' => $group->ukm_nama ?? 'UKM Tidak Ditemukan',
+                    'kode' => $group->ukm_kode ?? 'N/A',
+                    'pivot' => (object)[
+                        'role' => $group->pivot->is_muted ? 'Muted' : ($group->pivot->is_admin ? 'Admin' : 'Anggota'),
+                        'created_at' => $group->pivot->created_at,
+                        'updated_at' => $group->pivot->updated_at ?? $group->pivot->created_at
+                    ]
+                ];
+            });
         
         return view('admin.member_ukms', [
             'user' => $user,

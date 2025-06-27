@@ -69,9 +69,6 @@
                             <div class="mb-4">
                                 <h3 class="text-base font-medium text-black mb-2">Nomor Induk Mahasiswa</h3>
                                 <div class="flex items-center">
-                                    <div class="w-12 h-12 flex items-center justify-center mr-4">
-                                        <i class="fas fa-id-card text-gray-400 text-xl"></i>
-                                    </div>
                                     <span class="text-sm text-gray-600">{{ $user->nim ?? 'Tidak tersedia' }}</span>
                                 </div>
                             </div>
@@ -87,33 +84,7 @@
                             </div>
                             @endif
                             
-                            @if(isset($user->is_admin) && $user->is_admin)
-                            <div class="mb-4">
-                                <h3 class="text-base font-medium text-black mb-2">Password</h3>
-                                <div class="flex items-center">
-                                    <div class="w-12 h-12 flex items-center justify-center mr-4">
-                                        <i class="fas fa-lock text-gray-400 text-xl"></i>
-                                    </div>
-                                    <div class="relative flex-1">
-                                        <div class="flex items-center">
-                                            <div class="relative flex-1">
-                                                <input type="password" 
-                                                       value="{{ $user->password_visible ?? 'Tidak dapat menampilkan password' }}" 
-                                                       id="password-field" 
-                                                       class="text-sm text-gray-600 bg-transparent border-0 p-0 w-full" 
-                                                       readonly>
-                                            </div>
-                                            <button type="button" 
-                                                    class="ml-2 text-blue-600 hover:text-blue-800 text-sm font-medium"
-                                                    onclick="togglePassword('password-field')">
-                                                Tampilkan
-                                            </button>
-                                        </div>
-                                        <p class="text-xs text-gray-500 mt-1">Hanya terlihat oleh Admin Website</p>
-                                    </div>
-                                </div>
-                            </div>
-                            @endif
+
                         </div>
                     </div>
                     <div>
@@ -138,6 +109,7 @@
             </div>
 
             {{-- UKM Memberships --}}
+            @if($ukms->count() > 0)
             <div>
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-lg font-semibold text-gray-700">Keanggotaan UKM</h2>
@@ -145,83 +117,75 @@
                         Total: {{ $ukms->count() }} UKM
                     </span>
                 </div>
-
-                @if($ukms->count() > 0)
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">UKM</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Peran</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Password</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bergabung</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama UKM</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal Bergabung</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            @foreach($ukms as $ukm)
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-6 py-4">
+                                        <div class="text-sm font-medium text-gray-900">{{ $ukm->nama }}</div>
+                                        <div class="text-xs text-gray-500">{{ $ukm->kode }}</div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        {{ $ukm->pivot->created_at->translatedFormat('d F Y') }}
+                                        <div class="text-xs text-gray-400">
+                                            {{ $ukm->pivot->created_at->diffForHumans() }}
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        @if($user->role === 'admin_grup')
+                                            <span class="px-3 py-1 inline-flex items-center text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                                <i class="fas fa-user-shield mr-1"></i> Admin Grup
+                                            </span>
+                                        @else
+                                            <span class="px-3 py-1 inline-flex items-center text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                                                <i class="fas fa-user mr-1"></i> Anggota
+                                            </span>
+                                        @endif
+                                    </td>
                                 </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                @foreach($ukms as $ukm)
-                                    @php
-                                        $isOnline = $user->last_seen_at && $user->last_seen_at->gt(now()->subMinutes(5));
-                                        $password = $ukm->pivot->password ?? 'Belum diatur';
-                                    @endphp
-                                    <tr class="hover:bg-gray-50">
-                                        <td class="px-6 py-4">
-                                            <div class="text-sm font-medium text-gray-900">{{ $ukm->nama }}</div>
-                                            <div class="text-xs text-gray-500">{{ $ukm->kode }}</div>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $isOnline ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
-                                                {{ $isOnline ? 'Online' : 'Offline' }}
-                                                @if($isOnline)
-                                                    <span class="ml-1 w-2 h-2 bg-green-500 rounded-full"></span>
-                                                @endif
-                                            </span>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $ukm->pivot->role === 'Admin' ? 'bg-blue-100 text-blue-800' : 'bg-indigo-100 text-indigo-800' }}">
-                                                {{ $ukm->pivot->role }}
-                                            </span>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <div class="flex items-center">
-                                                <span class="password-display">••••••••</span>
-                                                <button onclick="togglePassword(this, '{{ $password }}')" class="ml-2 text-blue-600 hover:text-blue-800 text-xs">
-                                                    <i class="fas fa-eye"></i>
-                                                </button>
-                                                <input type="hidden" value="{{ $password }}" class="password-value">
-                                            </div>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {{ $ukm->pivot->created_at->translatedFormat('d F Y') }}
-                                            <div class="text-xs text-gray-400">
-                                                {{ $ukm->pivot->created_at->diffForHumans() }}
-                                            </div>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                            <form action="{{ route('admin.ukm.members.remove', ['ukm' => $ukm->id, 'user' => $user->id]) }}" 
-                                                  method="POST" 
-                                                  class="inline" 
-                                                  onsubmit="return confirm('Yakin ingin menghapus anggota ini dari UKM?')">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="text-red-600 hover:text-red-900" title="Hapus">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </form>
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                @else
-                    <div class="text-center py-12 bg-gray-50 rounded-lg">
-                        <i class="fas fa-users-slash text-gray-400 text-4xl mb-3"></i>
-                        <p class="text-gray-500">Belum terdaftar di UKM manapun</p>
-                    </div>
-                @endif
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
             </div>
+            @endif
+
+            {{-- Hapus Akun --}}
+            <div class="mt-8 border-t border-red-200 pt-6">
+                <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-r">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-red-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <h3 class="text-sm font-medium text-red-800">Hapus Akun</h3>
+                            <div class="mt-2 text-sm text-red-700">
+                                <p>Menghapus akun ini akan menghapus semua data yang terkait dengan pengguna ini. Tindakan ini tidak dapat dibatalkan.</p>
+                            </div>
+                            <div class="mt-4">
+                                <form action="{{ route('admin.users.destroy', $user->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus akun ini? Tindakan ini tidak dapat dibatalkan!')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                                        <i class="fas fa-trash-alt mr-2"></i> Hapus Akun
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 </div>

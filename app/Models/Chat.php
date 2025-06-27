@@ -27,7 +27,22 @@ class Chat extends Model
     // Relasi ke Group (grup chat)
     public function group()
     {
-        return $this->belongsTo(Group::class);
+        return $this->belongsTo(Group::class)->withTrashed();
+    }
+
+    // Relasi many-to-many dengan User
+    public function participants()
+    {
+        return $this->belongsToMany(User::class, 'chat_user')
+            ->withTimestamps()
+            ->withPivot(['last_read_at', 'deleted_at'])
+            ->withTrashed();
+    }
+    
+    // Relasi ke pesan-pesan dalam chat
+    public function messages()
+    {
+        return $this->hasMany(Message::class);
     }
 
     // Get whether the message has been read

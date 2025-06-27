@@ -2,9 +2,7 @@
 
 @section('content')
 <div class="container mx-auto px-4 py-8">
-    <h1 class="text-2xl font-bold mb-6">Hasil Pencarian: "{{ $query }}"</h1>
-    
-    <form action="{{ route('admin.search-member') }}" method="GET" class="mb-6">
+    <form action="{{ route('admin.member.search') }}" method="GET" class="mb-6">
         <div class="flex">
             <input type="text" name="q" value="{{ $query }}" 
                    class="flex-grow px-4 py-2 border rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -54,8 +52,18 @@
         </table>
     </div>
 
-    <div class="mt-6">
-        {{ $users->links('pagination::tailwind') }}
+    @if($users->hasPages())
+        <div class="mt-6">
+            {{ $users->links() }}
+        </div>
+    @endif
+
+    <!-- Bottom Navigation -->
+    <div class="mt-8 px-6 py-4 border-t bg-gray-50 flex justify-end">
+        <a href="{{ route('admin.dashboard') }}" 
+           class="inline-flex items-center px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
+            <i class="fas fa-arrow-left mr-2"></i> Kembali ke Dashboard
+        </a>
     </div>
 </div>
 @endsection

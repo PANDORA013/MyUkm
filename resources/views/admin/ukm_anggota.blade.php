@@ -32,7 +32,7 @@
                                 <th class="px-4 py-2 text-left font-medium text-gray-600">Role</th>
                                 <th class="px-4 py-2 text-left font-medium text-gray-600">Status</th>
                                 <th class="px-4 py-2 text-left font-medium text-gray-600">Terakhir Login</th>
-                                <th class="px-4 py-2 text-left font-medium text-gray-600">Aksi</th>
+                                {{-- Kolom Aksi Dihapus --}}
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100">
@@ -60,24 +60,29 @@
                                     </td>
 
                                     <td class="px-4 py-2 space-x-3 whitespace-nowrap">
-                                        <form action="{{ url('/admin/ukm/'.$ukm->id.'/keluarkan/'.$user->id) }}" method="POST" class="inline" onsubmit="return confirm('Keluarkan anggota ini dari UKM?');">
-                                            @csrf
-                                            <button type="submit" class="text-red-600 hover:underline">Keluarkan</button>
-                                        </form>
-                                        @if($user->role === 'anggota')
-                                            <form action="{{ url('/admin/user/jadikan-admin') }}" method="POST" class="inline">
-                                                @csrf
-                                                <input type="hidden" name="user_id" value="{{ $user->id }}">
-                                                <button type="submit" class="text-blue-600 hover:underline" onclick="return confirm('Jadikan user ini sebagai Admin Grup?');">Jadikan Admin</button>
-                                            </form>
-                                        @elseif($user->role === 'admin_grup')
-                                            <form action="{{ url('/admin/user/hapus-admin') }}" method="POST" class="inline">
-                                                @csrf
-                                                <input type="hidden" name="user_id" value="{{ $user->id }}">
-                                                <button type="submit" class="text-red-600 hover:underline" onclick="return confirm('Hapus status Admin Grup dari user ini?');">Hapus Admin</button>
-                                            </form>
+                                        @if(auth()->user()->role === 'admin_website' && $user->role !== 'admin_website')
+                                            @if($user->role !== 'admin_grup')
+                                                <form id="make-admin-{{ $user->id }}" action="{{ route('admin.users.make-admin', $user->id) }}" method="POST" class="inline">
+                                                    @csrf
+                                                    <button type="button" 
+                                                        onclick="if(confirm('Jadikan {{ $user->name }} sebagai Admin Grup?')) { this.form.submit(); }"
+                                                        class="text-green-600 hover:text-green-900 text-sm font-medium">
+                                                        <i class="fas fa-user-shield mr-1"></i> Jadikan Admin Grup
+                                                    </button>
+                                                </form>
+                                            @else
+                                                <form id="remove-admin-{{ $user->id }}" action="{{ route('admin.users.remove-admin', $user->id) }}" method="POST" class="inline">
+                                                    @csrf
+                                                    @method('POST')
+                                                    <button type="button" 
+                                                        onclick="if(confirm('Hapus hak akses Admin Grup dari {{ $user->name }}?')) { this.form.submit(); }"
+                                                        class="text-yellow-600 hover:text-yellow-900 text-sm font-medium">
+                                                        <i class="fas fa-user-minus mr-1"></i> Hapus Admin Grup
+                                                    </button>
+                                                </form>
+                                            @endif
                                         @else
-                                            <span class="text-gray-500">—</span>
+                                            <span class="text-gray-400">Tidak ada aksi</span>
                                         @endif
                                     </td>
                                 </tr>
