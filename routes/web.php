@@ -8,6 +8,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UkmController;
 use App\Http\Controllers\AdminWebsiteController;
 use App\Http\Controllers\AdminGrupController;
+use Illuminate\Support\Facades\Config;
 
 // Root route
 Route::get('/', function () {
@@ -121,4 +122,18 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/keluarkan/{id}', [AdminGrupController::class, 'keluarkanAnggota'])->name('grup.keluarkan');
         Route::post('/mute/{id}', [AdminGrupController::class, 'muteAnggota'])->name('grup.mute');
     });
+
+    // Pusher Test Routes
+    Route::get('/pusher-test', function () {
+        return view('pusher-test');
+    })->name('pusher.test');
+
+    // Test broadcast route
+    Route::post('/broadcasting/test', function () {
+        event(new App\Events\TestEvent([
+            'message' => 'Hello from the server!',
+            'time' => now()->toDateTimeString()
+        ]));
+        return response()->json(['status' => 'Message sent!']);
+    })->name('broadcast.test');
 });
