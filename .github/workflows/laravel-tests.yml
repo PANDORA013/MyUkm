@@ -34,10 +34,11 @@ jobs:
         ports:
           - 3306:3306
         options: >-
-          --health-cmd="mysqladmin ping --silent"
+          --health-cmd="mysqladmin ping"
           --health-interval=10s
           --health-timeout=5s
-          --health-retries=3
+          --health-retries=10
+          --health-start-period=30s
 
     steps:
       - name: Checkout code
@@ -91,6 +92,7 @@ jobs:
           echo "DB_DATABASE=myukm_test" >> .env
           echo "DB_USERNAME=root" >> .env
           echo "DB_PASSWORD=root" >> .env
+          echo "DB_SOCKET=/var/run/mysqld/mysqld.sock" >> .env
           
           # Testing Environment
           echo "APP_ENV=testing" >> .env
@@ -139,6 +141,20 @@ jobs:
         run: |
           npm run build
 
+      - name: Check Database Connection
+        run: |
+          echo "Checking MySQL connection..."
+          for i in 1 2 3 4 5 6 7 8 9 10; do
+            if mysql -h 127.0.0.1 -u root -proot -e "SELECT 1" > /dev/null 2>&1; then
+              echo "MySQL is ready!"
+              exit 0
+            fi
+            echo "Waiting for MySQL to be ready... (attempt $i/10)"
+            sleep 5
+          done
+          echo "Failed to connect to MySQL after 10 attempts"
+          exit 1
+          
       - name: Prepare Database
         run: |
           php artisan migrate:fresh --seed --force
