@@ -58,22 +58,18 @@ jobs:
         
     - name: Reset Database
       run: |
-        # Drop all tables
+        # Clear all caches first
+        php artisan cache:clear
+        php artisan config:clear
+        php artisan route:clear
+        php artisan view:clear
+        php artisan optimize:clear
+        
+        # Drop all tables and re-run all migrations
         php artisan db:wipe --force
         
-        # Run migrations up to the problematic one
-        php artisan migrate:refresh --path=database/migrations/001_create_users_table.php
-        php artisan migrate:refresh --path=database/migrations/002_create_chats_table.php
-        php artisan migrate:refresh --path=database/migrations/003_create_sessions_table.php
-        php artisan migrate:refresh --path=database/migrations/004_create_groups_table.php
-        php artisan migrate:refresh --path=database/migrations/005_create_group_user_table.php
-        php artisan migrate:refresh --path=database/migrations/006_create_cache_table.php
-        
-        # Run the fixed migration
-        php artisan migrate:refresh --path=database/migrations/007_update_chats_table.php
-        
-        # Run any remaining migrations
-        php artisan migrate
+        # Run all migrations in a single command to ensure proper order
+        php artisan migrate:fresh --force
         
         # Clear all caches
         php artisan cache:clear
