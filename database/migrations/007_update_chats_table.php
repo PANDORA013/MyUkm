@@ -22,12 +22,14 @@ return new class extends Migration
             $table->softDeletes();
         });
 
-        // Update group_id berdasarkan group_code
-        DB::statement('
-            UPDATE chats c
-            INNER JOIN groups g ON c.group_code = g.referral_code
-            SET c.group_id = g.id
-        ');
+        // Update group_id berdasarkan group_code (SQLite compatible)
+        $chats = DB::table('chats')->get();
+        foreach ($chats as $chat) {
+            $group = DB::table('groups')->where('referral_code', $chat->group_code)->first();
+            if ($group) {
+                DB::table('chats')->where('id', $chat->id)->update(['group_id' => $group->id]);
+            }
+        }
 
         // Buat foreign key setelah data diupdate
         Schema::table('chats', function (Blueprint $table) {
@@ -39,12 +41,37 @@ return new class extends Migration
     public function down()
     {
         Schema::table('chats', function (Blueprint $table) {
-            $table->dropForeign(['group_id']);
-            $table->dropIndex(['group_code', 'created_at']);
-            $table->dropIndex(['user_id', 'created_at']);
-            $table->dropSoftDeletes();
-            $table->string('group_code')->after('user_id');
-            $table->dropColumn('group_id');
+            // Hapus foreign key constraint
+            if (DB::getDriverName() !== 'sqlite') {
+                $table->dropForeign(['group_id']);
+            }
+            
+            // Hapus indeks jika ada
+            $sm = Schema::getConnection()->getDoctrineSchemaManager();
+            $indexesFound = $sm->listTableIndexes('chats');
+            
+            if (array_key_exists('chats_group_code_created_at_index', $indexesFound)) {
+                $table->dropIndex(['group_code', 'created_at']);
+            }
+            
+            if (array_key_exists('chats_user_id_created_at_index', $indexesFound)) {
+                $table->dropIndex(['user_id', 'created_at']);
+            }
+            
+            // Hapus soft deletes jika ada
+            if (Schema::hasColumn('chats', 'deleted_at')) {
+                $table->dropSoftDeletes();
+            }
+            
+            // Tambahkan kembali kolom group_code
+            if (!Schema::hasColumn('chats', 'group_code')) {
+                $table->string('group_code')->after('user_id')->nullable();
+            }
+            
+            // Hapus kolom group_id jika ada
+            if (Schema::hasColumn('chats', 'group_id')) {
+                $table->dropColumn('group_id');
+            }
         });
     }
 };
