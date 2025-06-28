@@ -56,9 +56,17 @@ jobs:
         php artisan view:clear
         php artisan optimize:clear
         
-    - name: Run Migrations
+    - name: Reset Database
       run: |
-        php artisan migrate:fresh --env=testing --force
+        # Drop all tables and re-run all migrations
+        php artisan db:wipe --force
+        php artisan migrate:fresh --force
+        
+        # Clear all caches
+        php artisan cache:clear
+        php artisan config:clear
+        php artisan route:clear
+        php artisan view:clear
       
     - name: Execute tests
       env:
