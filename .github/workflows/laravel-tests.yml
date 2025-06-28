@@ -48,8 +48,17 @@ jobs:
         echo "MAIL_MAILER=array" >> .env.testing
         cp .env.testing .env
         
+    - name: Clear migration cache
+      run: |
+        php artisan cache:clear
+        php artisan config:clear
+        php artisan route:clear
+        php artisan view:clear
+        php artisan optimize:clear
+        
     - name: Run Migrations
-      run: php artisan migrate:fresh --env=testing --force
+      run: |
+        php artisan migrate:fresh --env=testing --force
       
     - name: Execute tests
       env:
