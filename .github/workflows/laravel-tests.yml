@@ -31,14 +31,10 @@ jobs:
           MYSQL_DATABASE: myukm_test
           MYSQL_USER: root
           MYSQL_PASSWORD: root
+          MYSQL_ROOT_HOST: '%'
         ports:
           - 3306:3306
-        options: >-
-          --health-cmd="mysqladmin ping"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=10
-          --health-start-period=30s
+        options: --health-cmd="mysqladmin ping -h localhost -u root -proot" --health-interval=10s --health-timeout=5s --health-retries=10 --health-start-period=30s
 
     steps:
       - name: Checkout code
@@ -86,13 +82,15 @@ jobs:
       - name: Configure Environment
         run: |
           # Database Configuration
-          echo "DB_CONNECTION=mysql" >> .env
-          echo "DB_HOST=127.0.0.1" >> .env
-          echo "DB_PORT=3306" >> .env
-          echo "DB_DATABASE=myukm_test" >> .env
-          echo "DB_USERNAME=root" >> .env
-          echo "DB_PASSWORD=root" >> .env
-          echo "DB_SOCKET=/var/run/mysqld/mysqld.sock" >> .env
+          echo "DB_CONNECTION=mysql" > .env.testing
+          echo "DB_HOST=127.0.0.1" >> .env.testing
+          echo "DB_PORT=3306" >> .env.testing
+          echo "DB_DATABASE=myukm_test" >> .env.testing
+          echo "DB_USERNAME=root" >> .env.testing
+          echo "DB_PASSWORD=root" >> .env.testing
+          
+          # Copy to .env for backward compatibility
+          cp .env.testing .env
           
           # Testing Environment
           echo "APP_ENV=testing" >> .env
@@ -144,15 +142,15 @@ jobs:
       - name: Check Database Connection
         run: |
           echo "Checking MySQL connection..."
-          for i in 1 2 3 4 5 6 7 8 9 10; do
+          for i in {1..10}; do
             if mysql -h 127.0.0.1 -u root -proot -e "SELECT 1" > /dev/null 2>&1; then
-              echo "MySQL is ready!"
+              echo "✅ MySQL is ready!"
               exit 0
             fi
-            echo "Waiting for MySQL to be ready... (attempt $i/10)"
-            sleep 5
+            echo "⏳ Waiting for MySQL to be ready... (attempt $i/10)"
+            sleep 3
           done
-          echo "Failed to connect to MySQL after 10 attempts"
+          echo "❌ Failed to connect to MySQL after 10 attempts"
           exit 1
           
       - name: Prepare Database
