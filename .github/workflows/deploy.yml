@@ -25,7 +25,8 @@ jobs:
         extensions: mbstring, ctype, fileinfo, openssl, PDO, tokenizer, xml, gd, pdo_mysql
     - run: |
         composer install --no-interaction --prefer-dist --optimize-autoloader
-        npm ci && npm run prod
+        npm ci
+        npm run build
     - run: |
         cp .env.example .env
         php artisan key:generate
