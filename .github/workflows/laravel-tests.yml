@@ -58,9 +58,22 @@ jobs:
         
     - name: Reset Database
       run: |
-        # Drop all tables and re-run all migrations
+        # Drop all tables
         php artisan db:wipe --force
-        php artisan migrate:fresh --force
+        
+        # Run migrations up to the problematic one
+        php artisan migrate:refresh --path=database/migrations/001_create_users_table.php
+        php artisan migrate:refresh --path=database/migrations/002_create_chats_table.php
+        php artisan migrate:refresh --path=database/migrations/003_create_sessions_table.php
+        php artisan migrate:refresh --path=database/migrations/004_create_groups_table.php
+        php artisan migrate:refresh --path=database/migrations/005_create_group_user_table.php
+        php artisan migrate:refresh --path=database/migrations/006_create_cache_table.php
+        
+        # Skip the problematic migration (007) and run our fix instead
+        php artisan migrate:refresh --path=database/migrations/2025_06_28_153900_fix_chats_migration.php
+        
+        # Run any remaining migrations
+        php artisan migrate
         
         # Clear all caches
         php artisan cache:clear
