@@ -32,11 +32,12 @@ jobs:
         php artisan migrate --seed
         php artisan test
     - run: composer audit --no-interaction
-    - uses: rtCamp/action-slack-notify@v2
-      if: always()
-      env:
-        SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-        SLACK_MESSAGE: "Deploy MyUKM ${{ job.status }} 🚀"
+    # Notifikasi Slack dinonaktifkan sementara
+    # - uses: rtCamp/action-slack-notify@v2
+    #   if: always()
+    #   env:
+    #     SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+    #     SLACK_MESSAGE: "Deploy MyUKM ${{ job.status }} 🚀"
     - name: Deploy to Production
       if: github.ref == 'refs/heads/main'
       env:
