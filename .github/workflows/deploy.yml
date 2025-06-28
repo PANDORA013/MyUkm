@@ -37,5 +37,37 @@ jobs:
       env:
         SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
         SLACK_MESSAGE: "Deploy MyUKM ${{ job.status }} 🚀"
-    - run: echo "🚀 Deploying to production..."
+    - name: Deploy to Production
       if: github.ref == 'refs/heads/main'
+      env:
+        SSH_HOST: ${{ secrets.SSH_HOST }}
+        SSH_USER: ${{ secrets.SSH_USER }}
+        SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        PROJECT_PATH: ${{ secrets.PROJECT_PATH || '/var/www/myukm' }}
+      run: |
+        echo "🚀 Memulai deploy ke production..."
+        
+        # Buat SSH config
+        mkdir -p ~/.ssh
+        echo "$SSH_KEY" > ~/.ssh/deploy_key
+        chmod 600 ~/.ssh/deploy_key
+        
+        # Deploy via SSH
+        ssh -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key $SSH_USER@$SSH_HOST "
+          cd $PROJECT_PATH
+          git pull origin main
+          composer install --no-dev --optimize-autoloader
+          npm install --production
+          npm run prod
+          php artisan migrate --force
+          php artisan optimize:clear
+          php artisan queue:restart
+          
+          # Restart web server
+          sudo systemctl restart apache2 || sudo systemctl restart nginx
+          
+          echo '✅ Deploy berhasil!'
+        "
+        
+        # Hapus SSH key
+        rm -f ~/.ssh/deploy_key
