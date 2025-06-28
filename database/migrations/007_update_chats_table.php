@@ -22,39 +22,14 @@ return new class extends Migration
             $table->softDeletes();
         });
 
-        // Update group_id based on group_code (Fully SQLite compatible)
-        // First, get all chats with their corresponding group IDs
-        $groupMappings = DB::table('groups')
-            ->select('id', 'referral_code')
-            ->whereNotNull('referral_code')
-            ->pluck('id', 'referral_code')
-            ->toArray();
-        
-        // Then update each chat in batches to be more efficient
-        DB::table('chats')
-            ->whereNotNull('group_code')
-            ->orderBy('id')
-            ->chunk(100, function ($chats) use ($groupMappings) {
-                $updates = [];
-                
-                foreach ($chats as $chat) {
-                    if (isset($groupMappings[$chat->group_code])) {
-                        $updates[] = [
-                            'id' => $chat->id,
-                            'group_id' => $groupMappings[$chat->group_code]
-                        ];
-                    }
-                }
-                
-                // Update in batches
-                foreach (array_chunk($updates, 100) as $batch) {
-                    foreach ($batch as $update) {
-                        DB::table('chats')
-                            ->where('id', $update['id'])
-                            ->update(['group_id' => $update['group_id']]);
-                    }
-                }
-            });
+        // Update group_id based on group_code using SQLite-compatible syntax
+        DB::statement('
+            UPDATE chats
+            SET group_id = (
+                SELECT id FROM groups WHERE chats.group_code = groups.referral_code
+            )
+            WHERE group_code IS NOT NULL
+        ');
 
         // Buat foreign key setelah data diupdate
         Schema::table('chats', function (Blueprint $table) {
