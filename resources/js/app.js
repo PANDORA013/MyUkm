@@ -1,5 +1,27 @@
 import '../css/app.css';
 import './bootstrap';
+import Alpine from 'alpinejs';
+import focus from '@alpinejs/focus';
+
+window.Alpine = Alpine;
+Alpine.plugin(focus);
+Alpine.start();
+
+document.addEventListener('alpine:init', () => {
+    Alpine.data('dropdown', () => ({
+        open: false,
+        toggle() {
+            this.open = !this.open;
+        }
+    }));
+});
+
+window.helpers = {
+    confirmAction: (message, callback) => {
+        if (confirm(message)) callback();
+    }
+};
+
 // WebSocket functionality is disabled to prevent connection errors
 // If you need real-time features, uncomment and configure the following:
 /*

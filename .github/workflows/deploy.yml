@@ -1,50 +1,41 @@
-name: Deploy to Production
+name: Deploy MyUKM
 
 on:
   push:
-    tags:
-      - 'v*'  # Trigger on version tags (e.g., v1.0.0)
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.2'
-          extensions: mbstring, pdo, mysql, bcmath, dom, fileinfo, ctype, json, tokenizer, xml, zip
-
-      - name: Install dependencies
-        run: |
-          composer install --prefer-dist --no-dev
-          npm install
-          npm run build
-
-      - name: Setup SSH
-        uses: webfactory/ssh-agent@v0.7.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
-      - name: Add known hosts
-        run: |
-          mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
-          echo "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
-          chmod 600 ~/.ssh/known_hosts
-
-      - name: Deploy to production
-        env:
-          DEPLOY_SERVER: ${{ secrets.DEPLOY_SERVER }}
-          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
-          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
-        run: |
-          # Create deployment directory
-          ssh $DEPLOY_USER@$DEPLOY_SERVER "mkdir -p $DEPLOY_PATH/releases"
-          
-          # Create release directory with timestamp
-          RELEASE_DIR="$DEPLOY_PATH/releases/$(date +%Y%m%d%H%M%S)"
-          ssh $DEPLOY_USER@$DEPLOY_SERVER "mkdir -p $RELEASE_DIR"
+    - uses: actions/checkout@v4
+    - uses: actions/cache@v3
+      with:
+        path: |
+          ~/.composer/cache
+          node_modules
+        key: ${{ runner.os }}-deps-${{ hashFiles('composer.lock') }}-${{ hashFiles('package-lock.json') }}
+    - uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.2'
+        extensions: mbstring, ctype, fileinfo, openssl, PDO, tokenizer, xml, gd, pdo_mysql
+    - run: |
+        composer install --no-interaction --prefer-dist --optimize-autoloader
+        npm ci && npm run prod
+    - run: |
+        cp .env.example .env
+        php artisan key:generate
+        php artisan migrate --seed
+        php artisan test
+    - run: composer audit --no-interaction
+    - uses: rtCamp/action-slack-notify@v2
+      if: always()
+      env:
+        SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+        SLACK_MESSAGE: "Deploy MyUKM ${{ job.status }} 🚀"
+    - run: echo "🚀 Deploying to production..."
+      if: github.ref == 'refs/heads/main'
