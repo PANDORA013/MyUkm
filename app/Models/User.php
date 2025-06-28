@@ -47,6 +47,8 @@ class User extends Authenticatable
     ];
     
     protected $appends = ['plain_password'];
+
+
     
     /**
      * Get the plain text password (only for admin website viewing)

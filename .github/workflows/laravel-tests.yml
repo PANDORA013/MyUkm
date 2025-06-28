@@ -1,14 +1,27 @@
-name: Run Laravel Tests
+name: Laravel Tests
 
 on:
   push:
     branches: [ "main", "master" ]
   pull_request:
     branches: [ "main", "master" ]
+  schedule:
+    # Run every day at midnight UTC
+    - cron: '0 0 * * *'
 
 jobs:
   laravel-tests:
+    name: PHP ${{ matrix.php-version }} - Laravel ${{ matrix.laravel-version }}
     runs-on: ubuntu-latest
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        php-version: ['8.2']
+        laravel-version: ['^10.0']
+        include:
+          - php-version: '8.2'
+            dependency-version: '*'
 
     services:
       mysql:
@@ -16,6 +29,8 @@ jobs:
         env:
           MYSQL_ROOT_PASSWORD: root
           MYSQL_DATABASE: myukm_test
+          MYSQL_USER: root
+          MYSQL_PASSWORD: root
         ports:
           - 3306:3306
         options: >-
@@ -25,42 +40,57 @@ jobs:
           --health-retries=3
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.2'
-          extensions: mbstring, pdo, mysql, bcmath, dom, fileinfo, ctype, json, tokenizer, xml, gd, zip
+          php-version: ${{ matrix.php-version }}
+          extensions: mbstring, pdo, mysql, bcmath, dom, fileinfo, ctype, json, tokenizer, xml, gd, zip, intl
           coverage: none
           tools: composer:v2
           
       - name: Verify PHP version
         run: php -v
 
-      - name: Copy .env
-        run: cp .env.example .env
+      - name: Cache Composer packages
+        id: composer-cache
+        uses: actions/cache@v3
+        with:
+          path: vendor
+          key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-php-
 
-      - name: Generate App Key
+      - name: Cache NPM packages
+        id: npm-cache
+        uses: actions/cache@v3
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Copy .env
         run: |
-          php -r "
-          file_put_contents(
-              '.env',
-              str_replace(
-                  'APP_KEY=',
-                  'APP_KEY=base64:' . base64_encode(random_bytes(32)),
-                  file_get_contents('.env')
-              )
-          );
-          "
+          cp .env.example .env
+          # Generate app key
+          php artisan key:generate --show
+          php artisan key:generate
+          # Set debug mode
+          echo "APP_DEBUG=true" >> .env
+          echo "LOG_CHANNEL=stderr" >> .env
 
       - name: Configure Environment
         run: |
           # Database Configuration
-          sed -i 's/DB_HOST=127.0.0.1/DB_HOST=127.0.0.1/' .env
-          sed -i 's/DB_DATABASE=.*/DB_DATABASE=myukm_test/' .env
-          sed -i 's/DB_USERNAME=.*/DB_USERNAME=root/' .env
-          sed -i 's/DB_PASSWORD=.*/DB_PASSWORD=root/' .env
+          echo "DB_CONNECTION=mysql" >> .env
+          echo "DB_HOST=127.0.0.1" >> .env
+          echo "DB_PORT=3306" >> .env
+          echo "DB_DATABASE=myukm_test" >> .env
+          echo "DB_USERNAME=root" >> .env
+          echo "DB_PASSWORD=root" >> .env
           
           # Testing Environment
           echo "APP_ENV=testing" >> .env
@@ -71,36 +101,67 @@ jobs:
           echo "SESSION_DRIVER=array" >> .env
           echo "SESSION_LIFETIME=120" >> .env
           
+          # Mail Configuration
+          echo "MAIL_MAILER=array" >> .env
+          
           # Broadcasting Configuration
-          echo "BROADCAST_DRIVER=none" >> .env
+          echo "BROADCAST_DRIVER=null" >> .env
           
           # Dummy Pusher Credentials (to prevent null errors)
           echo "PUSHER_APP_ID=test" >> .env
           echo "PUSHER_APP_KEY=test" >> .env
           echo "PUSHER_APP_SECRET=test" >> .env
           echo "PUSHER_APP_CLUSTER=mt1" >> .env
-          echo "PUSHER_HOST=" >> .env
-          echo "PUSHER_PORT=443" >> .env
-          echo "PUSHER_SCHEME=https" >> .env
-          echo "PUSHER_APP_CLUSTER=" >> .env
           
           # Disable Pusher service provider for tests
           sed -i "s/App\\Providers\\BroadcastServiceProvider::class,//g" config/app.php
           
-      - name: Install Composer Dependencies
+          # Show configuration for debugging
+          echo "=== .env ==="
+          cat .env
+          echo "\n=== Database Configuration ==="
+          php artisan db:show
+          
+      - name: Install Dependencies
         env:
-          BROADCAST_DRIVER: 'none'
+          BROADCAST_DRIVER: null
           CACHE_DRIVER: array
           QUEUE_CONNECTION: sync
           SESSION_DRIVER: array
-          PUSHER_APP_ID: test
-          PUSHER_APP_KEY: test
-          PUSHER_APP_SECRET: test
-          PUSHER_APP_CLUSTER: mt1
-        run: composer install --prefer-dist --no-progress --no-suggest
+        run: |
+          composer install --prefer-dist --no-progress --no-suggest --no-interaction --optimize-autoloader
+          
+      - name: Install NPM Dependencies
+        run: |
+          npm ci
+          
+      - name: Build Assets
+        run: |
+          npm run build
 
-      - name: Run Migrations
-        run: php artisan migrate --force
-
-      - name: Run Tests
-        run: php artisan test
+      - name: Prepare Database
+        run: |
+          php artisan migrate:fresh --seed --force
+          
+      - name: Show Directory Structure
+        run: |
+          ls -la
+          ls -la storage/
+          
+      - name: Run PHPUnit Tests
+        run: |
+          php artisan test --coverage-clover=coverage.xml
+          
+      - name: Upload Coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: coverage.xml
+          fail_ci_if_error: false
+          verbose: true
+          
+      - name: Run Static Analysis
+        if: always()
+        run: |
+          composer require --dev nunomaduro/larastan
+          ./vendor/bin/phpstan analyse --memory-limit=2G
