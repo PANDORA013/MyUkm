@@ -39,7 +39,13 @@ jobs:
 
     - name: Install Dependencies
       run: |
-        composer update --with-all-dependencies --no-interaction --ignore-platform-reqs || composer install --no-interaction --ignore-platform-reqs
+        # Remove composer.lock to force fresh dependency resolution
+        rm -f composer.lock
+        
+        # Install dependencies with fresh resolution
+        composer install --no-interaction --ignore-platform-reqs --prefer-dist
+        
+        # Copy environment file and generate key
         cp .env.example .env
         php artisan key:generate
         

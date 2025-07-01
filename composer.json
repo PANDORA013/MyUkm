@@ -14,13 +14,11 @@
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
-        "laravel/browser-kit-testing": "^7.0",
         "laravel/dusk": "^8.3",
         "laravel/pail": "^1.2.2",
         "laravel/pint": "^1.13",
         "laravel/sail": "^1.41",
         "mockery/mockery": "^1.6",
-        "nunomaduro/collision": "^7.0",
         "phpunit/phpunit": "^10.5",
         "spatie/laravel-ignition": "^2.4"
     },
