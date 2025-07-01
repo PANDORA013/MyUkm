@@ -19,7 +19,6 @@ class Group extends Model
     protected $fillable = [
         'name',
         'referral_code',
-        'ukm_id',
         'description',
         'created_by',
         'is_active',
@@ -29,10 +28,9 @@ class Group extends Model
     protected $casts = [
         'is_active' => 'boolean',
         'settings' => 'array',
-    ];
-    
-    protected $dates = [
-        'deleted_at',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+        'deleted_at' => 'datetime',
     ];
 
     /**
@@ -41,13 +39,16 @@ class Group extends Model
     public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'group_user')
+            ->using(GroupUser::class)
             ->withPivot([
-                'is_muted', 
+                'is_muted',
                 'is_admin',
-                'created_at', 
+                'created_at',
                 'updated_at',
                 'deleted_at'
             ])
+            ->withTimestamps()
+            ->withTrashed()
             ->withTimestamps()
             ->withTrashed();
     }

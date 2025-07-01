@@ -2,12 +2,31 @@
 
 namespace Tests\Unit;
 
-use PHPUnit\Framework\TestCase;
+use Tests\TestCase;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
 class BasicTest extends TestCase
 {
+    use RefreshDatabase;
+
+    /**
+     * A basic test example.
+     *
+     * @return void
+     */
     public function test_basic_example()
     {
         $this->assertTrue(true);
+    }
+
+    /**
+     * Test that the application returns a successful response.
+     *
+     * @return void
+     */
+    public function test_application_returns_successful_response()
+    {
+        $response = $this->get('/');
+        $response->assertStatus(200);
     }
 }

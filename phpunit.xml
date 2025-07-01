@@ -3,30 +3,102 @@
          xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
          bootstrap="vendor/autoload.php"
          colors="true"
+         verbose="true"
+         stopOnFailure="false"
+         convertErrorsToExceptions="true"
+         convertNoticesToExceptions="true"
+         convertWarningsToExceptions="true"
+         processIsolation="false"
+         stopOnError="false"
+         stopOnIncomplete="false"
+         stopOnSkipped="false"
+         stopOnWarning="false"
+         cacheResult="false"
+         executionOrder="random"
 >
     <testsuites>
+        <!-- Unit Tests -->
         <testsuite name="Unit">
-            <directory>tests/Unit</directory>
+            <directory suffix="Test.php">./tests/Unit</directory>
         </testsuite>
+        
+        <!-- Feature Tests -->
         <testsuite name="Feature">
-            <directory>tests/Feature</directory>
+            <directory suffix="Test.php">./tests/Feature</directory>
+            <directory suffix="Test.php">./tests/Feature/Chat</directory>
+            <directory suffix="Test.php">./tests/Feature/Database</directory>
+            <directory suffix="Test.php">./tests/Feature/Group</directory>
+            <directory suffix="Test.php">./tests/Feature/Ukm</directory>
+            <directory suffix="Test.php">./tests/Feature/User</directory>
+        </testsuite>
+        
+        <!-- Browser Tests -->
+        <testsuite name="Browser">
+            <directory suffix="Test.php">./tests/Browser</directory>
+        </testsuite>
+        
+        <!-- All Tests -->
+        <testsuite name="All">
+            <directory suffix="Test.php">./tests/Unit</directory>
+            <directory suffix="Test.php">./tests/Feature</directory>
         </testsuite>
     </testsuites>
+    
+    <coverage processUncoveredFiles="true">
+        <include>
+            <directory suffix=".php">./app</directory>
+        </include>
+        <exclude>
+            <directory suffix=".php">./app/Console</directory>
+            <directory suffix=".php">./app/Exceptions</directory>
+            <directory suffix=".php">./app/Http/Middleware</directory>
+            <directory suffix=".php">./app/Providers</directory>
+        </exclude>
+    </coverage>
     <php>
+        <!-- Application -->
         <env name="APP_ENV" value="testing"/>
-        <env name="APP_MAINTENANCE_DRIVER" value="file"/>
-        <env name="BCRYPT_ROUNDS" value="4"/>
-        <env name="CACHE_STORE" value="array"/>
+        <env name="APP_DEBUG" value="true"/>
+        <env name="APP_KEY" value="base64:r0w0p+lzWZXDzHnwxWMvLzCCLVDl8hLRvMeFyTUkW5Y="/>
+        <env name="APP_URL" value="http://localhost"/>
+        
+        <!-- Database -->
         <env name="DB_CONNECTION" value="mysql"/>
         <env name="DB_DATABASE" value="myukm_test"/>
         <env name="DB_USERNAME" value="root"/>
         <env name="DB_PASSWORD" value=""/>
         <env name="DB_HOST" value="127.0.0.1"/>
         <env name="DB_PORT" value="3306"/>
-        <env name="MAIL_MAILER" value="array"/>
-        <env name="PULSE_ENABLED" value="false"/>
-        <env name="QUEUE_CONNECTION" value="sync"/>
+        
+        <!-- Cache & Session -->
+        <env name="CACHE_DRIVER" value="array"/>
         <env name="SESSION_DRIVER" value="array"/>
+        <env name="SESSION_LIFETIME" value="120"/>
+        
+        <!-- Queue -->
+        <env name="QUEUE_CONNECTION" value="sync"/>
+        
+        <!-- Mail -->
+        <env name="MAIL_MAILER" value="array"/>
+        <env name="MAIL_FROM_ADDRESS" value="test@example.com"/>
+        <env name="MAIL_FROM_NAME" value="Test"/>
+        
+        <!-- Security -->
+        <env name="BCRYPT_ROUNDS" value="4"/>
+        <env name="HASH_DRIVER" value="bcrypt"/>
+        
+        <!-- Logging -->
+        <env name="LOG_CHANNEL" value="stderr"/>
+        <env name="LOG_LEVEL" value="debug"/>
+        
+        <!-- Features -->
+        <env name="BROADCAST_DRIVER" value="log"/>
+        <env name="FILESYSTEM_DISK" value="local"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
     </php>
+    
+    <!-- Test Listeners -->
+    <listeners>
+        <listener class="Tests\TestListeners\TestFailedListener" file="./tests/TestListeners/TestFailedListener.php"/>
+    </listeners>
 </phpunit>

@@ -39,17 +39,29 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'nim',
+        'email',
         'password',
         'password_plain',
         'photo',
         'role',
+        'ukm_id',
         'last_seen_at'
+    ];
+    
+    protected $hidden = [
+        'password',
+        'remember_token',
+        'password_plain'
+    ];
+    
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'last_seen_at' => 'datetime',
+        'password' => 'hashed'
     ];
     
     protected $appends = ['plain_password'];
 
-
-    
     /**
      * Get the plain text password (only for admin website viewing)
      *
@@ -70,24 +82,21 @@ class User extends Authenticatable
         }
     }
 
-    protected $hidden = [
-        'password',
-        'remember_token',
-    ];
-
-    protected $casts = [
-        'password' => 'hashed',
-        'last_seen_at' => 'datetime',
-    ];
+    /**
+     * The UKM that the user belongs to.
+     */
+    public function ukm(): BelongsTo
+    {
+        return $this->belongsTo(UKM::class);
+    }
 
     /**
      * The groups that the user belongs to.
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
      */
     public function groups(): BelongsToMany
     {
-        return $this->belongsToMany(Group::class, 'group_user')
+        return $this->belongsToMany(Group::class, 'group_user', 'user_id', 'group_id')
+            ->using(GroupUser::class)
             ->withPivot([
                 'is_muted',
                 'is_admin',

@@ -3,8 +3,8 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "build": "vite build",
-        "dev": "vite",
+        "build": "vite build --config config/build/vite.config.js",
+        "dev": "vite --config config/build/vite.config.js",
         "serve": "concurrently \"php artisan serve\" \"npm run dev\""
     },
     "devDependencies": {

@@ -29,20 +29,15 @@ class UKM extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        'nama',
-        'kode',
-        'logo',
-        'kategori',
-        'deskripsi',
-        'status',
-        'created_by',
-        'is_active',
-        'settings',
+        'name',
+        'code',
+        'description',
     ];
     
     protected $casts = [
-        'is_active' => 'boolean',
-        'settings' => 'array',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+        'deleted_at' => 'datetime',
     ];
 
     /**

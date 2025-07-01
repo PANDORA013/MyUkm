@@ -10,32 +10,49 @@ class Chat extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['user_id', 'group_id', 'message', 'read_at'];
+    protected $fillable = [
+        'user_id',
+        'group_id',
+        'message',
+        'read_at'
+    ];
 
     protected $casts = [
         'read_at' => 'datetime',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+        'deleted_at' => 'datetime',
     ];
 
     protected $appends = ['is_read'];
 
-    // Relasi ke User (pengirim pesan)
+    /**
+     * Get the user that owns the chat message.
+     */
     public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class)->withTrashed();
     }
 
-    // Relasi ke Group (grup chat)
+    /**
+     * Get the group that the chat message belongs to.
+     */
     public function group()
     {
         return $this->belongsTo(Group::class)->withTrashed();
     }
 
-    // Relasi many-to-many dengan User
+    /**
+     * The users that are participants in the chat.
+     */
     public function participants()
     {
         return $this->belongsToMany(User::class, 'chat_user')
             ->withTimestamps()
-            ->withPivot(['last_read_at', 'deleted_at'])
+            ->withPivot([
+                'last_read_at',
+                'deleted_at'
+            ])
             ->withTrashed();
     }
     

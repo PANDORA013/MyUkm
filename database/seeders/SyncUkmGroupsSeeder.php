@@ -16,8 +16,8 @@ class SyncUkmGroupsSeeder extends Seeder
         UKM::chunk(100, function ($ukms) {
             foreach ($ukms as $ukm) {
                 Group::updateOrCreate(
-                    ['referral_code' => $ukm->kode],
-                    ['name' => $ukm->nama]
+                    ['referral_code' => $ukm->code],
+                    ['name' => $ukm->name]
                 );
             }
         });
