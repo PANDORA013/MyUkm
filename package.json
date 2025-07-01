@@ -18,6 +18,8 @@
         "vite": "^5.0.10"
     },
     "dependencies": {
+        "@alpinejs/focus": "^3.14.9",
+        "alpinejs": "^3.14.9",
         "axios": "^1.10.0",
         "laravel-echo": "^2.1.6",
         "pusher-js": "^8.4.0"

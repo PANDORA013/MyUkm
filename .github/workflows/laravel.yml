@@ -10,21 +10,7 @@ on:
 jobs:
   laravel-tests:
     runs-on: ubuntu-latest
-    services:
-      mysql:
-        image: mysql:8.0
-        env:
-          MYSQL_ROOT_PASSWORD: root
-          MYSQL_DATABASE: myukm_test
-          MYSQL_USER: root
-          MYSQL_PASSWORD: root
-        ports:
-          - 3306
-        options: >-
-          --health-cmd "mysqladmin ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 3
+    # Remove MySQL service, not needed for SQLite
 
     steps:
     - name: Checkout code
@@ -42,12 +28,9 @@ jobs:
         cp .env.example .env.testing
         echo "APP_ENV=testing" >> .env.testing
         echo "APP_DEBUG=true" >> .env.testing
-        echo "DB_CONNECTION=mysql" >> .env.testing
-        echo "DB_HOST=127.0.0.1" >> .env.testing
-        echo "DB_PORT=3306" >> .env.testing
-        echo "DB_DATABASE=myukm_test" >> .env.testing
-        echo "DB_USERNAME=root" >> .env.testing
-        echo "DB_PASSWORD=root" >> .env.testing
+        echo "DB_CONNECTION=sqlite" >> .env.testing
+        echo "DB_DATABASE=:memory:" >> .env.testing
+        echo "DB_FOREIGN_KEYS=true" >> .env.testing
         echo "SESSION_DRIVER=array" >> .env.testing
         echo "CACHE_DRIVER=array" >> .env.testing
         echo "QUEUE_CONNECTION=sync" >> .env.testing
@@ -64,9 +47,8 @@ jobs:
     - name: Directory Permissions
       run: chmod -R 777 storage bootstrap/cache
 
-    - name: Create Database and Run Migrations
+    - name: Run Migrations (SQLite)
       run: |
-        mysql -h 127.0.0.1 -u root -proot -e "CREATE DATABASE IF NOT EXISTS myukm_test;"
         php artisan migrate:fresh --env=testing --force
 
     - name: Run Tests
