@@ -39,6 +39,8 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/chat/send', [ChatController::class, 'sendChat'])->name('chat.send');
         Route::post('/chat/logout', [ChatController::class, 'logoutGroup'])->name('chat.logout');
         Route::get('/chat/unread-count', [ChatController::class, 'getUnreadCount'])->name('chat.unread-count');
+        // Tambahkan route untuk chat.messages (misal: menampilkan pesan chat)
+        Route::get('/chat/messages', [ChatController::class, 'index'])->name('chat.messages');
     });
 
     // Profile Management
@@ -107,6 +109,15 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/ukms', [AdminWebsiteController::class, 'ukms'])->name('admin.ukms');
         Route::get('/ukm-members/{ukm}', [AdminWebsiteController::class, 'ukmMembers'])->name('admin.ukm.members');
         Route::get('/search-member', [AdminWebsiteController::class, 'searchMember'])->name('admin.member.search');
+        // Tambahkan resourceful route untuk users dan groups agar route admin.users.* dan admin.groups.* tersedia
+        Route::resource('users', AdminWebsiteController::class, [
+            'as' => 'admin',
+            'parameters' => ['users' => 'id']
+        ]);
+        Route::resource('groups', AdminWebsiteController::class, [
+            'as' => 'admin',
+            'parameters' => ['groups' => 'id']
+        ]);
         
         // User Deletion History Routes
         Route::prefix('user-deletions')->name('admin.user-deletions.')->group(function () {

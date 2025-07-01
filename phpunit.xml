@@ -62,14 +62,17 @@
         <env name="APP_KEY" value="base64:r0w0p+lzWZXDzHnwxWMvLzCCLVDl8hLRvMeFyTUkW5Y="/>
         <env name="APP_URL" value="http://localhost"/>
         
-        <!-- Database -->
+        <!-- Database (sqlite in-memory for testing) -->
+        <env name="DB_CONNECTION" value="sqlite"/>
+        <env name="DB_DATABASE" value=":memory:"/>
+        <!--
         <env name="DB_CONNECTION" value="mysql"/>
         <env name="DB_DATABASE" value="myukm_test"/>
         <env name="DB_USERNAME" value="root"/>
-        <env name="DB_PASSWORD" value=""/>
+        <env name="DB_PASSWORD" value="root"/>
         <env name="DB_HOST" value="127.0.0.1"/>
         <env name="DB_PORT" value="3306"/>
-        
+        -->
         <!-- Cache & Session -->
         <env name="CACHE_DRIVER" value="array"/>
         <env name="SESSION_DRIVER" value="array"/>
@@ -95,6 +98,9 @@
         <env name="BROADCAST_DRIVER" value="log"/>
         <env name="FILESYSTEM_DISK" value="local"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
+        
+        <!-- Testing -->
+        <env name="TEST_TOKEN" value="test-token"/>
     </php>
     
     <!-- Test Listeners -->

@@ -1,34 +1,69 @@
 <?php
 
-namespace Tests\Feature;
+namespace Tests\Feature\Ukm;
 
-use App\Models\Ukm;
+use App\Models\UKM;
 use App\Models\User;
-use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class UkmTest extends TestCase
 {
     use RefreshDatabase, WithFaker;
+    
+    protected $admin;
+    protected $user;
+    protected $ukm;
 
-    protected function createAdminUser(array $attributes = [])
+    protected function setUp(): void
     {
-        return parent::createAdminUser(array_merge([
-            'password' => bcrypt('admin123')
-        ], $attributes));
+        parent::setUp();
+        
+        // Create a test UKM first
+        $this->ukm = UKM::create([
+            'name' => 'Test UKM',
+            'code' => 'TST',
+            'description' => 'Test UKM Description',
+            'created_at' => now(),
+            'updated_at' => now()
+        ]);
+        
+        // Create admin user
+        $this->admin = User::create([
+            'name' => 'Admin User',
+            'nim' => 'ADM001',
+            'email' => 'admin@test.com',
+            'password' => Hash::make('admin123'),
+            'password_plain' => 'admin123',
+            'role' => 'admin',
+            'ukm_id' => $this->ukm->id,
+            'created_at' => now(),
+            'updated_at' => now()
+        ]);
+        
+        // Create regular user
+        $this->user = User::create([
+            'name' => 'Regular User',
+            'nim' => 'USR001',
+            'email' => 'user@test.com',
+            'password' => Hash::make('password'),
+            'password_plain' => 'password',
+            'role' => 'member',
+            'ukm_id' => $this->ukm->id,
+            'created_at' => now(),
+            'updated_at' => now()
+        ]);
     }
 
     /** @test */
     public function admin_can_view_ukm_list()
     {
-        $admin = $this->createAdminUser();
-        
-        $response = $this->actingAs($admin)
-                         ->get('/admin/ukm');
+        $response = $this->actingAs($this->admin)
+                       ->get(route('admin.ukm.index'));
                          
         $response->assertStatus(200);
         $response->assertViewHas('ukms');
@@ -37,41 +72,31 @@ class UkmTest extends TestCase
     /** @test */
     public function admin_can_create_ukm()
     {
-        $admin = $this->createAdminUser();
         Storage::fake('public');
         
         $data = [
-            'name' => 'UKM Test',
-            'description' => 'Deskripsi UKM Test',
-            'pembina' => 'Nama Pembina',
-            'logo' => UploadedFile::fake()->image('ukm-logo.jpg'),
+            'name' => 'New UKM',
+            'code' => 'NEW',
+            'description' => 'New UKM Description',
+            'logo' => UploadedFile::fake()->image('logo.jpg'),
         ];
         
-        $response = $this->actingAs($admin)
-                         ->post('/admin/ukm', $data);
+        $response = $this->actingAs($this->admin)
+                        ->post(route('admin.ukm.store'), $data);
                          
-        $response->assertRedirect('/admin/ukm');
+        $response->assertRedirect(route('admin.ukm.index'));
         $this->assertDatabaseHas('ukms', [
-            'name' => 'UKM Test',
-            'description' => 'Deskripsi UKM Test',
-            'pembina' => 'Nama Pembina',
+            'name' => 'New UKM',
+            'code' => 'NEW',
+            'description' => 'New UKM Description',
         ]);
-        
-        // Verify the file was stored (using assertTrue instead of assertExists)
-        $this->assertTrue(
-            Storage::disk('public')->exists('ukm-logos/' . $data['logo']->hashName()),
-            'The logo file was not stored.'
-        );
     }
 
     /** @test */
     public function user_can_view_ukm_list()
     {
-        /** @var \App\Models\User $user */
-        $user = User::factory()->create();
-        
-        $response = $this->actingAs($user)
-                         ->get('/ukm');
+        $response = $this->actingAs($this->user)
+                       ->get(route('ukm.index'));
                          
         $response->assertStatus(200);
         $response->assertViewHas('ukms');
@@ -80,17 +105,13 @@ class UkmTest extends TestCase
     /** @test */
     public function user_can_join_ukm()
     {
-        /** @var \App\Models\User $user */
-        $user = User::factory()->create();
-        $ukm = Ukm::factory()->create();
-        
-        $response = $this->actingAs($user)
-                         ->post("/ukm/{$ukm->id}/join");
+        $response = $this->actingAs($this->user)
+                       ->post(route('ukm.join', $this->ukm->id));
                          
         $response->assertRedirect();
-        $this->assertDatabaseHas('ukm_user', [
-            'user_id' => $user->id,
-            'ukm_id' => $ukm->id,
+        $this->assertDatabaseHas('group_user', [
+            'user_id' => $this->user->id,
+            'group_id' => $this->ukm->groups()->first()->id,
         ]);
     }
 

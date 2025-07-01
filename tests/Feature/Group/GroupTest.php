@@ -1,82 +1,141 @@
 <?php
 
-namespace Tests\Feature;
+namespace Tests\Feature\Group;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use App\Models\User;
 use App\Models\Group;
-use PHPUnit\Framework\Attributes\Test;
+use App\Models\UKM;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Session;
 
 class GroupTest extends TestCase
 {
     use RefreshDatabase;
+    
+    protected $user;
+    protected $group;
+    protected $ukm;
 
-    #[Test]
+    protected function setUp(): void
+    {
+        parent::setUp();
+        
+        // Create a test UKM
+        $this->ukm = UKM::create([
+            'name' => 'Test UKM',
+            'code' => 'TST',
+            'description' => 'Test UKM Description',
+            'created_at' => now(),
+            'updated_at' => now()
+        ]);
+        
+        // Create a test user
+        $this->user = User::create([
+            'name' => 'Test User',
+            'nim' => '12345678',
+            'email' => 'test@example.com',
+            'password' => Hash::make('password'),
+            'password_plain' => 'password',
+            'role' => 'member',
+            'ukm_id' => $this->ukm->id,
+            'created_at' => now(),
+            'updated_at' => now()
+        ]);
+        
+        // Create a test group
+        $this->group = Group::create([
+            'name' => 'Test Group',
+            'referral_code' => 'TEST123',
+            'description' => 'Test Description',
+            'ukm_id' => $this->ukm->id,
+            'created_at' => now(),
+            'updated_at' => now()
+        ]);
+    }
+    
+    /** @test */
     public function user_can_login_with_correct_nim_and_password()
     {
-        $user = User::factory()->create([
-            'nim' => '12345678',
-            'password' => bcrypt('password'),
-        ]);
-
         $response = $this->post('/login', [
             'nim' => '12345678',
             'password' => 'password',
         ]);
 
         $response->assertRedirect('/home');
-        $this->assertAuthenticatedAs($user);
+        $this->assertAuthenticatedAs($this->user);
     }
 
-    #[Test]
+    /** @test */
     public function user_can_join_group_with_valid_code()
     {
-        $user = User::factory()->create();
-        $user = User::find($user->id); // pastikan instance User
-        $group = Group::factory()->create(['referral_code' => '0812']);
-
-        $response = $this->actingAs($user)->post('/ukm/join', [
-            'group_code' => '0812',
-        ]);
+        $response = $this->actingAs($this->user)
+            ->post(route('group.join'), [
+                'referral_code' => 'TEST123',
+            ]);
 
         $response->assertRedirect();
         $this->assertDatabaseHas('group_user', [
-            'user_id' => $user->id,
-            'group_id' => $group->id,
+            'user_id' => $this->user->id,
+            'group_id' => $this->group->id,
         ]);
     }
 
-    #[Test]
+    /** @test */
     public function user_cannot_join_group_with_invalid_code()
     {
-        $user = User::factory()->create();
-        $user = User::find($user->id); // pastikan instance User
-
-        $response = $this->actingAs($user)->post('/ukm/join', [
-            'group_code' => '9999',
-        ]);
+        $response = $this->actingAs($this->user)
+            ->post(route('group.join'), [
+                'referral_code' => 'INVALID',
+            ]);
 
         $response->assertSessionHasErrors();
         $this->assertDatabaseMissing('group_user', [
-            'user_id' => $user->id,
+            'user_id' => $this->user->id,
         ]);
     }
 
-    #[Test]
+    /** @test */
     public function user_can_leave_group()
     {
-        $user = User::factory()->create();
-        $user = User::find($user->id); // pastikan instance User
-        $group = Group::factory()->create();
-        $user->groups()->attach($group->id); // Join dulu
-
-        $response = $this->actingAs($user)->delete("/ukm/{$group->referral_code}/leave");
+        // Join group first
+        $this->user->groups()->attach($this->group->id);
+        
+        $response = $this->actingAs($this->user)
+            ->delete(route('group.leave', $this->group->id));
 
         $response->assertRedirect();
         $this->assertDatabaseMissing('group_user', [
-            'user_id' => $user->id,
-            'group_id' => $group->id,
+            'user_id' => $this->user->id,
+            'group_id' => $this->group->id,
+        ]);
+    }
+    
+    /** @test */
+    public function admin_can_create_group()
+    {
+        $admin = User::create([
+            'name' => 'Admin User',
+            'nim' => 'ADM001',
+            'password' => Hash::make('admin123'),
+            'role' => 'admin',
+            'ukm_id' => $this->ukm->id
+        ]);
+        
+        $response = $this->actingAs($admin)
+            ->post(route('admin.groups.store'), [
+                'name' => 'New Group',
+                'referral_code' => 'NEWGRP',
+                'description' => 'New Group Description',
+                'ukm_id' => $this->ukm->id
+            ]);
+            
+        $response->assertRedirect(route('admin.groups.index'));
+        $this->assertDatabaseHas('groups', [
+            'name' => 'New Group',
+            'referral_code' => 'NEWGRP',
+            'ukm_id' => $this->ukm->id
         ]);
     }
 }

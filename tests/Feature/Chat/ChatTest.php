@@ -1,101 +1,143 @@
 <?php
 
-namespace Tests\Feature;
+namespace Tests\Feature\Chat;
 
-use App\Events\MessageSent;
+use Tests\TestCase;
 use App\Models\User;
 use App\Models\Group;
-use App\Models\GroupUser;
+use App\Models\UKM;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
 use Illuminate\Support\Facades\Event;
-use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class ChatTest extends TestCase
 {
     use RefreshDatabase;
+    
+    protected $user;
+    protected $group;
+    protected $ukm;
 
-    /**
-     * @test
-     */
-    public function user_can_send_chat_message(): void
+    protected function setUp(): void
     {
-        // Create a user with member role
-        /** @var Authenticatable|User $user */
-        $user = User::factory()->create(['role' => 'member']);
+        parent::setUp();
+        $this->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class);
         
-        // Create a group
-        $group = Group::create([
+        // Create a test UKM
+        $this->ukm = UKM::create([
+            'name' => 'Test UKM',
+            'code' => 'TST',
+            'description' => 'Test UKM Description',
+            'created_at' => now(),
+            'updated_at' => now()
+        ]);
+        
+        // Create a test user
+        $this->user = User::create([
+            'name' => 'Test User',
+            'nim' => '12345678',
+            'email' => 'test@example.com',
+            'password' => Hash::make('password'),
+            'password_plain' => 'password',
+            'role' => 'member',
+            'ukm_id' => $this->ukm->id,
+            'created_at' => now(),
+            'updated_at' => now()
+        ]);
+        
+        // Create a test group
+        $this->group = Group::create([
             'name' => 'Test Group',
+            'referral_code' => 'TEST123',
             'description' => 'Test Description',
-            'referral_code' => 'TEST123'
+            'ukm_id' => $this->ukm->id,
+            'created_at' => now(),
+            'updated_at' => now()
         ]);
         
-        // Add user to group using the pivot model
-        GroupUser::create([
-            'user_id' => $user->id,
-            'group_id' => $group->id,
-            'is_admin' => false,
-            'is_muted' => false
+        // Add user to group
+        \Illuminate\Support\Facades\DB::table('group_user')->insert([
+            'user_id' => $this->user->id,
+            'group_id' => $this->group->id,
+            'created_at' => now(),
+            'updated_at' => now()
         ]);
         
-        $this->actingAs($user)
+        // Fake events to prevent broadcasting during tests
+        Event::fake();
+    }
+    
+    /** @test */
+    public function user_can_send_chat_message()
+    {
+        $response = $this->actingAs($this->user)
             ->post(route('chat.send'), [
                 'message' => 'Hello World',
                 'group_code' => 'TEST123'
-            ])
-            ->assertStatus(200);
+            ]);
+            
+        $response->assertStatus(200);
             
         $this->assertDatabaseHas('chats', [
-            'user_id' => $user->id,
-            'message' => 'Hello World',
-            'group_id' => $group->id
+            'user_id' => $this->user->id,
+            'group_id' => $this->group->id,
+            'message' => 'Hello World'
         ]);
     }
-
+    
     /** @test */
-    public function message_requires_content(): void
+    public function message_requires_content()
     {
-        // Create a user with member role
-        /** @var Authenticatable|User $user */
-        $user = User::factory()->create(['role' => 'member']);
-        
-        // Create a group
-        $group = Group::create([
-            'name' => 'Test Group',
-            'description' => 'Test Description',
-            'referral_code' => 'TEST123'
-        ]);
-        
-        // Add user to group using the pivot model
-        GroupUser::create([
-            'user_id' => $user->id,
-            'group_id' => $group->id,
-            'is_admin' => false,
-            'is_muted' => false
-        ]);
-        
-        $this->actingAs($user)
+        $response = $this->actingAs($this->user)
             ->post(route('chat.send'), [
                 'message' => '',
                 'group_code' => 'TEST123'
-            ])
-            ->assertStatus(422)
+            ]);
+            
+        $response->assertStatus(422)
             ->assertJsonValidationErrors(['message']);
-        $group = \App\Models\Group::create([
-            'name' => 'Test Group',
-            'description' => 'Test Description',
-            'referral_code' => 'TEST456'
+    }
+    
+    /** @test */
+    public function user_can_view_chat_messages()
+    {
+        // Create some test messages
+        $messages = [
+            ['user_id' => $this->user->id, 'group_id' => $this->group->id, 'message' => 'Hello'],
+            ['user_id' => $this->user->id, 'group_id' => $this->group->id, 'message' => 'World']
+        ];
+        
+        // Use the query builder to insert directly
+        \Illuminate\Support\Facades\DB::table('chats')->insert($messages);
+        
+        $response = $this->actingAs($this->user)
+            ->get(route('chat.messages', $this->group->referral_code));
+            
+        $response->assertStatus(200)
+            ->assertJsonCount(2)
+            ->assertJsonFragment(['message' => 'Hello'])
+            ->assertJsonFragment(['message' => 'World']);
+    }
+    
+    /** @test */
+    public function user_cannot_send_message_to_unauthorized_group()
+    {
+        // Create another group that the user is not a member of
+        $otherGroup = Group::create([
+            'name' => 'Other Group',
+            'referral_code' => 'OTHER123',
+            'description' => 'Other Group Description',
+            'ukm_id' => $this->ukm->id
         ]);
         
-        $user->groups()->attach($group->id);
-        
-        $this->actingAs($user)
+        $response = $this->actingAs($this->user)
             ->post(route('chat.send'), [
-                'message' => '',
-                'group_id' => $group->id
-            ])
-            ->assertSessionHasErrors('message');
+                'message' => 'Unauthorized message',
+                'group_code' => 'OTHER123'
+            ]);
+            
+        $response->assertStatus(403);
     }
 
     /** @test */

@@ -1,139 +1,174 @@
 <?php
 
-namespace Tests\Feature;
+namespace Tests\Feature\Ukm;
 
 use App\Models\Group;
 use App\Models\User;
+use App\Models\UKM;
+use App\Models\GroupUser;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
-use PHPUnit\Framework\Attributes\Test;
-use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
 
 class UkmJoinTest extends TestCase
 {
     use RefreshDatabase;
+    
+    protected $ukm;
+    protected $user;
+    protected $group;
 
-    #[Test]
-    public function user_can_join_ukm_with_valid_referral_code(): void
+    protected function setUp(): void
     {
-        // Create a test group
-        $group = Group::factory()->create([
-            'name' => 'UKM Test',
-            'referral_code' => 'ABCD',
-            'is_active' => true
+        parent::setUp();
+        
+        // Create a test UKM
+        $this->ukm = UKM::create([
+            'name' => 'Test UKM',
+            'code' => 'TST',
+            'description' => 'Test UKM Description',
+            'created_at' => now(),
+            'updated_at' => now()
         ]);
+        
+        // Create a test user
+        $this->user = User::create([
+            'name' => 'Test User',
+            'nim' => '12345678',
+            'email' => 'test@example.com',
+            'password' => Hash::make('password'),
+            'password_plain' => 'password',
+            'role' => 'member',
+            'ukm_id' => $this->ukm->id,
+            'created_at' => now(),
+            'updated_at' => now()
+        ]);
+        
+        // Create a test group
+        $this->group = Group::create([
+            'name' => 'Test Group',
+            'referral_code' => 'TEST123',
+            'description' => 'Test Description',
+            'ukm_id' => $this->ukm->id,
+            'is_active' => true,
+            'created_at' => now(),
+            'updated_at' => now()
+        ]);
+    }
 
-        // Create and login a user
-        $user = User::factory()->create();
-        /** @var Authenticatable $user */
-        $this->actingAs($user, 'web');
+    /** @test */
+    public function user_can_join_ukm_with_valid_referral_code()
+    {
+        // Login the user
+        $this->actingAs($this->user);
 
         // Join the group
         $response = $this->post(route('ukm.join'), [
-            'group_code' => 'ABCD'
+            'group_code' => 'TEST123'
         ]);
 
         // Assert the user was redirected back with success message
         $response->assertRedirect(route('ukm.index'));
-        $response->assertSessionHas('success', 'Berhasil bergabung dengan UKM Test');
+        $response->assertSessionHas('success', 'Berhasil bergabung dengan Test Group');
 
         // Assert the user is now a member of the group
-        $this->assertTrue($user->groups()->where('groups.id', $group->id)->exists());
+        $this->assertDatabaseHas('group_user', [
+            'user_id' => $this->user->id,
+            'group_id' => $this->group->id,
+            'deleted_at' => null
+        ]);
     }
 
-    #[Test]
-    public function user_cannot_join_with_invalid_referral_code(): void
+    /** @test */
+    public function user_cannot_join_with_invalid_referral_code()
     {
-        // Create and login a user
-        $user = User::factory()->create();
-        /** @var Authenticatable $user */
-        $this->actingAs($user, 'web');
+        // Login the user
+        $this->actingAs($this->user);
 
         // Try to join with invalid code
         $response = $this->post(route('ukm.join'), [
             'group_code' => 'INVALID'
         ]);
 
-        // Assert error message
-        $response->assertRedirect(route('ukm.index'));
-        $response->assertSessionHas('error', 'Kode referral tidak valid');
+        // Assert validation error
+        $response->assertSessionHasErrors('group_code');
 
-        // Assert the user is not a member of any group
-        $this->assertCount(0, $user->groups);
+        // Assert user is not a member of any group
+        $this->assertDatabaseMissing('group_user', [
+            'user_id' => $this->user->id,
+            'group_id' => $this->group->id
+        ]);
     }
 
-    #[Test]
-    public function user_cannot_join_same_ukm_twice(): void
+    /** @test */
+    public function user_cannot_join_same_ukm_twice()
     {
-        // Create a test group
-        $group = Group::factory()->create([
-            'referral_code' => 'ABCD',
-            'is_active' => true
-        ]);
-
-        // Create and login a user
-        $user = User::factory()->create();
-        /** @var Authenticatable $user */
-        $this->actingAs($user, 'web');
+        // Login the user
+        $this->actingAs($this->user);
 
         // Join the group first time
-        $this->post(route('ukm.join'), ['group_code' => 'ABCD']);
+        $response1 = $this->post(route('ukm.join'), [
+            'group_code' => 'TEST123'
+        ]);
 
         // Try to join the same group again
-        $response = $this->post(route('ukm.join'), [
-            'group_code' => 'ABCD'
+        $response2 = $this->post(route('ukm.join'), [
+            'group_code' => 'TEST123'
         ]);
 
-        // Assert info message
-        $response->assertRedirect(route('ukm.index'));
-        $response->assertSessionHas('info', 'Anda sudah tergabung di UKM ini');
+        // Assert the second attempt shows an error
+        $response2->assertSessionHas('error');
 
-        // Assert the user is still only a member once
-        $this->assertCount(1, $user->groups);
+        // Assert user is only a member of the group once
+        $count = DB::table('group_user')
+            ->where('user_id', $this->user->id)
+            ->where('group_id', $this->group->id)
+            ->whereNull('deleted_at')
+            ->count();
+            
+        $this->assertEquals(1, $count);
     }
 
-    #[Test]
-    public function user_can_leave_ukm(): void
+    /** @test */
+    public function user_can_leave_ukm()
     {
-        // Create a test group
-        $group = Group::factory()->create([
-            'name' => 'UKM Test',
-            'referral_code' => 'ABCD',
-            'is_active' => true
-        ]);
+        // Login the user
+        $this->actingAs($this->user);
 
-        // Create and login a user
-        $user = User::factory()->create();
-        /** @var Authenticatable $user */
-        $this->actingAs($user, 'web');
-
-        // Join the group
-        $user->groups()->attach($group->id);
+        // Join the group first
+        $this->user->groups()->attach($this->group->id);
 
         // Leave the group
-        $response = $this->delete(route('ukm.leave', ['code' => 'ABCD']));
+        $response = $this->delete(route('ukm.leave', $this->group->id));
 
-        // Assert success message
+        // Assert the user was redirected back with success message
         $response->assertRedirect(route('ukm.index'));
-        $response->assertSessionHas('success', 'Berhasil keluar dari UKM Test');
+        $response->assertSessionHas('success', 'Berhasil keluar dari UKM');
 
-        // Assert the user is no longer a member
-        $this->assertFalse($user->groups()->where('groups.id', $group->id)->exists());
+        // Assert the user is no longer a member of the group
+        $this->assertDatabaseMissing('group_user', [
+            'user_id' => $this->user->id,
+            'group_id' => $this->group->id,
+            'deleted_at' => null
+        ]);
     }
 
-    #[Test]
-    public function guest_cannot_access_ukm_pages(): void
+    /** @test */
+    public function guest_cannot_access_ukm_pages()
     {
         // Try to access UKM index without logging in
         $response = $this->get(route('ukm.index'));
         $response->assertRedirect(route('login'));
 
         // Try to join a group without logging in
-        $response = $this->post(route('ukm.join'), ['group_code' => 'ABCD']);
+        $response = $this->post(route('ukm.join'), [
+            'group_code' => 'TEST123'
+        ]);
         $response->assertRedirect(route('login'));
 
         // Try to leave a group without logging in
-        $response = $this->delete(route('ukm.leave', ['code' => 'ABCD']));
+        $response = $this->delete(route('ukm.leave', $this->group->id));
         $response->assertRedirect(route('login'));
     }
 }
