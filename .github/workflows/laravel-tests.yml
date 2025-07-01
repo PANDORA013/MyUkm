@@ -39,7 +39,7 @@ jobs:
 
     - name: Install Dependencies
       run: |
-        composer update --no-interaction --prefer-dist
+        composer update --with-all-dependencies --no-interaction --ignore-platform-reqs || composer install --no-interaction --ignore-platform-reqs
         cp .env.example .env
         php artisan key:generate
         
