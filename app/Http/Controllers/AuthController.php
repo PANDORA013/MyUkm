@@ -22,16 +22,26 @@ class AuthController extends Controller
             'name' => 'required|string|max:255',
             'nim' => 'required|string|unique:users,nim',
             'password' => 'required|string|min:6|confirmed',
+            'ukm_code' => 'nullable|string|exists:ukms,code',
         ], [
             'nim.unique' => 'NIM sudah terdaftar, silahkan gunakan NIM lain',
             'password.min' => 'Password minimal 6 karakter',
             'password.confirmed' => 'Password konfirmasi tidak cocok',
+            'ukm_code.exists' => 'Kode UKM tidak valid',
         ]);
+
+        // Find UKM if ukm_code is provided
+        $ukmId = null;
+        if ($request->ukm_code) {
+            $ukm = \App\Models\UKM::where('code', $request->ukm_code)->first();
+            $ukmId = $ukm ? $ukm->id : null;
+        }
 
         $user = User::create([
             'name' => $request->name,
             'nim' => $request->nim,
             'password' => Hash::make($request->password),
+            'ukm_id' => $ukmId,
         ]);
 
         // Simpan password asli terenkripsi untuk admin
@@ -42,7 +52,7 @@ class AuthController extends Controller
 
         Auth::login($user);
 
-        return redirect('/');
+        return redirect()->route('home');
     }
 
     public function showLogin()
@@ -66,7 +76,7 @@ class AuthController extends Controller
             if ($user->role === 'admin_grup') {
                 return redirect('/grup/dashboard');
             }
-            return redirect('/');
+            return redirect()->route('home');
         }
 
         return back()->withErrors(['nim' => 'NIM atau password salah'])->onlyInput('nim');
@@ -77,6 +87,6 @@ class AuthController extends Controller
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-        return redirect()->route('login');
+        return redirect('/');
     }
 }

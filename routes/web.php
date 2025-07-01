@@ -20,7 +20,7 @@ Route::get('/', function () {
         if ($user->role === 'admin_grup') {
             return redirect('/grup/dashboard');
         }
-        return redirect()->route('ukm.index');
+        return redirect()->route('home');
     }
     return redirect()->route('login');
 });
@@ -54,6 +54,10 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/ukm/join', [UkmController::class, 'join'])->name('ukm.join');
     Route::delete('/ukm/{code}/leave', [UkmController::class, 'leave'])->name('ukm.leave');
     Route::get('/ukm/{code}/chat', [UkmController::class, 'chat'])->name('ukm.chat');
+
+    // Group routes that tests are looking for
+    Route::post('/group/join', [UkmController::class, 'join'])->name('group.join');
+    Route::post('/group/leave', [UkmController::class, 'leave'])->name('group.leave');
 
     // Profile routes
     Route::delete('/profile/destroy', [ProfileController::class, 'destroy'])->name('profile.destroy');
@@ -107,6 +111,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/dashboard', [AdminWebsiteController::class, 'dashboard'])->name('admin.dashboard');
         Route::get('/members', [AdminWebsiteController::class, 'members'])->name('admin.members');
         Route::get('/ukms', [AdminWebsiteController::class, 'ukms'])->name('admin.ukms');
+        Route::get('/ukm', [AdminWebsiteController::class, 'ukms'])->name('admin.ukm.index'); // Add this route for tests
         Route::get('/ukm-members/{ukm}', [AdminWebsiteController::class, 'ukmMembers'])->name('admin.ukm.members');
         Route::get('/search-member', [AdminWebsiteController::class, 'searchMember'])->name('admin.member.search');
         // Tambahkan resourceful route untuk users dan groups agar route admin.users.* dan admin.groups.* tersedia

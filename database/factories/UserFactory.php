@@ -28,6 +28,8 @@ class UserFactory extends Factory
             'nim' => fake()->unique()->numerify('########'),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
+            'email' => fake()->unique()->safeEmail(),
+            'is_admin' => false,
         ];
     }
 
@@ -37,5 +39,16 @@ class UserFactory extends Factory
     public function unverified(): static
     {
         return $this;
+    }
+
+    /**
+     * Create an admin user.
+     */
+    public function admin(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'is_admin' => true,
+            'role' => 'admin',
+        ]);
     }
 }
