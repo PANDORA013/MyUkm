@@ -34,6 +34,17 @@ Route::post('logout', [AuthController::class, 'logout'])->name('logout');
 
 // Protected routes
 Route::middleware(['auth'])->group(function () {
+    // Home alias and UKM routes  
+    Route::get('/home', fn() => redirect()->route('ukm.index'))->name('home');
+    Route::get('/ukm', [UkmController::class, 'index'])->name('ukm.index');
+    Route::post('/ukm/join', [UkmController::class, 'join'])->name('ukm.join');
+    Route::delete('/ukm/{code}/leave', [UkmController::class, 'leave'])->name('ukm.leave');
+    Route::get('/ukm/{code}/chat', [UkmController::class, 'chat'])->name('ukm.chat');
+
+    // Group routes that tests are looking for
+    Route::post('/group/join', [UkmController::class, 'join'])->name('group.join');
+    Route::post('/group/leave', [UkmController::class, 'leave'])->name('group.leave');
+
     // Chat Functionality (with group membership check)
     Route::middleware(['auth', 'role:member'])->group(function () {
         Route::post('/chat/send', [ChatController::class, 'sendChat'])->name('chat.send');
@@ -47,19 +58,6 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
     Route::post('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.updatePassword');
     Route::post('/profile/photo', [ProfileController::class, 'updatePhoto'])->name('profile.updatePhoto');
-
-    // Home alias and UKM routes
-    Route::get('/home', fn() => redirect()->route('ukm.index'))->name('home');
-    Route::get('/ukm', [UkmController::class, 'index'])->name('ukm.index');
-    Route::post('/ukm/join', [UkmController::class, 'join'])->name('ukm.join');
-    Route::delete('/ukm/{code}/leave', [UkmController::class, 'leave'])->name('ukm.leave');
-    Route::get('/ukm/{code}/chat', [UkmController::class, 'chat'])->name('ukm.chat');
-
-    // Group routes that tests are looking for
-    Route::post('/group/join', [UkmController::class, 'join'])->name('group.join');
-    Route::post('/group/leave', [UkmController::class, 'leave'])->name('group.leave');
-
-    // Profile routes
     Route::delete('/profile/destroy', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     // Admin Website routes

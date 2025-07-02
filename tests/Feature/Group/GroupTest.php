@@ -119,7 +119,7 @@ class GroupTest extends TestCase
             'name' => 'Admin User',
             'nim' => 'ADM001',
             'password' => Hash::make('admin123'),
-            'role' => 'admin',
+            'role' => 'admin_website',
             'ukm_id' => $this->ukm->id
         ]);
         

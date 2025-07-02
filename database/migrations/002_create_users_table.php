@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('password');
             $table->string('password_plain')->nullable();
             $table->string('photo')->nullable();
-            $table->string('role')->default('user');
+            $table->string('role')->default('member');
             $table->foreignId('ukm_id')->nullable()->constrained('ukms');
             $table->timestamp('last_seen_at')->nullable();
             $table->rememberToken();

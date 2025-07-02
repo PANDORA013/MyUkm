@@ -29,6 +29,8 @@ class UserFactory extends Factory
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
             'email' => fake()->unique()->safeEmail(),
+            'role' => 'member', // Default role for consistency with tests
+            'ukm_id' => null, // Will be set in tests if needed
             'is_admin' => false,
         ];
     }
@@ -48,7 +50,7 @@ class UserFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'is_admin' => true,
-            'role' => 'admin',
+            'role' => 'admin_website',
         ]);
     }
 }

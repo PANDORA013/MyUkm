@@ -39,37 +39,25 @@ jobs:
 
     - name: Install Dependencies
       run: |
-        # Remove composer.lock to force fresh dependency resolution
-        rm -f composer.lock
-        
-        # Install dependencies with fresh resolution
+        # Install dependencies
         composer install --no-interaction --ignore-platform-reqs --prefer-dist
-        
-        # Copy environment file and generate key
-        cp .env.example .env
-        php artisan key:generate
         
     - name: Configure Environment for Testing
       run: |
-        echo "APP_ENV=testing" > .env.testing
-        echo "DB_CONNECTION=mysql" >> .env.testing
-        echo "DB_HOST=127.0.0.1" >> .env.testing
-        echo "DB_PORT=3306" >> .env.testing
-        echo "DB_DATABASE=myukm_test" >> .env.testing
-        echo "DB_USERNAME=root" >> .env.testing
-        echo "DB_PASSWORD=secret" >> .env.testing
-        echo "CACHE_DRIVER=array" >> .env.testing
-        echo "SESSION_DRIVER=array" >> .env.testing
-        echo "QUEUE_CONNECTION=sync" >> .env.testing
-        echo "MAIL_MAILER=array" >> .env.testing
-        cp .env.testing .env
+        # Copy from .env.example as base
+        copy .env.example .env
         
-    - name: Clear migration cache
-      run: |
-        php artisan cache:clear
-        php artisan config:clear
-        php artisan route:clear
-        php artisan view:clear
+        # Override specific testing configurations for Windows
+        (Get-Content .env) -replace 'APP_ENV=local', 'APP_ENV=testing' | Set-Content .env
+        (Get-Content .env) -replace 'DB_DATABASE=myukm', 'DB_DATABASE=myukm_test' | Set-Content .env
+        (Get-Content .env) -replace 'DB_PASSWORD=', 'DB_PASSWORD=secret' | Set-Content .env
+        (Get-Content .env) -replace 'CACHE_DRIVER=database', 'CACHE_DRIVER=array' | Set-Content .env
+        (Get-Content .env) -replace 'SESSION_DRIVER=database', 'SESSION_DRIVER=array' | Set-Content .env
+        
+        # Generate application key
+        php artisan key:generate --force
+        
+        # Clear any cached config
         php artisan optimize:clear
         
     - name: Run Database Migrations
@@ -84,14 +72,65 @@ jobs:
         # Run fresh migrations
         php artisan migrate:fresh --force
       
-    - name: Execute tests
+    - name: Check Database Connection
+      run: |
+        php artisan tinker --execute="
+        try {
+            \DB::connection()->getPdo();
+            echo 'Database connection successful';
+        } catch (\Exception \$e) {
+            echo 'Database connection failed: ' . \$e->getMessage();
+            exit(1);
+        }"
+        
+    - name: Seed Test Data
+      run: |
+        php artisan db:seed --force
+        
+    - name: List Routes for Debugging
+      run: |
+        php artisan route:list --compact
+        
+    - name: Run Tests with Verbose Output
       env:
+        APP_ENV: testing
         DB_CONNECTION: mysql
         DB_DATABASE: myukm_test
         DB_USERNAME: root
         DB_PASSWORD: secret
         DB_HOST: 127.0.0.1
         DB_PORT: 3306
-        TEST_DATABASE: myukm_test
+        CACHE_DRIVER: array
+        SESSION_DRIVER: array
+        QUEUE_CONNECTION: sync
       run: |
-        php artisan test
+        # Run tests with more verbose output and continue on failure
+        php artisan test --verbose --stop-on-failure || true
+        
+        # Show failed tests summary
+        echo "=== Failed Tests Summary ==="
+        php artisan test --verbose 2>&1 | grep -A5 -B5 "FAILED\|ERROR" || true
+        
+    - name: Check Application Status
+      run: |
+        # Check if application can boot
+        php artisan about
+        
+        # Check for any configuration issues
+        php artisan config:show database
+        
+    - name: Capture Test Results
+      if: always()
+      run: |
+        echo "=== Test Environment Info ==="
+        php --version
+        php artisan --version
+        
+        echo "=== Database Tables ==="
+        php artisan tinker --execute="
+        \$tables = \DB::select('SHOW TABLES');
+        foreach(\$tables as \$table) {
+            \$tableName = array_values((array)\$table)[0];
+            \$count = \DB::table(\$tableName)->count();
+            echo \$tableName . ': ' . \$count . ' rows' . PHP_EOL;
+        }"

@@ -6,139 +6,217 @@
         
         <?php $__currentLoopData = ['success', 'error', 'info']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $msg): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
             <?php if(session($msg)): ?>
-                <div class="px-4 py-3 rounded-lg shadow-sm border <?php echo e($msg==='success' ? 'bg-green-100 border-green-200 text-green-700' : ($msg==='error' ? 'bg-red-100 border-red-200 text-red-700' : 'bg-blue-100 border-blue-200 text-blue-700')); ?>">
+                <?php if (isset($component)) { $__componentOriginal5194778a3a7b899dcee5619d0610f5cf = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal5194778a3a7b899dcee5619d0610f5cf = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.alert','data' => ['type' => $msg]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('alert'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['type' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($msg)]); ?>
                     <?php echo e(session($msg)); ?>
 
-                </div>
+                 <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal5194778a3a7b899dcee5619d0610f5cf)): ?>
+<?php $attributes = $__attributesOriginal5194778a3a7b899dcee5619d0610f5cf; ?>
+<?php unset($__attributesOriginal5194778a3a7b899dcee5619d0610f5cf); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal5194778a3a7b899dcee5619d0610f5cf)): ?>
+<?php $component = $__componentOriginal5194778a3a7b899dcee5619d0610f5cf; ?>
+<?php unset($__componentOriginal5194778a3a7b899dcee5619d0610f5cf); ?>
+<?php endif; ?>
             <?php endif; ?>
         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
 
         
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            <!-- Card Total Anggota -->
-            <div class="bg-white border border-gray-200 shadow rounded-lg p-4 hover:shadow-md transition-shadow duration-200 flex flex-col">
-                <div class="flex items-center justify-between mb-4">
-                    <div>
-                        <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Total Anggota</p>
-                        <p class="text-2xl font-bold text-gray-900 mt-1"><?php echo e(number_format($totalMembers)); ?></p>
-                        <p class="text-xs text-gray-500 mt-1">Seluruh UKM</p>
-                    </div>
-                    <div class="p-3 bg-blue-50 rounded-lg">
-                        <i class="fas fa-users text-blue-500 text-2xl"></i>
-                    </div>
-                </div>
-                <a href="<?php echo e(route('admin.member.search')); ?>" 
-                   class="mt-auto w-full text-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200 flex items-center justify-center">
-                    <i class="fas fa-search mr-2"></i> Cari Anggota
-                </a>
-            </div>
+            <?php if (isset($component)) { $__componentOriginal527fae77f4db36afc8c8b7e9f5f81682 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.stat-card','data' => ['title' => 'Total Anggota','value' => number_format($totalMembers),'icon' => 'fa-users','description' => 'Seluruh UKM','color' => 'blue','action' => [
+                    'url' => route('admin.member.search'),
+                    'icon' => 'fa-search',
+                    'label' => 'Cari Anggota'
+                ]]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('stat-card'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['title' => 'Total Anggota','value' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(number_format($totalMembers)),'icon' => 'fa-users','description' => 'Seluruh UKM','color' => 'blue','action' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute([
+                    'url' => route('admin.member.search'),
+                    'icon' => 'fa-search',
+                    'label' => 'Cari Anggota'
+                ])]); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682)): ?>
+<?php $attributes = $__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682; ?>
+<?php unset($__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal527fae77f4db36afc8c8b7e9f5f81682)): ?>
+<?php $component = $__componentOriginal527fae77f4db36afc8c8b7e9f5f81682; ?>
+<?php unset($__componentOriginal527fae77f4db36afc8c8b7e9f5f81682); ?>
+<?php endif; ?>
             
-            <!-- Card Total UKM -->
-            <div class="bg-white border border-gray-200 shadow rounded-lg p-4 hover:shadow-md transition-shadow duration-200">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Total UKM</p>
-                        <p class="text-2xl font-bold text-gray-900 mt-1"><?php echo e(number_format($totalUkms)); ?></p>
-                        <p class="text-xs text-gray-500 mt-1">Terdaftar</p>
-                    </div>
-                    <div class="p-3 bg-green-50 rounded-lg">
-                        <i class="fas fa-building text-green-500 text-2xl"></i>
-                    </div>
-                </div>
-            </div>
+            <?php if (isset($component)) { $__componentOriginal527fae77f4db36afc8c8b7e9f5f81682 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.stat-card','data' => ['title' => 'Total UKM','value' => number_format($totalUkms),'icon' => 'fa-building','description' => 'Terdaftar','color' => 'green']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('stat-card'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['title' => 'Total UKM','value' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(number_format($totalUkms)),'icon' => 'fa-building','description' => 'Terdaftar','color' => 'green']); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682)): ?>
+<?php $attributes = $__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682; ?>
+<?php unset($__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal527fae77f4db36afc8c8b7e9f5f81682)): ?>
+<?php $component = $__componentOriginal527fae77f4db36afc8c8b7e9f5f81682; ?>
+<?php unset($__componentOriginal527fae77f4db36afc8c8b7e9f5f81682); ?>
+<?php endif; ?>
             
-            <!-- Card Riwayat Penghapusan -->
-            <div class="bg-white border border-gray-200 shadow rounded-lg p-4 hover:shadow-md transition-shadow duration-200">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Riwayat Penghapusan</p>
-                        <p class="text-2xl font-bold text-gray-900 mt-1"><?php echo e(number_format($totalDeletedAccounts)); ?></p>
-                        <p class="text-xs text-gray-500 mt-1">Akun Dihapus</p>
-                    </div>
-                    <div class="p-3 bg-red-50 rounded-lg">
-                        <i class="fas fa-history text-red-500 text-2xl"></i>
-                    </div>
-                </div>
-                <a href="<?php echo e(route('admin.user-deletions.index')); ?>" 
-                   class="mt-4 block w-full text-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 flex items-center justify-center">
-                    <i class="fas fa-list mr-2"></i> Lihat Riwayat
-                </a>
-            </div>
-            
-            <!-- Card Admin Grup -->
-            <div class="bg-white border border-gray-200 shadow rounded-lg p-4 hover:shadow-md transition-shadow duration-200">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Admin Grup</p>
-                        <p class="text-2xl font-bold text-gray-900 mt-1"><?php echo e(number_format($totalAdmins)); ?></p>
-                        <p class="text-xs text-gray-500 mt-1">Aktif</p>
-                    </div>
-                    <div class="p-3 bg-purple-50 rounded-lg">
-                        <i class="fas fa-user-shield text-purple-500 text-2xl"></i>
-                    </div>
-                </div>
-            </div>
+            <?php if (isset($component)) { $__componentOriginal527fae77f4db36afc8c8b7e9f5f81682 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.stat-card','data' => ['title' => 'Riwayat Penghapusan','value' => $totalDeletedAccounts,'icon' => 'fa-history','description' => 'Akun Dihapus','color' => 'red','action' => [
+                    'url' => route('admin.user-deletions.index'),
+                    'label' => 'Lihat Riwayat'
+                ]]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('stat-card'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['title' => 'Riwayat Penghapusan','value' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($totalDeletedAccounts),'icon' => 'fa-history','description' => 'Akun Dihapus','color' => 'red','action' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute([
+                    'url' => route('admin.user-deletions.index'),
+                    'label' => 'Lihat Riwayat'
+                ])]); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682)): ?>
+<?php $attributes = $__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682; ?>
+<?php unset($__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal527fae77f4db36afc8c8b7e9f5f81682)): ?>
+<?php $component = $__componentOriginal527fae77f4db36afc8c8b7e9f5f81682; ?>
+<?php unset($__componentOriginal527fae77f4db36afc8c8b7e9f5f81682); ?>
+<?php endif; ?>
 
-            <!-- Card Pengguna Aktif Bulan Ini -->
-            <div class="bg-white border border-gray-200 shadow rounded-lg p-4 hover:shadow-md transition-shadow duration-200">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Aktif Bulan Ini</p>
-                        <p class="text-2xl font-bold text-gray-900 mt-1"><?php echo e(number_format($activeUsersThisMonth)); ?></p>
-                        <p class="text-xs text-gray-500 mt-1">Pengguna</p>
-                    </div>
-                    <div class="p-3 bg-amber-50 rounded-lg">
-                        <i class="fas fa-user-clock text-amber-500 text-2xl"></i>
-                    </div>
-                </div>
-            </div>
+            <?php if (isset($component)) { $__componentOriginal527fae77f4db36afc8c8b7e9f5f81682 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.stat-card','data' => ['title' => 'Admin Grup','value' => $totalAdmins,'icon' => 'fa-user-shield','description' => 'Aktif','color' => 'purple']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('stat-card'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['title' => 'Admin Grup','value' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($totalAdmins),'icon' => 'fa-user-shield','description' => 'Aktif','color' => 'purple']); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682)): ?>
+<?php $attributes = $__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682; ?>
+<?php unset($__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal527fae77f4db36afc8c8b7e9f5f81682)): ?>
+<?php $component = $__componentOriginal527fae77f4db36afc8c8b7e9f5f81682; ?>
+<?php unset($__componentOriginal527fae77f4db36afc8c8b7e9f5f81682); ?>
+<?php endif; ?>
+
+            <?php if (isset($component)) { $__componentOriginal527fae77f4db36afc8c8b7e9f5f81682 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.stat-card','data' => ['title' => 'Pengguna Aktif Bulan Ini','value' => number_format($activeUsersThisMonth),'icon' => 'fa-user-clock','description' => 'Pengguna','color' => 'amber']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('stat-card'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['title' => 'Pengguna Aktif Bulan Ini','value' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(number_format($activeUsersThisMonth)),'icon' => 'fa-user-clock','description' => 'Pengguna','color' => 'amber']); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682)): ?>
+<?php $attributes = $__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682; ?>
+<?php unset($__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal527fae77f4db36afc8c8b7e9f5f81682)): ?>
+<?php $component = $__componentOriginal527fae77f4db36afc8c8b7e9f5f81682; ?>
+<?php unset($__componentOriginal527fae77f4db36afc8c8b7e9f5f81682); ?>
+<?php endif; ?>
         </div>
 
         <!-- Baris Kedua Statistik -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-            <!-- Card Pengguna Baru Bulan Ini -->
-            <div class="bg-white border border-gray-200 shadow rounded-lg p-4 hover:shadow-md transition-shadow duration-200">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Pengguna Baru</p>
-                        <p class="text-2xl font-bold text-gray-900 mt-1">+<?php echo e(number_format($newUsersThisMonth)); ?></p>
-                        <p class="text-xs text-gray-500 mt-1">Bulan Ini</p>
-                    </div>
-                    <div class="p-3 bg-teal-50 rounded-lg">
-                        <i class="fas fa-user-plus text-teal-500 text-2xl"></i>
-                    </div>
-                </div>
-            </div>
+            <?php if (isset($component)) { $__componentOriginal527fae77f4db36afc8c8b7e9f5f81682 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.stat-card','data' => ['title' => 'Pengguna Baru','value' => '+' . number_format($newUsersThisMonth),'icon' => 'fa-user-plus','description' => 'Bulan Ini','color' => 'teal']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('stat-card'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['title' => 'Pengguna Baru','value' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute('+' . number_format($newUsersThisMonth)),'icon' => 'fa-user-plus','description' => 'Bulan Ini','color' => 'teal']); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682)): ?>
+<?php $attributes = $__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682; ?>
+<?php unset($__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal527fae77f4db36afc8c8b7e9f5f81682)): ?>
+<?php $component = $__componentOriginal527fae77f4db36afc8c8b7e9f5f81682; ?>
+<?php unset($__componentOriginal527fae77f4db36afc8c8b7e9f5f81682); ?>
+<?php endif; ?>
 
-            <!-- Placeholder untuk statistik tambahan -->
-            <div class="bg-white border border-gray-200 shadow rounded-lg p-4 hover:shadow-md transition-shadow duration-200">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Rata-rata Keanggotaan</p>
-                        <p class="text-2xl font-bold text-gray-900 mt-1"><?php echo e($totalUkms > 0 ? number_format($totalMembers / $totalUkms, 1) : 0); ?></p>
-                        <p class="text-xs text-gray-500 mt-1">Anggota per UKM</p>
-                    </div>
-                    <div class="p-3 bg-indigo-50 rounded-lg">
-                        <i class="fas fa-chart-bar text-indigo-500 text-2xl"></i>
-                    </div>
-                </div>
-            </div>
+            <?php if (isset($component)) { $__componentOriginal527fae77f4db36afc8c8b7e9f5f81682 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.stat-card','data' => ['title' => 'Rata-rata Keanggotaan','value' => $totalUkms > 0 ? number_format($totalMembers / $totalUkms, 1) : 0,'icon' => 'fa-chart-bar','description' => 'Anggota per UKM','color' => 'indigo']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('stat-card'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['title' => 'Rata-rata Keanggotaan','value' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($totalUkms > 0 ? number_format($totalMembers / $totalUkms, 1) : 0),'icon' => 'fa-chart-bar','description' => 'Anggota per UKM','color' => 'indigo']); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682)): ?>
+<?php $attributes = $__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682; ?>
+<?php unset($__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal527fae77f4db36afc8c8b7e9f5f81682)): ?>
+<?php $component = $__componentOriginal527fae77f4db36afc8c8b7e9f5f81682; ?>
+<?php unset($__componentOriginal527fae77f4db36afc8c8b7e9f5f81682); ?>
+<?php endif; ?>
 
-            <!-- Placeholder untuk statistik tambahan -->
-            <div class="bg-white border border-gray-200 shadow rounded-lg p-4 hover:shadow-md transition-shadow duration-200">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Pertumbuhan</p>
-                        <p class="text-2xl font-bold text-gray-900 mt-1">
-                            <?php echo e($newUsersThisMonth > 0 ? round(($newUsersThisMonth / $totalMembers) * 100, 1) : 0); ?>%
-                        </p>
-                        <p class="text-xs text-gray-500 mt-1">Pertumbuhan Pengguna</p>
-                    </div>
-                    <div class="p-3 bg-pink-50 rounded-lg">
-                        <i class="fas fa-chart-line text-pink-500 text-2xl"></i>
-                    </div>
-                </div>
-            </div>
+            <?php if (isset($component)) { $__componentOriginal527fae77f4db36afc8c8b7e9f5f81682 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.stat-card','data' => ['title' => 'Pertumbuhan','value' => ($totalMembers > 0 && $newUsersThisMonth > 0 ? round(($newUsersThisMonth / $totalMembers) * 100, 1) : 0) . '%','icon' => 'fa-chart-line','description' => 'Pertumbuhan Pengguna','color' => 'pink']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('stat-card'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['title' => 'Pertumbuhan','value' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(($totalMembers > 0 && $newUsersThisMonth > 0 ? round(($newUsersThisMonth / $totalMembers) * 100, 1) : 0) . '%'),'icon' => 'fa-chart-line','description' => 'Pertumbuhan Pengguna','color' => 'pink']); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682)): ?>
+<?php $attributes = $__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682; ?>
+<?php unset($__attributesOriginal527fae77f4db36afc8c8b7e9f5f81682); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal527fae77f4db36afc8c8b7e9f5f81682)): ?>
+<?php $component = $__componentOriginal527fae77f4db36afc8c8b7e9f5f81682; ?>
+<?php unset($__componentOriginal527fae77f4db36afc8c8b7e9f5f81682); ?>
+<?php endif; ?>
         </div>
 
         <section class="bg-white border border-gray-200 shadow-sm rounded-xl p-6 space-y-6">

@@ -37,7 +37,7 @@ class UserTest extends TestCase
             'nim' => 'ADM001',
             'email' => 'admin@test.com',
             'password' => Hash::make('admin123'),
-            'role' => 'admin',
+            'role' => 'admin_website',
             'ukm_id' => $this->ukm->id,
             'created_at' => now(),
             'updated_at' => now()

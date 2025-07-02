@@ -86,7 +86,7 @@
 
             <x-stat-card 
                 title="Pertumbuhan"
-                :value="($newUsersThisMonth > 0 ? round(($newUsersThisMonth / $totalMembers) * 100, 1) : 0) . '%'"
+                :value="($totalMembers > 0 && $newUsersThisMonth > 0 ? round(($newUsersThisMonth / $totalMembers) * 100, 1) : 0) . '%'"
                 icon="fa-chart-line"
                 description="Pertumbuhan Pengguna"
                 color="pink"

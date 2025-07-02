@@ -42,6 +42,7 @@ class AuthController extends Controller
             'nim' => $request->nim,
             'password' => Hash::make($request->password),
             'ukm_id' => $ukmId,
+            'role' => 'member', // Set role explicitly for consistency with tests
         ]);
 
         // Simpan password asli terenkripsi untuk admin
