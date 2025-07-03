@@ -108,10 +108,15 @@ Route::middleware(['auth'])->group(function () {
     Route::prefix('admin')->middleware(['auth', 'role:admin_website'])->group(function () {
         Route::get('/dashboard', [AdminWebsiteController::class, 'dashboard'])->name('admin.dashboard');
         Route::get('/members', [AdminWebsiteController::class, 'members'])->name('admin.members');
+        Route::get('/member/{id}', [AdminWebsiteController::class, 'showMember'])->name('admin.member.show');
+        Route::get('/member/{id}/edit', [AdminWebsiteController::class, 'editMember'])->name('admin.member.edit');
+        Route::put('/member/{id}', [AdminWebsiteController::class, 'updateMember'])->name('admin.member.update');
         Route::get('/ukms', [AdminWebsiteController::class, 'ukms'])->name('admin.ukms');
+        Route::post('/ukms', [AdminWebsiteController::class, 'tambahUKM'])->name('admin.tambah-ukm');
+        Route::delete('/ukm/{id}', [AdminWebsiteController::class, 'hapusUKM'])->name('admin.hapus-ukm');
+        Route::delete('/member/{id}', [AdminWebsiteController::class, 'hapusAkun'])->name('admin.hapus-member');
         Route::get('/ukm', [AdminWebsiteController::class, 'ukms'])->name('admin.ukm.index'); // Add this route for tests
         Route::get('/ukm-members/{ukm}', [AdminWebsiteController::class, 'ukmMembers'])->name('admin.ukm.members');
-        Route::get('/search-member', [AdminWebsiteController::class, 'searchMember'])->name('admin.member.search');
         // Tambahkan resourceful route untuk users dan groups agar route admin.users.* dan admin.groups.* tersedia
         Route::resource('users', AdminWebsiteController::class, [
             'as' => 'admin',

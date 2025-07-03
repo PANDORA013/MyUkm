@@ -22,9 +22,9 @@ class UkmController extends Controller
         $availableGroups = Group::whereNotIn('id', $joinedGroups->pluck('id'))->get();
         
         return view('ukm.index', [
-            
             'joinedGroups' => $joinedGroups,
-            'availableGroups' => $availableGroups
+            'availableGroups' => $availableGroups,
+            'userUkm' => $user->ukm_id ? Group::find($user->ukm_id) : null
         ]);
     }
 

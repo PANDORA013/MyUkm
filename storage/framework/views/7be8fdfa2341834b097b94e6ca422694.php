@@ -1,8 +1,6 @@
-@extends('layouts.admin')
+<?php $__env->startSection('title', 'Profil Saya'); ?>
 
-@section('title', 'Profil Saya')
-
-@push('styles')
+<?php $__env->startPush('styles'); ?>
     <style>
         .card {
             border: none;
@@ -48,28 +46,29 @@
             color: #4e73df;
         }
     </style>
-@endpush
+<?php $__env->stopPush(); ?>
 
-@section('content')
+<?php $__env->startSection('content'); ?>
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
         <h1 class="h3 mb-0 text-gray-800">Profil Saya</h1>
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="{{ url('/admin/dashboard') }}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="<?php echo e(url('/admin/dashboard')); ?>">Dashboard</a></li>
                 <li class="breadcrumb-item active" aria-current="page">Profil Saya</li>
             </ol>
         </nav>
     </div>
 
-    {{-- Flash Messages --}}
-    @foreach (['success', 'error', 'info'] as $msg)
-        @if(session($msg))
-            <div class="alert alert-{{ $msg === 'error' ? 'danger' : $msg }} alert-dismissible fade show" role="alert">
-                {{ session($msg) }}
+    
+    <?php $__currentLoopData = ['success', 'error', 'info']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $msg): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+        <?php if(session($msg)): ?>
+            <div class="alert alert-<?php echo e($msg === 'error' ? 'danger' : $msg); ?> alert-dismissible fade show" role="alert">
+                <?php echo e(session($msg)); ?>
+
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
-        @endif
-    @endforeach
+        <?php endif; ?>
+    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
 
     <!-- Main Content -->
     <div class="row">
@@ -85,27 +84,28 @@
                 <div class="card-body text-center">
                     <div class="d-flex justify-content-center mb-4">
                         <div class="profile-photo">
-                            @if($user->photo)
-                                <img src="{{ Storage::url($user->photo) }}" 
-                                     alt="{{ $user->name }}" 
+                            <?php if($user->photo): ?>
+                                <img src="<?php echo e(Storage::url($user->photo)); ?>" 
+                                     alt="<?php echo e($user->name); ?>" 
                                      class="h-100 w-100 object-cover"
                                      id="currentPhoto">
-                            @else
+                            <?php else: ?>
                                 <div class="profile-photo-placeholder"
                                      id="photoPlaceholder">
-                                    {{ strtoupper(substr($user->name ?? 'U', 0, 1)) }}
+                                    <?php echo e(strtoupper(substr($user->name ?? 'U', 0, 1))); ?>
+
                                 </div>
-                            @endif
+                            <?php endif; ?>
                             <img id="photoPreview" class="h-100 w-100 object-cover d-none" alt="Preview">
                         </div>
                     </div>
-                    <h4 class="font-weight-bold text-gray-800">{{ $user->name ?? 'Pengguna' }}</h4>
-                    <p class="text-muted mb-4">{{ $user->nim ?? 'No NIM' }}</p>
-                    <form action="{{ route('profile.updatePhoto') }}" 
+                    <h4 class="font-weight-bold text-gray-800"><?php echo e($user->name ?? 'Pengguna'); ?></h4>
+                    <p class="text-muted mb-4"><?php echo e($user->nim ?? 'No NIM'); ?></p>
+                    <form action="<?php echo e(route('profile.updatePhoto')); ?>" 
                           method="POST" 
                           enctype="multipart/form-data" 
                           class="mb-4">
-                        @csrf
+                        <?php echo csrf_field(); ?>
                         <div class="mb-3">
                             <label for="photo" class="form-label small text-muted">JPG atau PNG. Maksimal 2MB</label>
                             <input type="file" 
@@ -113,9 +113,16 @@
                                    id="photo" 
                                    accept="image/jpeg,image/png"
                                    class="form-control form-control-sm">
-                            @error('photo')
-                                <div class="small text-danger mt-1">{{ $message }}</div>
-                            @enderror
+                            <?php $__errorArgs = ['photo'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                                <div class="small text-danger mt-1"><?php echo e($message); ?></div>
+                            <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                         </div>
                         <button type="submit" 
                                 class="btn btn-primary btn-sm">
@@ -136,16 +143,16 @@
                     <table class="table table-bordered">
                         <tr>
                             <th class="bg-light" width="40%">Nama</th>
-                            <td>{{ $user->name }}</td>
+                            <td><?php echo e($user->name); ?></td>
                         </tr>
                         <tr>
                             <th class="bg-light">NIM</th>
-                            <td>{{ $user->nim }}</td>
+                            <td><?php echo e($user->nim); ?></td>
                         </tr>
                         <tr>
                             <th class="bg-light">Role</th>
                             <td>
-                                @php
+                                <?php
                                     $role = $user->role ?? 'anggota';
                                     
                                     $badgeClass = [
@@ -161,15 +168,16 @@
                                         'anggota' => 'Anggota',
                                         'member' => 'Member'
                                     ][$role] ?? ucfirst($role);
-                                @endphp
-                                <span class="badge {{ $badgeClass }}">
-                                    {{ $roleText }}
+                                ?>
+                                <span class="badge <?php echo e($badgeClass); ?>">
+                                    <?php echo e($roleText); ?>
+
                                 </span>
                             </td>
                         </tr>
                         <tr>
                             <th class="bg-light">Bergabung</th>
-                            <td>{{ $user->created_at ? $user->created_at->format('d M Y') : 'Tidak tersedia' }}</td>
+                            <td><?php echo e($user->created_at ? $user->created_at->format('d M Y') : 'Tidak tersedia'); ?></td>
                         </tr>
                     </table>
                 </div>
@@ -186,10 +194,10 @@
                     </h6>
                 </div>
                 <div class="card-body">
-                    <form action="{{ route('profile.updatePassword') }}" 
+                    <form action="<?php echo e(route('profile.updatePassword')); ?>" 
                           method="POST" 
                           id="passwordForm">
-                        @csrf
+                        <?php echo csrf_field(); ?>
                         <div class="row mb-3">
                             <div class="col-md-4">
                                 <label for="current_password" class="form-label">Password Saat Ini</label>
@@ -197,10 +205,24 @@
                                        name="current_password" 
                                        id="current_password"
                                        required
-                                       class="form-control @error('current_password') is-invalid @enderror">
-                                @error('current_password')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
+                                       class="form-control <?php $__errorArgs = ['current_password'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>">
+                                <?php $__errorArgs = ['current_password'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                                    <div class="invalid-feedback"><?php echo e($message); ?></div>
+                                <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                             </div>
                             <div class="col-md-4">
                                 <label for="password" class="form-label">Password Baru</label>
@@ -209,10 +231,24 @@
                                        id="password"
                                        required
                                        minlength="8"
-                                       class="form-control @error('password') is-invalid @enderror">
-                                @error('password')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
+                                       class="form-control <?php $__errorArgs = ['password'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>">
+                                <?php $__errorArgs = ['password'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                                    <div class="invalid-feedback"><?php echo e($message); ?></div>
+                                <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                             </div>
                             <div class="col-md-4">
                                 <label for="password_confirmation" class="form-label">Konfirmasi Password</label>
@@ -235,18 +271,18 @@
             </div>
 
             <!-- Membership Table -->
-            @if(Auth::user()->role !== 'admin_website')
+            <?php if(Auth::user()->role !== 'admin_website'): ?>
             <div class="card shadow mb-4">
                 <div class="card-header py-3 d-flex justify-content-between align-items-center">
                     <h6 class="m-0 font-weight-bold text-primary">
                         <i class="fas fa-users me-2"></i>Keanggotaan UKM
                     </h6>
                     <span class="badge bg-primary">
-                        Total: {{ count($memberships ?? []) }} UKM
+                        Total: <?php echo e(count($memberships ?? [])); ?> UKM
                     </span>
                 </div>
                 <div class="card-body">
-                    @if(isset($memberships) && count($memberships) > 0)
+                    <?php if(isset($memberships) && count($memberships) > 0): ?>
                     <div class="table-responsive">
                         <table class="table table-bordered table-hover" width="100%" cellspacing="0">
                             <thead class="table-light">
@@ -258,50 +294,53 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach($memberships as $membership)
+                                <?php $__currentLoopData = $memberships; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $membership): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                     <tr>
                                         <td>
                                             <div class="d-flex align-items-center">
                                                 <div class="me-3">
                                                     <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center text-white" style="width: 40px; height: 40px;">
-                                                        {{ strtoupper(substr($membership->ukm_name ?? 'U', 0, 1)) }}
+                                                        <?php echo e(strtoupper(substr($membership->ukm_name ?? 'U', 0, 1))); ?>
+
                                                     </div>
                                                 </div>
                                                 <div>
-                                                    <div class="fw-bold">{{ $membership->ukm_name ?? 'UKM Tidak Ditemukan' }}</div>
-                                                    <small class="text-muted">{{ $membership->joined_at ? \Carbon\Carbon::parse($membership->joined_at)->format('d/m/Y') : 'N/A' }}</small>
+                                                    <div class="fw-bold"><?php echo e($membership->ukm_name ?? 'UKM Tidak Ditemukan'); ?></div>
+                                                    <small class="text-muted"><?php echo e($membership->joined_at ? \Carbon\Carbon::parse($membership->joined_at)->format('d/m/Y') : 'N/A'); ?></small>
                                                 </div>
                                             </div>
                                         </td>
                                         <td>
-                                            {{ $membership->joined_at ? \Carbon\Carbon::parse($membership->joined_at)->translatedFormat('d F Y') : 'N/A' }}
+                                            <?php echo e($membership->joined_at ? \Carbon\Carbon::parse($membership->joined_at)->translatedFormat('d F Y') : 'N/A'); ?>
+
                                         </td>
                                         <td>
-                                            @php
+                                            <?php
                                                 $userRole = Auth::user() ? Auth::user()->role : 'anggota';
                                                 $badgeClass = $userRole === 'admin_grup' ? 'bg-primary' : 'bg-secondary';
                                                 $roleText = $userRole === 'admin_grup' ? 'Admin Grup' : 'Anggota';
-                                            @endphp
-                                            <span class="badge {{ $badgeClass }}">{{ $roleText }}</span>
+                                            ?>
+                                            <span class="badge <?php echo e($badgeClass); ?>"><?php echo e($roleText); ?></span>
                                         </td>
                                         <td>
-                                            @if(isset($membership->is_online) && $membership->is_online)
+                                            <?php if(isset($membership->is_online) && $membership->is_online): ?>
                                                 <span class="text-success fw-bold">
                                                     <i class="fas fa-circle text-success me-1" style="font-size: 0.6rem;"></i>Online
                                                 </span>
-                                            @else
+                                            <?php else: ?>
                                                 <span class="text-muted">
                                                     <i class="fas fa-clock me-1"></i>
-                                                    {{ isset($membership->last_seen) && $membership->last_seen ? \Carbon\Carbon::parse($membership->last_seen)->diffForHumans() : 'Belum pernah online' }}
+                                                    <?php echo e(isset($membership->last_seen) && $membership->last_seen ? \Carbon\Carbon::parse($membership->last_seen)->diffForHumans() : 'Belum pernah online'); ?>
+
                                                 </span>
-                                            @endif
+                                            <?php endif; ?>
                                         </td>
                                     </tr>
-                                @endforeach
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </tbody>
                         </table>
                     </div>
-                    @else
+                    <?php else: ?>
                     <div class="text-center py-4">
                         <div class="mb-3">
                             <i class="fas fa-users-slash fa-3x text-muted"></i>
@@ -309,10 +348,10 @@
                         <h5 class="text-muted">Tidak Ada Keanggotaan UKM</h5>
                         <p class="text-muted">Anda belum terdaftar sebagai anggota UKM manapun.</p>
                     </div>
-                    @endif
+                    <?php endif; ?>
                 </div>
             </div>
-            @endif
+            <?php endif; ?>
 
             <!-- Delete Account -->
             <div class="card shadow mb-4 border-danger">
@@ -337,10 +376,10 @@
                         </div>
                     </div>
                     
-                    <form action="{{ route('profile.destroy') }}" method="POST" 
+                    <form action="<?php echo e(route('profile.destroy')); ?>" method="POST" 
                           onsubmit="return confirm('Apakah Anda yakin ingin menghapus akun? Tindakan ini tidak dapat dibatalkan.')">
-                        @csrf
-                        @method('DELETE')
+                        <?php echo csrf_field(); ?>
+                        <?php echo method_field('DELETE'); ?>
                         <div class="text-center">
                             <button type="submit" class="btn btn-danger">
                                 <i class="fas fa-trash-alt me-2"></i> Hapus Akun Saya
@@ -354,14 +393,14 @@
 
     <!-- Back to Dashboard -->
     <div class="d-flex justify-content-between mt-3">
-        <a href="{{ route('admin.dashboard') }}" class="btn btn-outline-secondary">
+        <a href="<?php echo e(route('admin.dashboard')); ?>" class="btn btn-outline-secondary">
             <i class="fas fa-arrow-left me-2"></i> Kembali ke Dashboard
         </a>
     </div>
 
-@endsection
+<?php $__env->stopSection(); ?>
 
-@push('scripts')
+<?php $__env->startPush('scripts'); ?>
     <script>
         // Initialize tooltips
         var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
@@ -385,4 +424,6 @@
             }
         });
     </script>
-@endpush
+<?php $__env->stopPush(); ?>
+
+<?php echo $__env->make('layouts.admin', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\MyUkm-main\resources\views/profile/index.blade.php ENDPATH**/ ?>

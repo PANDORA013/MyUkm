@@ -2,9 +2,28 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-    :root {
-        --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-            'Segoe UI Symbol', 'Noto Color Emoji';
+@layer components {
+    .btn-blue {
+        @apply inline-flex items-center px-4 py-2 bg-blue-500 text-white text-sm font-medium rounded-full hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors;
+    }
+
+    .btn-white {
+        @apply inline-flex items-center px-4 py-2 bg-white text-blue-500 text-sm font-medium rounded-full hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors border border-blue-500;
+    }
+
+    .form-input {
+        @apply w-full px-4 py-3 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors;
+    }
+
+    .card {
+        @apply bg-white rounded-lg shadow-lg overflow-hidden;
+    }
+
+    .card-header {
+        @apply bg-blue-500 p-6 flex items-center justify-between;
+    }
+
+    .card-body {
+        @apply px-6 py-6;
     }
 }

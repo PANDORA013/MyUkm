@@ -109,12 +109,7 @@
                                 UKM
                             </a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link {{ request()->routeIs('admin.member.search') ? 'active' : '' }}" href="{{ route('admin.member.search') }}">
-                                <i class="fas fa-fw fa-search"></i>
-                                Cari Anggota
-                            </a>
-                        </li>
+
                         <li class="nav-item">
                             <a class="nav-link {{ request()->routeIs('admin.user-deletions.*') ? 'active' : '' }}" href="{{ route('admin.user-deletions.index') }}">
                                 <i class="fas fa-fw fa-trash-alt"></i>

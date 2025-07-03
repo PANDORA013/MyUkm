@@ -1,96 +1,181 @@
-@extends('layouts.app')
+@extends('layouts.admin')
+
+@section('title', 'Kelola UKM')
+
+@push('styles')
+    <style>
+        .card {
+            border: none;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+        }
+        .card-header {
+            background-color: #f8f9fc;
+            border-bottom: 1px solid #e3e6f0;
+            padding: 1rem 1.25rem;
+            font-weight: 600;
+        }
+        .table th {
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .badge {
+            font-size: 0.8em;
+            padding: 0.4em 0.6em;
+        }
+        .form-group label {
+            font-weight: 600;
+            color: #5a5c69;
+        }
+        .form-control {
+            border: 1px solid #d1d3e2;
+            border-radius: 0.35rem;
+        }
+        .form-control:focus {
+            border-color: #5a67d8;
+            box-shadow: 0 0 0 0.2rem rgba(90, 103, 216, 0.25);
+        }
+    </style>
+@endpush
 
 @section('content')
-<div class="bg-gray-50 min-h-screen py-12 px-6">
-    <div class="max-w-4xl mx-auto space-y-10">
-        {{-- Flash Messages --}}
-        @if(session('success'))
-            <div class="bg-green-100 border border-green-200 text-green-700 px-4 py-3 rounded-lg shadow-sm">
-                {{ session('success') }}
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Kelola UKM</h1>
+    </div>
+
+    {{-- Flash Messages --}}
+    @foreach (['success', 'error', 'info'] as $msg)
+        @if(session($msg))
+            <div class="alert alert-{{ $msg === 'error' ? 'danger' : $msg }} alert-dismissible fade show" role="alert">
+                {{ session($msg) }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         @endif
+    @endforeach
 
-        @if(session('error'))
-            <div class="bg-red-100 border border-red-200 text-red-700 px-4 py-3 rounded-lg shadow-sm">
-                {{ session('error') }}
-            </div>
-        @endif
-
-        @if(session('info'))
-            <div class="bg-blue-100 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg shadow-sm">
-                {{ session('info') }}
-            </div>
-        @endif
-
-        {{-- Referral Form --}}
-        <section class="bg-white shadow-sm rounded-xl p-6 border border-gray-200">
-            <h2 class="text-2xl font-semibold text-gray-800 mb-4 text-center">Gabung dengan Kode Referral</h2>
-            <form action="{{ route('ukm.join') }}" method="POST" class="flex flex-col sm:flex-row gap-3 items-center justify-center">
+    {{-- Referral Form Card --}}
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Gabung dengan Kode Referral</h6>
+        </div>
+        <div class="card-body">
+            <form action="{{ route('ukm.join') }}" method="POST" class="row g-3 align-items-end">
                 @csrf
-                <input name="group_code" type="text" 
-                    class="w-full sm:w-2/3 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
-                    placeholder="Masukkan kode referral"
-                    maxlength="4" pattern=".{4,4}" required />
-                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition">
-                    Gabung
-                </button>
+                <div class="col-md-8">
+                    <label for="group_code" class="form-label">Kode Referral</label>
+                    <input 
+                        name="group_code" 
+                        type="text" 
+                        class="form-control"
+                        id="group_code"
+                        placeholder="Masukkan kode 4 digit"
+                        maxlength="4" 
+                        pattern=".{4,4}" 
+                        required 
+                    />
+                </div>
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-plus me-2"></i>Gabung UKM
+                    </button>
+                </div>
             </form>
-            @error('group_code')
-                <p class="mt-2 text-sm text-red-600 text-center">{{ $message }}</p>
-            @enderror
-        </section>
+        </div>
+    </div>
 
-        {{-- Available UKMs --}}
-        <section class="bg-white shadow-sm rounded-xl p-6 border border-gray-200">
-            <h2 class="text-2xl font-semibold text-gray-800 mb-6">Daftar UKM</h2>
-            
-            <div class="grid md:grid-cols-2 gap-6">
-                @forelse ($availableGroups as $group)
-                    <div class="flex items-center justify-between border border-gray-100 rounded-lg px-4 py-3 hover:shadow-sm transition">
-                        <div>
-                            <h3 class="text-lg font-medium text-gray-800">{{ $group->name }}</h3>
-                            <p class="text-xs text-gray-500 italic text-gray-400">Tanyakan kode ke pengurus UKM</p>
-                        </div>
-                    </div>
-                @empty
-                    <p class="text-gray-500 text-center col-span-2">Tidak ada UKM tersedia untuk kamu bergabung saat ini.</p>
-                @endforelse
-            </div>
-        </section>
+    {{-- UKM List Card --}}
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">Daftar UKM</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover" width="100%" cellspacing="0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Nama UKM</th>
+                            <th>Kode</th>
+                            <th>Status</th>
+                            <th class="text-center">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{-- Joined UKMs --}}
+                        @if(!empty($joinedGroups) && count($joinedGroups) > 0)
+                            @foreach($joinedGroups as $ukm)
+                            <tr class="table-success">
+                                <td>
+                                    <strong>{{ $ukm->name }}</strong>
+                                </td>
+                                <td>
+                                    <code class="bg-light px-2 py-1 rounded">{{ $ukm->referral_code }}</code>
+                                </td>
+                                <td>
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-check me-1"></i>Tergabung
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <form action="{{ route('ukm.leave', $ukm->referral_code) }}" method="POST" class="d-inline">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button 
+                                            type="submit" 
+                                            class="btn btn-sm btn-danger"
+                                            onclick="return confirm('Apakah Anda yakin ingin keluar dari UKM ini?')"
+                                            title="Keluar dari UKM"
+                                            data-bs-toggle="tooltip"
+                                        >
+                                            <i class="fas fa-sign-out-alt"></i> Keluar
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            @endforeach
+                        @endif
 
-        {{-- Joined UKMs --}}
-        <section class="bg-white shadow-sm rounded-xl p-6 border border-gray-200">
-            <h2 class="text-2xl font-semibold text-gray-800 mb-6">UKM yang Kamu Ikuti</h2>
-            @if ($joinedGroups->isEmpty())
-                <p class="text-gray-500 text-center">Kamu belum bergabung dengan UKM manapun.</p>
-            @else
-                <div class="grid md:grid-cols-2 gap-6">
-                    @foreach ($joinedGroups as $group)
-                        <div class="border border-gray-200 rounded-lg p-4 shadow-sm flex flex-col justify-between">
-                            <div>
-                                <h3 class="text-lg font-semibold text-gray-800">{{ $group->name }}</h3>
-                                <p class="text-sm text-gray-500">{{ $group->users->count() }} anggota</p>
-                            </div>
-                            <div class="mt-4 flex justify-between items-center">
-                                <a href="{{ route('ukm.chat', $group->referral_code) }}"
-                                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition">
-                                    Masuk Chat
-                                </a>
-                                <form action="{{ route('ukm.leave', $group->referral_code) }}" method="POST" class="inline">
+                        {{-- Available UKMs --}}
+                        @forelse($availableGroups as $ukm)
+                        <tr>
+                            <td>
+                                <strong>{{ $ukm->name }}</strong>
+                            </td>
+                            <td>
+                                <code class="bg-light px-2 py-1 rounded">{{ $ukm->referral_code }}</code>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary">
+                                    <i class="fas fa-users me-1"></i>Tersedia
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                <form action="{{ route('ukm.join') }}" method="POST" class="d-inline">
                                     @csrf
-                                    @method('DELETE')
-                                    <button type="submit" 
-                                        onclick="return confirm('Yakin ingin keluar dari UKM ini?')"
-                                        class="text-red-500 hover:text-red-600 text-sm font-semibold">
-                                        Keluar
+                                    <input type="hidden" name="group_code" value="{{ $ukm->referral_code }}">
+                                    <button 
+                                        type="submit" 
+                                        class="btn btn-sm btn-primary"
+                                        title="Gabung UKM"
+                                        data-bs-toggle="tooltip"
+                                    >
+                                        <i class="fas fa-plus"></i> Gabung
                                     </button>
                                 </form>
-                            </div>
-                        </div>
-                    @endforeach
-                </div>
-            @endif
-        </section>
+                            </td>
+                        </tr>
+                        @empty
+                            @if(empty($joinedGroups) || count($joinedGroups) == 0)
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-4">
+                                    <i class="fas fa-info-circle me-2"></i>Belum ada UKM yang tersedia
+                                </td>
+                            </tr>
+                            @endif
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
-</div>
 @endsection

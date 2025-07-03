@@ -110,12 +110,7 @@
                                 UKM
                             </a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link <?php echo e(request()->routeIs('admin.member.search') ? 'active' : ''); ?>" href="<?php echo e(route('admin.member.search')); ?>">
-                                <i class="fas fa-fw fa-search"></i>
-                                Cari Anggota
-                            </a>
-                        </li>
+
                         <li class="nav-item">
                             <a class="nav-link <?php echo e(request()->routeIs('admin.user-deletions.*') ? 'active' : ''); ?>" href="<?php echo e(route('admin.user-deletions.index')); ?>">
                                 <i class="fas fa-fw fa-trash-alt"></i>

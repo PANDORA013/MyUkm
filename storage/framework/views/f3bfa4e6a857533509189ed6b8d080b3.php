@@ -1,8 +1,6 @@
-@extends('layouts.admin')
+<?php $__env->startSection('title', 'Edit UKM'); ?>
 
-@section('title', 'Edit UKM')
-
-@push('styles')
+<?php $__env->startPush('styles'); ?>
     <style>
         .card {
             border: none;
@@ -31,28 +29,29 @@
             border-color: #4c63d2;
         }
     </style>
-@endpush
+<?php $__env->stopPush(); ?>
 
-@section('content')
+<?php $__env->startSection('content'); ?>
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
         <h1 class="h3 mb-0 text-gray-800">Edit UKM</h1>
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="{{ url('/admin/dashboard') }}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="<?php echo e(url('/admin/dashboard')); ?>">Dashboard</a></li>
                 <li class="breadcrumb-item active" aria-current="page">Edit UKM</li>
             </ol>
         </nav>
     </div>
 
-    {{-- Flash Messages --}}
-    @foreach (['success', 'error', 'info'] as $msg)
-        @if(session($msg))
-            <div class="alert alert-{{ $msg === 'error' ? 'danger' : $msg }} alert-dismissible fade show" role="alert">
-                {{ session($msg) }}
+    
+    <?php $__currentLoopData = ['success', 'error', 'info']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $msg): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+        <?php if(session($msg)): ?>
+            <div class="alert alert-<?php echo e($msg === 'error' ? 'danger' : $msg); ?> alert-dismissible fade show" role="alert">
+                <?php echo e(session($msg)); ?>
+
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
-        @endif
-    @endforeach
+        <?php endif; ?>
+    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
 
     <div class="row justify-content-center">
         <div class="col-lg-8">
@@ -63,46 +62,76 @@
                     </h6>
                 </div>
                 <div class="card-body">
-                    <form action="{{ url('/admin/ukm/update/'.$ukm->id) }}" method="POST">
-                        @csrf
+                    <form action="<?php echo e(url('/admin/ukm/update/'.$ukm->id)); ?>" method="POST">
+                        <?php echo csrf_field(); ?>
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="name" class="form-label">Nama UKM</label>
                                     <input type="text" 
-                                           class="form-control @error('name') is-invalid @enderror" 
+                                           class="form-control <?php $__errorArgs = ['name'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>" 
                                            id="name" 
                                            name="name" 
-                                           value="{{ old('name', $ukm->name) }}" 
+                                           value="<?php echo e(old('name', $ukm->name)); ?>" 
                                            required 
                                            maxlength="255"
                                            placeholder="Masukkan nama UKM">
-                                    @error('name')
+                                    <?php $__errorArgs = ['name'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
                                         <div class="invalid-feedback">
-                                            {{ $message }}
+                                            <?php echo e($message); ?>
+
                                         </div>
-                                    @enderror
+                                    <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="code" class="form-label">Kode UKM</label>
                                     <input type="text" 
-                                           class="form-control text-uppercase @error('code') is-invalid @enderror" 
+                                           class="form-control text-uppercase <?php $__errorArgs = ['code'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>" 
                                            id="code" 
                                            name="code" 
-                                           value="{{ old('code', $ukm->code) }}" 
+                                           value="<?php echo e(old('code', $ukm->code)); ?>" 
                                            required 
                                            pattern=".{4,4}" 
                                            maxlength="4"
                                            placeholder="ABCD"
                                            style="letter-spacing: 0.1em;">
                                     <div class="form-text">Maksimal 4 karakter (huruf/angka)</div>
-                                    @error('code')
+                                    <?php $__errorArgs = ['code'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
                                         <div class="invalid-feedback">
-                                            {{ $message }}
+                                            <?php echo e($message); ?>
+
                                         </div>
-                                    @enderror
+                                    <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                                 </div>
                             </div>
                         </div>
@@ -116,7 +145,7 @@
                                             <div class="card bg-light">
                                                 <div class="card-body">
                                                     <small class="text-muted">Dibuat pada:</small><br>
-                                                    <strong>{{ $ukm->created_at->format('d M Y, H:i') }}</strong>
+                                                    <strong><?php echo e($ukm->created_at->format('d M Y, H:i')); ?></strong>
                                                 </div>
                                             </div>
                                         </div>
@@ -124,7 +153,7 @@
                                             <div class="card bg-light">
                                                 <div class="card-body">
                                                     <small class="text-muted">Terakhir diupdate:</small><br>
-                                                    <strong>{{ $ukm->updated_at->format('d M Y, H:i') }}</strong>
+                                                    <strong><?php echo e($ukm->updated_at->format('d M Y, H:i')); ?></strong>
                                                 </div>
                                             </div>
                                         </div>
@@ -134,7 +163,7 @@
                         </div>
 
                         <div class="d-flex justify-content-between align-items-center">
-                            <a href="{{ url('/admin/dashboard') }}" class="btn btn-secondary">
+                            <a href="<?php echo e(url('/admin/dashboard')); ?>" class="btn btn-secondary">
                                 <i class="fas fa-arrow-left me-2"></i>Kembali ke Dashboard
                             </a>
                             <button type="submit" class="btn btn-primary">
@@ -146,4 +175,6 @@
             </div>
         </div>
     </div>
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.admin', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\MyUkm-main\resources\views/admin/ukm_edit.blade.php ENDPATH**/ ?>

@@ -22,34 +22,19 @@ window.helpers = {
     }
 };
 
-// WebSocket functionality is disabled to prevent connection errors
-// If you need real-time features, uncomment and configure the following:
-/*
-import Pusher from 'pusher-js';
-import Echo from 'laravel-echo';
-
-window.Pusher = Pusher;
-
-try {
-    window.Echo = new Echo({
-        broadcaster: 'pusher',
-        key: import.meta.env.VITE_PUSHER_APP_KEY,
-        cluster: import.meta.env.VITE_PUSHER_APP_CLUSTER || 'mt1',
-        wsHost: import.meta.env.VITE_PUSHER_HOST ? import.meta.env.VITE_PUSHER_HOST : `ws-${import.meta.env.VITE_PUSHER_APP_CLUSTER}.pusher.com`,
-        wsPort: import.meta.env.VITE_PUSHER_PORT || 80,
-        wssPort: import.meta.env.VITE_PUSHER_PORT || 443,
-        forceTLS: (import.meta.env.VITE_PUSHER_SCHEME || 'https') === 'https',
-        enabledTransports: ['ws', 'wss'],
-        disableStats: true,
-        auth: {
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                'Accept': 'application/json'
+// Simple form validation
+document.addEventListener('DOMContentLoaded', function() {
+    // Basic form interaction
+    const forms = document.querySelectorAll('form');
+    forms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            const submitBtn = this.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                setTimeout(() => {
+                    submitBtn.disabled = false;
+                }, 2000);
             }
-        }
+        });
     });
-    console.log('Echo initialized successfully');
-} catch (error) {
-    console.error('Failed to initialize Echo:', error);
-}
-*/
+});

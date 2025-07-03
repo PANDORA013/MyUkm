@@ -1,155 +1,213 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 
 @section('title', 'Dashboard Admin')
 
+@push('styles')
+    <style>
+        .card {
+            border: none;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+        }
+        .card-header {
+            background-color: #f8f9fc;
+            border-bottom: 1px solid #e3e6f0;
+            padding: 1rem 1.25rem;
+            font-weight: 600;
+        }
+        .table th {
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+            color: white;
+            transition: transform 0.3s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        .stat-card.blue { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); }
+        .stat-card.green { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+        .stat-card.red { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
+        .stat-card.purple { background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); }
+        .stat-card.amber { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+        .stat-card.teal { background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%); }
+        .stat-card.indigo { background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); }
+        .stat-card.pink { background: linear-gradient(135deg, #ec4899 0%, #db2777 100%); }
+        .form-control {
+            border: 1px solid #d1d3e2;
+            border-radius: 0.35rem;
+        }
+        .form-control:focus {
+            border-color: #5a67d8;
+            box-shadow: 0 0 0 0.2rem rgba(90, 103, 216, 0.25);
+        }
+    </style>
+@endpush
+
 @section('content')
-<div class="bg-gray-50 min-h-screen py-10 px-6">
-    <div class="max-w-5xl mx-auto space-y-8">
-        {{-- Flash Messages --}}
-        @foreach (['success', 'error', 'info'] as $msg)
-            @if(session($msg))
-                <x-alert :type="$msg">
-                    {{ session($msg) }}
-                </x-alert>
-            @endif
-        @endforeach
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Dashboard Admin</h1>
+    </div>
 
-        {{-- Statistik --}}
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            <x-stat-card 
-                title="Total Anggota"
-                :value="number_format($totalMembers)"
-                icon="fa-users"
-                description="Seluruh UKM"
-                color="blue"
-                :action="[
-                    'url' => route('admin.member.search'),
-                    'icon' => 'fa-search',
-                    'label' => 'Cari Anggota'
-                ]"
-            />
-            
-            <x-stat-card 
-                title="Total UKM"
-                :value="number_format($totalUkms)"
-                icon="fa-building"
-                description="Terdaftar"
-                color="green"
-            />
-            
-            <x-stat-card 
-                title="Riwayat Penghapusan"
-                :value="$totalDeletedAccounts"
-                icon="fa-history"
-                description="Akun Dihapus"
-                color="red"
-                :action="[
-                    'url' => route('admin.user-deletions.index'),
-                    'label' => 'Lihat Riwayat'
-                ]"
-            />
+    {{-- Flash Messages --}}
+    @foreach (['success', 'error', 'info'] as $msg)
+        @if(session($msg))
+            <div class="alert alert-{{ $msg === 'error' ? 'danger' : $msg }} alert-dismissible fade show" role="alert">
+                {{ session($msg) }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        @endif
+    @endforeach
 
-            <x-stat-card 
-                title="Admin Grup"
-                :value="$totalAdmins"
-                icon="fa-user-shield"
-                description="Aktif"
-                color="purple"
-            />
-
-            <x-stat-card 
-                title="Pengguna Aktif Bulan Ini"
-                :value="number_format($activeUsersThisMonth)"
-                icon="fa-user-clock"
-                description="Pengguna"
-                color="amber"
-            />
-        </div>
-
-        <!-- Baris Kedua Statistik -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-            <x-stat-card 
-                title="Pengguna Baru"
-                :value="'+' . number_format($newUsersThisMonth)"
-                icon="fa-user-plus"
-                description="Bulan Ini"
-                color="teal"
-            />
-
-            <x-stat-card 
-                title="Rata-rata Keanggotaan"
-                :value="$totalUkms > 0 ? number_format($totalMembers / $totalUkms, 1) : 0"
-                icon="fa-chart-bar"
-                description="Anggota per UKM"
-                color="indigo"
-            />
-
-            <x-stat-card 
-                title="Pertumbuhan"
-                :value="($totalMembers > 0 && $newUsersThisMonth > 0 ? round(($newUsersThisMonth / $totalMembers) * 100, 1) : 0) . '%'"
-                icon="fa-chart-line"
-                description="Pertumbuhan Pengguna"
-                color="pink"
-            />
-        </div>
-
-        <section class="bg-white border border-gray-200 shadow-sm rounded-xl p-6 space-y-6">
-            <h2 class="text-xl font-semibold text-gray-800">Kelola UKM</h2>
-
-            {{-- Form Tambah UKM --}}
-            <form action="{{ url('/admin/ukm/tambah') }}" method="POST" class="space-y-4">
-                @csrf
-                <div class="grid md:grid-cols-3 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Nama UKM</label>
-                        <input type="text" name="nama" required maxlength="255" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Kode (4 huruf/angka)</label>
-                        <input type="text" name="kode" required pattern=".{4,4}" maxlength="4" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 uppercase tracking-wider focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    </div>
-                    <div class="flex items-end">
-                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium w-full">Tambah</button>
+    {{-- Statistik Cards --}}
+    <div class="row mb-4">
+        <!-- Total Anggota -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card blue h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-uppercase mb-1">Total Anggota</div>
+                            <div class="h5 mb-0 font-weight-bold">{{ number_format($totalMembers) }}</div>
+                            <div class="text-xs mt-1 opacity-75">Seluruh UKM</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-users fa-2x opacity-75"></i>
+                        </div>
                     </div>
                 </div>
-            </form>
-
-            {{-- Daftar UKM --}}
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200 text-sm">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="px-4 py-2 text-left font-semibold text-gray-600">Nama</th>
-                            <th class="px-4 py-2 text-left font-semibold text-gray-600">Kode</th>
-                            <th class="px-4 py-2 text-center font-semibold text-gray-600">Anggota</th>
-                            <th class="px-4 py-2 text-center font-semibold text-gray-600">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-100">
-                        @forelse($ukms as $ukm)
-                            <tr>
-                                <td class="px-4 py-2 whitespace-nowrap">{{ $ukm->nama }}</td>
-                                <td class="px-4 py-2 whitespace-nowrap font-mono">{{ $ukm->kode }}</td>
-                                <td class="px-4 py-2 text-center">{{ $ukm->members_count }}</td>
-                                <td class="px-4 py-2 text-center space-x-3">
-                                    <a href="{{ url('/admin/ukm/'.$ukm->id.'/anggota') }}" class="text-blue-600 hover:underline">Anggota</a>
-                                    <a href="{{ url('/admin/ukm/edit/'.$ukm->id) }}" class="text-yellow-600 hover:underline">Edit</a>
-                                    <form action="{{ url('/admin/ukm/hapus/'.$ukm->id) }}" method="POST" class="inline" onsubmit="return confirm('Hapus UKM?');">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="text-red-600 hover:underline">Hapus</button>
-                                    </form>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="4" class="px-4 py-6 text-center text-gray-500">Belum ada UKM terdaftar.</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
             </div>
-        </section>
+        </div>
+
+        <!-- Total UKM -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card green h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-uppercase mb-1">Total UKM</div>
+                            <div class="h5 mb-0 font-weight-bold">{{ number_format($totalUkms) }}</div>
+                            <div class="text-xs mt-1 opacity-75">Terdaftar</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-building fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Riwayat Penghapusan -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card red h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-uppercase mb-1">Akun Dihapus</div>
+                            <div class="h5 mb-0 font-weight-bold">{{ $totalDeletedAccounts }}</div>
+                            <div class="text-xs mt-1 opacity-75">Riwayat Penghapusan</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-history fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <a href="{{ route('admin.user-deletions.index') }}" class="btn btn-light btn-sm">
+                            <i class="fas fa-eye me-1"></i>Lihat Riwayat
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Grup -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card purple h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-uppercase mb-1">Admin Grup</div>
+                            <div class="h5 mb-0 font-weight-bold">{{ $totalAdmins }}</div>
+                            <div class="text-xs mt-1 opacity-75">Aktif</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-shield fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-</div>
+
+    {{-- Baris Kedua Statistik --}}
+    <div class="row mb-4">
+        <!-- Pengguna Aktif -->
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card stat-card amber h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-uppercase mb-1">Pengguna Aktif</div>
+                            <div class="h5 mb-0 font-weight-bold">{{ number_format($activeUsersThisMonth) }}</div>
+                            <div class="text-xs mt-1 opacity-75">Bulan Ini</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-clock fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pengguna Baru -->
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card stat-card teal h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-uppercase mb-1">Pengguna Baru</div>
+                            <div class="h5 mb-0 font-weight-bold">+{{ number_format($newUsersThisMonth) }}</div>
+                            <div class="text-xs mt-1 opacity-75">Bulan Ini</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-plus fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rata-rata Keanggotaan -->
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card stat-card indigo h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-uppercase mb-1">Rata-rata</div>
+                            <div class="h5 mb-0 font-weight-bold">{{ $totalUkms > 0 ? number_format($totalMembers / $totalUkms, 1) : 0 }}</div>
+                            <div class="text-xs mt-1 opacity-75">Anggota per UKM</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-chart-bar fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+@push('scripts')
+    <script>
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        });
+    </script>
+@endpush
+
 @endsection

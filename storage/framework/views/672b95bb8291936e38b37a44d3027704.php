@@ -1,69 +1,54 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<?php echo e(str_replace('_', '-', app()->getLocale())); ?>">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="<?php echo e(csrf_token()); ?>">
-    <title><?php echo $__env->yieldContent('title', 'MyUkm'); ?></title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <?php echo app('Illuminate\Foundation\Vite')(['resources/js/app.js', 'resources/js/profile.js']); ?>
+
+    <title><?php echo e(config('app.name', 'MyUKM')); ?></title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.bunny.net">
+    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- Scripts -->
+    <?php echo app('Illuminate\Foundation\Vite')(['resources/css/app.css', 'resources/js/app.js']); ?>
 </head>
-<body class="font-[Inter]">
-    <div class="min-h-screen bg-gray-50">
-        <!-- Navigation -->
-        <nav class="bg-white shadow-sm py-3 px-6 border-b">
-            <div class="max-w-6xl mx-auto flex justify-between items-center">
-                <div class="flex items-center space-x-3">
-                    <a href="<?php echo e(url('/')); ?>" class="flex items-center space-x-2 hover:opacity-75 transition">
+<body class="font-sans antialiased bg-gray-100">
+    <div class="min-h-screen">
+        <?php echo $__env->make('layouts.navigation', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
 
-
-
-                        <span class="font-bold text-lg">MyUkm</span>
-                    </a>
+        <!-- Page Heading -->
+        <?php if(isset($header)): ?>
+            <header class="bg-white shadow-sm">
+                <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
+                    <h2 class="text-xl font-semibold text-gray-800"><?php echo e($header); ?></h2>
                 </div>
+            </header>
+        <?php endif; ?>
 
-                <?php if(Request::is('ukm/*/chat')): ?>
-                    <div class="hidden sm:flex items-center">
-                        <a href="<?php echo e(route('ukm.index')); ?>" class="inline-flex items-center text-sm text-gray-500 hover:text-blue-600 transition">
-                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                            </svg>
-                            Kembali ke Beranda
-                        </a>
+        <!-- Page Content -->
+        <main class="py-6">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <?php if(session('success')): ?>
+                    <div class="mb-4 p-4 bg-green-100 border border-green-200 text-green-700 rounded-lg">
+                        <?php echo e(session('success')); ?>
+
                     </div>
                 <?php endif; ?>
 
-                <?php if(auth()->guard()->check()): ?>
-                <div class="flex items-center space-x-6">
-                    <a href="<?php echo e(route('profile.show')); ?>" class="flex items-center space-x-3 py-1 px-3 rounded-lg hover:bg-gray-50 transition">
-                        <div class="flex flex-col items-end">
-                            <span class="text-sm font-medium text-gray-700"><?php echo e(auth()->user()->name); ?></span>
-                        </div>
+                <?php if($errors->any()): ?>
+                    <div class="mb-4 p-4 bg-red-100 border border-red-200 text-red-700 rounded-lg">
+                        <?php echo e($errors->first()); ?>
 
-                    </a>
-
-                    <form method="POST" action="<?php echo e(route('logout')); ?>">
-                        <?php echo csrf_field(); ?>
-                        <button type="submit" class="text-red-500 hover:text-red-600 font-medium text-sm transition-colors">
-                            Keluar
-                        </button>
-                    </form>
-                </div>
+                    </div>
                 <?php endif; ?>
-            </div>
-        </nav>
 
-        <!-- Main Content -->
-        <main>
-            <?php echo $__env->yieldContent('content'); ?>
+                <?php echo $__env->yieldContent('content'); ?>
+            </div>
         </main>
     </div>
-
-    <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.15.3/dist/echo.iife.js"></script>
-    <?php echo app('Illuminate\Foundation\Vite')(['resources/js/app.js']); ?>
-    <?php echo $__env->yieldPushContent('scripts'); ?>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </body>
 </html>
 <?php /**PATH C:\xampp\htdocs\MyUkm-main\resources\views/layouts/app.blade.php ENDPATH**/ ?>
