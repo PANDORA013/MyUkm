@@ -400,8 +400,8 @@ class ChatController extends BaseController
 
             // Dispatch message broadcasting to queue for INSTANT responsiveness
             try {
-                // OPTIMIZED: Dispatch dengan priority tinggi dan timeout minimal
-                dispatch(new BroadcastChatMessage($chat, $group->referral_code))
+                // ULTRA-OPTIMIZED: Dispatch dengan priority tinggi dan timeout minimal
+                dispatch(new BroadcastChatMessage($chat))
                     ->onQueue('realtime') // Queue khusus real-time untuk prioritas tertinggi
                     ->delay(0); // No delay untuk instant processing
                 

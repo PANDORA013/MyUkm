@@ -1,0 +1,1 @@
+'Pusher Options: ' . json_encode(\$config- . PHP_EOL;

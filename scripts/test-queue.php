@@ -43,8 +43,8 @@ try {
             // Set the user relationship manually
             $testChat->setRelation('user', $testUser);
             
-            // Dispatch job
-            dispatch(new BroadcastChatMessage($testChat, $testGroup->referral_code));
+            // Dispatch job with corrected constructor
+            dispatch(new BroadcastChatMessage($testChat));
             echo "   ✓ Chat message job dispatched\n";
         } else {
             echo "   ⚠ No groups found for user\n";

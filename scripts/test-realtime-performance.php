@@ -67,8 +67,8 @@ try {
             
             $testChat->load('user');
             
-            // Dispatch via queue
-            dispatch(new BroadcastChatMessage($testChat, $testGroup->referral_code));
+            // Dispatch via queue with corrected constructor
+            dispatch(new BroadcastChatMessage($testChat));
             
             $endTime = microtime(true);
             $responseTime = round(($endTime - $startTime) * 1000, 2);

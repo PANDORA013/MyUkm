@@ -1,0 +1,1 @@
+'Database Queue Table: ' . \$config- . PHP_EOL;

@@ -11,8 +11,8 @@ php artisan migrate --force --no-interaction >nul 2>&1
 php artisan db:seed --force --no-interaction >nul 2>&1
 php artisan config:clear >nul 2>&1
 
-::  Start queue worker (optimized for real-time responsiveness)
-start "Queue Worker - Real-Time" /min cmd /c "php artisan queue:work --queue=realtime,high,default --timeout=30 --sleep=1 --tries=3 --memory=128"
+::  Start ULTRA queue worker (maximum real-time responsiveness)
+start "ULTRA Queue Worker - Real-Time" /min cmd /c "php artisan queue:work --queue=realtime,high,default --timeout=10 --sleep=0 --tries=2 --memory=256 --max-jobs=1000"
 
 :: Auto-open browser
 start http://localhost:8000

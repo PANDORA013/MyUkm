@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'default' => env('BROADCAST_DRIVER', 'log'),
+    'default' => env('BROADCAST_DRIVER', 'pusher'),
     'connections' => [
         'pusher' => [
             'driver' => 'pusher',
@@ -15,10 +15,27 @@ return [
                 'host' => env('PUSHER_HOST') ?: 'api-'.env('PUSHER_APP_CLUSTER', 'mt1').'.pusher.com',
                 'port' => env('PUSHER_PORT', 443),
                 'scheme' => env('PUSHER_SCHEME', 'https'),
+                // OPTIMIZED: Ultra-fast broadcasting settings for real-time responsiveness
+                'timeout' => 5,              // Reduced timeout for faster response
+                'connect_timeout' => 3,      // Faster connection timeout
             ],
             'client_options' => [
-                // Guzzle client options: https://docs.guzzlephp.org/en/stable/request-options.html
+                // OPTIMIZED: Guzzle client options for maximum speed
+                'timeout' => 5,              // Request timeout
+                'connect_timeout' => 3,      // Connection timeout
+                'http_errors' => false,      // Don't throw on HTTP errors
+                'verify' => true,            // SSL verification
             ],
+        ],
+        
+        // OPTIMIZED: Sync fallback for instant local testing
+        'sync' => [
+            'driver' => 'sync',
+        ],
+        
+        // OPTIMIZED: Log fallback for debugging
+        'log' => [
+            'driver' => 'log',
         ],
     ],
 ];

@@ -48,8 +48,8 @@ try {
             echo "   👤 User: {$testUser->name}\n";
             echo "   📡 Broadcasting to channel: group.{$sims->referral_code}\n";
             
-            // Dispatch to queue
-            dispatch(new \App\Jobs\BroadcastChatMessage($testChat, $sims->referral_code));
+            // Dispatch to queue with corrected constructor
+            dispatch(new \App\Jobs\BroadcastChatMessage($testChat));
             echo "   ⚡ Dispatched to queue for broadcasting\n";
             
         } else {

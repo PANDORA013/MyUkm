@@ -1,0 +1,1 @@
+'Job Tries: ' . \$tries- BroadcastChatMessage(new App\Models\Chat())) . PHP_EOL;

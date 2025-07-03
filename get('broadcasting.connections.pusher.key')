@@ -1,0 +1,1 @@
+'Pusher Key: ' . (\$config- ? 'SET' : 'NOT SET') . PHP_EOL;
