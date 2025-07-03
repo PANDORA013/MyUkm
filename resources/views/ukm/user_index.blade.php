@@ -120,7 +120,11 @@
                 <div class="card ukm-card">
                     <div class="card-header d-flex justify-content-between align-items-center bg-white py-2">
                         <h5 class="mb-0">{{ $group->name }}</h5>
-                        <span class="badge bg-success ukm-badge">Anggota</span>
+                        @if($group->isUserAdminInGroup ?? false)
+                            <span class="badge bg-warning text-dark ukm-badge">Admin Grup</span>
+                        @else
+                            <span class="badge bg-success ukm-badge">Anggota</span>
+                        @endif
                     </div>
                     <div class="card-body">
                         @php
@@ -133,19 +137,41 @@
                                 <span class="badge bg-light text-dark me-2">
                                     <i class="fas fa-users me-1"></i> {{ $group->members->count() }} Anggota
                                 </span>
+                                @if($group->userRoleInGroup ?? null)
+                                    <small class="text-muted d-block mt-1">
+                                        Status: 
+                                        @if($group->userRoleInGroup === 'admin')
+                                            <strong class="text-warning">Admin Grup</strong>
+                                        @else
+                                            <strong class="text-success">Anggota</strong>
+                                        @endif
+                                    </small>
+                                @endif
                             </div>
-                            <div class="btn-group">
-                                <a href="{{ route('ukm.chat', $group->referral_code) }}" class="btn btn-sm btn-primary">
-                                    <i class="fas fa-comments me-1"></i> Chat
+                        </div>
+                        
+                        <div class="btn-group mt-3 w-100" role="group">
+                            <a href="{{ route('ukm.show', $group->referral_code) }}" class="btn btn-sm btn-outline-info">
+                                <i class="fas fa-eye me-1"></i> Detail
+                            </a>
+                            <a href="{{ route('ukm.chat', $group->referral_code) }}" class="btn btn-sm btn-primary">
+                                <i class="fas fa-comments me-1"></i> Chat
+                            </a>
+                            @if($group->isUserAdminInGroup ?? false)
+                                <a href="{{ route('group.admin.dashboard', $group->referral_code) }}" class="btn btn-sm btn-warning">
+                                    <i class="fas fa-cog me-1"></i> Kelola
                                 </a>
-                                <form action="{{ route('ukm.leave', $group->referral_code) }}" method="POST" class="d-inline">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Yakin ingin keluar dari UKM ini?')">
-                                        <i class="fas fa-sign-out-alt me-1"></i> Keluar
-                                    </button>
-                                </form>
-                            </div>
+                            @endif
+                        </div>
+                        
+                        <div class="mt-2">
+                            <form action="{{ route('ukm.leave', $group->referral_code) }}" method="POST" class="d-inline w-100">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-sm btn-outline-danger w-100" onclick="return confirm('Yakin ingin keluar dari UKM ini?')">
+                                    <i class="fas fa-sign-out-alt me-1"></i> Keluar dari UKM
+                                </button>
+                            </form>
                         </div>
                     </div>
                 </div>

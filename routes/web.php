@@ -9,6 +9,7 @@ use App\Http\Controllers\UkmController;
 use App\Http\Controllers\AdminWebsiteController;
 use App\Http\Controllers\AdminGrupController;
 use Illuminate\Support\Facades\Config;
+use App\Http\Controllers\GroupAdminController;
 
 // Root route
 Route::get('/', function () {
@@ -32,6 +33,11 @@ Route::post('register', [AuthController::class, 'register']);
 Route::get('login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('login', [AuthController::class, 'login']);
 Route::post('logout', [AuthController::class, 'logout'])->name('logout');
+
+// CSRF token refresh route - accessible without auth but requires web middleware for session
+Route::middleware(['web'])->get('/csrf-refresh', function () {
+    return response()->json(['token' => csrf_token()]);
+})->name('csrf.refresh');
 
 // Protected routes
 Route::middleware(['auth', 'ensure.role'])->group(function () {
@@ -164,6 +170,16 @@ Route::middleware(['auth', 'ensure.role'])->group(function () {
         Route::post('/profile/photo', [ProfileController::class, 'updatePhoto'])->name('profile.updatePhoto');
     });
 
+    // Group Admin routes - privilege admin per grup
+    Route::middleware(['group.admin'])->prefix('grup/{code}/admin')->name('group.admin.')->group(function () {
+        Route::get('/dashboard', [GroupAdminController::class, 'dashboard'])->name('dashboard');
+        Route::get('/members', [GroupAdminController::class, 'members'])->name('members');
+        Route::post('/promote', [GroupAdminController::class, 'promoteToAdmin'])->name('promote');
+        Route::post('/demote', [GroupAdminController::class, 'demoteToMember'])->name('demote');
+        Route::delete('/remove-member', [GroupAdminController::class, 'removeMember'])->name('remove-member');
+        Route::put('/settings', [GroupAdminController::class, 'updateSettings'])->name('settings');
+    });
+
     // Pusher Test Routes
     Route::get('/pusher-test', function () {
         return view('pusher-test');
@@ -177,9 +193,4 @@ Route::middleware(['auth', 'ensure.role'])->group(function () {
         ]));
         return response()->json(['status' => 'Message sent!']);
     })->name('broadcast.test');
-    
-    // CSRF token refresh route
-    Route::get('/csrf-refresh', function () {
-        return response()->json(['token' => csrf_token()]);
-    })->name('csrf.refresh');
 });

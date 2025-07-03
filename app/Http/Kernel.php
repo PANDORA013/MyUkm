@@ -55,5 +55,6 @@ class Kernel extends HttpKernel
         'admin_website' => \App\Http\Middleware\AdminWebsiteMiddleware::class,
         'ensure.role' => \App\Http\Middleware\EnsureUserRole::class,
         'role' => \App\Http\Middleware\EnsureUserRole::class,
+        'group.admin' => \App\Http\Middleware\EnsureGroupAdmin::class,
     ];
 }

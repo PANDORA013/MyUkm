@@ -54,11 +54,21 @@
             <div class="card mt-3">
                 <div class="card-body">
                     <h6 class="card-title">Aksi</h6>
-                    <div class="d-flex gap-2">
+                    <div class="d-flex gap-2 flex-wrap">
                         @if($isMember)
                             <a href="{{ route('ukm.chat', $group->referral_code) }}" class="btn btn-primary">
                                 <i class="fas fa-comments"></i> Chat Grup
                             </a>
+                            
+                            @if($isGroupAdmin)
+                                <a href="{{ route('group.admin.dashboard', $group->referral_code) }}" class="btn btn-warning">
+                                    <i class="fas fa-cog"></i> Kelola Grup
+                                </a>
+                                <a href="{{ route('group.admin.members', $group->referral_code) }}" class="btn btn-info">
+                                    <i class="fas fa-users"></i> Kelola Anggota
+                                </a>
+                            @endif
+                            
                             <form method="POST" action="{{ route('ukm.leave', $group->referral_code) }}" class="d-inline">
                                 @csrf
                                 @method('DELETE')
@@ -77,6 +87,19 @@
                             </form>
                         @endif
                     </div>
+                    
+                    @if($isMember)
+                        <div class="mt-3">
+                            <small class="text-muted">
+                                Status Anda di grup ini: 
+                                @if($userRoleInGroup === 'admin')
+                                    <span class="badge bg-warning text-dark">Admin Grup</span>
+                                @else
+                                    <span class="badge bg-secondary">Anggota</span>
+                                @endif
+                            </small>
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>
@@ -101,16 +124,20 @@
                                         <div class="flex-grow-1">
                                             <h6 class="mb-0 fs-sm">{{ $member->name }}</h6>
                                             <small class="text-muted">
-                                                @switch($member->role)
-                                                    @case('admin_grup')
-                                                        <span class="badge bg-warning text-dark">Admin Grup</span>
-                                                        @break
-                                                    @case('admin_website')
-                                                        <span class="badge bg-danger">Admin Website</span>
-                                                        @break
-                                                    @default
-                                                        <span class="badge bg-secondary">Anggota</span>
-                                                @endswitch
+                                                @php
+                                                    $membershipPivot = $member->pivot ?? null;
+                                                    $isAdminInThisGroup = $membershipPivot && $membershipPivot->is_admin;
+                                                @endphp
+                                                
+                                                @if($isAdminInThisGroup)
+                                                    <span class="badge bg-warning text-dark">Admin Grup</span>
+                                                @else
+                                                    <span class="badge bg-secondary">Anggota</span>
+                                                @endif
+                                                
+                                                @if($member->role === 'admin_website')
+                                                    <span class="badge bg-danger ms-1">Admin Website</span>
+                                                @endif
                                             </small>
                                         </div>
                                     </div>

@@ -261,4 +261,93 @@ class User extends Authenticatable
     {
         return $this->photo ? asset('storage/' . $this->photo) : null;
     }
+    
+    /**
+     * Check if user is admin in a specific group
+     *
+     * @param int|Group $group
+     * @return bool
+     */
+    public function isAdminInGroup($group): bool
+    {
+        $groupId = $group instanceof Group ? $group->id : $group;
+        
+        return $this->groups()
+            ->where('group_id', $groupId)
+            ->wherePivot('is_admin', true)
+            ->exists();
+    }
+    
+    /**
+     * Check if user is member (not admin) in a specific group
+     *
+     * @param int|Group $group
+     * @return bool
+     */
+    public function isMemberInGroup($group): bool
+    {
+        $groupId = $group instanceof Group ? $group->id : $group;
+        
+        return $this->groups()
+            ->where('group_id', $groupId)
+            ->wherePivot('is_admin', false)
+            ->exists();
+    }
+    
+    /**
+     * Get user's role in a specific group (admin or member)
+     *
+     * @param int|Group $group
+     * @return string|null 'admin', 'member', or null if not in group
+     */
+    public function getRoleInGroup($group): ?string
+    {
+        $groupId = $group instanceof Group ? $group->id : $group;
+        
+        $membership = $this->groups()
+            ->where('group_id', $groupId)
+            ->first();
+            
+        if (!$membership) {
+            return null;
+        }
+        
+        return $membership->pivot->is_admin ? 'admin' : 'member';
+    }
+    
+    /**
+     * Promote user to admin in a specific group
+     *
+     * @param int|Group $group
+     * @return bool
+     */
+    public function promoteToAdminInGroup($group): bool
+    {
+        $groupId = $group instanceof Group ? $group->id : $group;
+        
+        if (!$this->groups()->where('group_id', $groupId)->exists()) {
+            return false; // User is not a member of this group
+        }
+        
+        $this->groups()->updateExistingPivot($groupId, ['is_admin' => true]);
+        return true;
+    }
+    
+    /**
+     * Demote user from admin to member in a specific group
+     *
+     * @param int|Group $group
+     * @return bool
+     */
+    public function demoteFromAdminInGroup($group): bool
+    {
+        $groupId = $group instanceof Group ? $group->id : $group;
+        
+        if (!$this->groups()->where('group_id', $groupId)->exists()) {
+            return false; // User is not a member of this group
+        }
+        
+        $this->groups()->updateExistingPivot($groupId, ['is_admin' => false]);
+        return true;
+    }
 }

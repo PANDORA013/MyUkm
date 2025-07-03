@@ -21,6 +21,12 @@ class UkmController extends Controller
         $joinedGroups = $user->groups()->with('members')->get();
         $availableGroups = Group::with('members')->whereNotIn('id', $joinedGroups->pluck('id'))->get();
         
+        // Tambahkan informasi role per grup untuk setiap grup yang diikuti
+        foreach ($joinedGroups as $group) {
+            $group->userRoleInGroup = $user->getRoleInGroup($group);
+            $group->isUserAdminInGroup = $user->isAdminInGroup($group);
+        }
+        
         // Berdasarkan role user, tampilkan view yang sesuai
         if ($user->role === 'admin_website') {
             return view('admin.ukms.index', [
@@ -128,11 +134,18 @@ class UkmController extends Controller
         $group = Group::where('referral_code', $code)->firstOrFail();
         
         $isMember = $user->groups()->where('group_id', $group->id)->exists();
+        $isGroupAdmin = $isMember && $user->isAdminInGroup($group);
+        $userRoleInGroup = $user->getRoleInGroup($group);
+        
+        // Ambil members dengan pivot data untuk menampilkan role per grup
+        $members = $group->users()->withPivot(['is_admin', 'is_muted'])->get();
         
         return view('ukm.show', [
             'group' => $group,
             'isMember' => $isMember,
-            'members' => $group->members()->get()
+            'isGroupAdmin' => $isGroupAdmin,
+            'userRoleInGroup' => $userRoleInGroup,
+            'members' => $members
         ]);
     }
 }

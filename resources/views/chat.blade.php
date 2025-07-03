@@ -217,7 +217,7 @@
         // Function to refresh CSRF token and keep session alive
         function refreshCsrfToken() {
             window.lastRefreshTime = Date.now();
-            fetch('/csrf-refresh', {
+            return fetch('/csrf-refresh', {
                 method: 'GET',
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest'
@@ -232,12 +232,21 @@
                     console.error('Received HTML instead of JSON when refreshing CSRF token. Session might have expired.');
                     throw new Error('Session expired');
                 }
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
                 return response.json();
             })
             .then(data => {
                 if (data.token) {
                     csrfToken = data.token;
                     console.log('CSRF token refreshed at ' + new Date().toLocaleTimeString());
+                    
+                    // Update meta tag for future requests
+                    const metaTag = document.querySelector('meta[name="csrf-token"]');
+                    if (metaTag) {
+                        metaTag.setAttribute('content', data.token);
+                    }
                     
                     // If we previously had an error, hide it now
                     const errorBanner = document.getElementById('connection-error');
@@ -251,23 +260,38 @@
                         console.log('Attempting to reload messages after session refresh');
                         loadMessages();
                     }
+                    
+                    // Reset session expired attempts counter
+                    window.sessionExpiredAttempts = 0;
+                    
+                    return data.token;
+                } else {
+                    throw new Error('No token received');
                 }
             })
             .catch(error => {
                 console.warn('Failed to refresh CSRF token:', error);
-                if (error.message === 'Session expired') {
+                if (error.message === 'Session expired' || error.message.includes('HTTP 401')) {
                     window.hadSessionExpiredError = true;
                     showConnectionError('Sesi Anda telah berakhir. Mencoba memperbarui otomatis...');
                     
                     // Try to redirect to login if after multiple attempts we still have session issues
+                    window.sessionExpiredAttempts = (window.sessionExpiredAttempts || 0) + 1;
                     if (window.sessionExpiredAttempts >= 3) {
-                        window.location.href = '{{ route('login') }}?redirect={{ urlencode(request()->fullUrl()) }}';
+                        showConnectionError('Sesi berakhir. Mengarahkan ke halaman login...');
+                        setTimeout(() => {
+                            window.location.href = '{{ route('login') }}?redirect={{ urlencode(request()->fullUrl()) }}';
+                        }, 2000);
                     } else {
-                        window.sessionExpiredAttempts = (window.sessionExpiredAttempts || 0) + 1;
                         // Try again in 5 seconds
                         setTimeout(refreshCsrfToken, 5000);
                     }
+                } else {
+                    showConnectionError('Gagal memperbarui sesi. Mencoba lagi...');
+                    setTimeout(refreshCsrfToken, 5000);
                 }
+                throw error;
+            });
             });
         }
         
@@ -402,28 +426,64 @@
             
             const message = messageInput.value.trim();
             if (message) {
-                fetch('{{ route('chat.send') }}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken
-                    },
-                    body: JSON.stringify({
-                        message: message,
-                        group_id: groupId,
-                        group_code: groupCode
-                    })
-                })
-                .then(response => {
+                // Disable input while sending
+                messageInput.disabled = true;
+                sendButton.disabled = true;
+                
+                retryWithTokenRefresh(async () => {
+                    const response = await fetch('{{ route('chat.send') }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': csrfToken,
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: JSON.stringify({
+                            message: message,
+                            group_id: groupId,
+                            group_code: groupCode
+                        })
+                    });
+                    
                     if (!response.ok) {
                         // Try to parse the error response safely
-                        return safeJsonParse(response).catch(e => {
+                        const data = await safeJsonParse(response).catch(e => {
                             // If JSON parsing fails, return a generic error
                             return { status: 'error', message: 'Server error: ' + response.status };
-                        }).then(data => {
-                            if (response.status === 403 && data.message && data.message.includes('di-mute')) {
-                                showMutedAlert(data.message);
-                                return { status: 'error', message: data.message };
+                        });
+                        
+                        if (response.status === 403 && data.message && data.message.includes('di-mute')) {
+                            showMutedAlert(data.message);
+                            throw new Error(data.message);
+                        } else if (response.status === 401 || response.status === 419) {
+                            throw new Error('Session expired');
+                        } else {
+                            throw new Error(data.message || 'Error: ' + response.status);
+                        }
+                    }
+                    
+                    return await safeJsonParse(response);
+                })
+                .then(data => {
+                    if (data.status === 'success') {
+                        messageInput.value = '';
+                        // Message will appear via Pusher or polling
+                    } else {
+                        throw new Error(data.message || 'Unknown error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error sending message:', error);
+                    if (error.message !== 'Session expired') {
+                        showConnectionError('Gagal mengirim pesan: ' + error.message);
+                    }
+                })
+                .finally(() => {
+                    // Re-enable input
+                    messageInput.disabled = false;
+                    sendButton.disabled = false;
+                    messageInput.focus();
+                });
                             }
                             throw new Error('Error: ' + (data.message || response.status));
                         });
@@ -521,19 +581,36 @@
         });
         
         // Load messages
-        function loadMessages() {
-            fetch(`{{ route('chat.messages') }}?group_id=${groupId}`)
-                .then(safeJsonParse)
-                .then(data => {
+        async function loadMessages() {
+            try {
+                await retryWithTokenRefresh(async () => {
+                    const response = await fetch(`{{ route('chat.messages') }}?group_id=${groupId}`, {
+                        headers: {
+                            'X-CSRF-TOKEN': csrfToken,
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+                    
+                    const data = await safeJsonParse(response);
+                    
                     if (data.status === 'success') {
                         chatMessages.innerHTML = '';
                         data.messages.forEach(message => appendMessage(message));
                         scrollToBottom();
+                    } else {
+                        throw new Error(data.message || 'Failed to load messages');
                     }
-                })
-                .catch(error => {
-                    console.error('Error loading messages:', error);
-                    if (error.message !== 'Session expired') {
+                    
+                    return data;
+                });
+            } catch (error) {
+                console.error('Error loading messages:', error);
+                if (error.message !== 'Session expired') {
+                    showConnectionError('Gagal memuat pesan. Mencoba lagi...');
+                    setTimeout(loadMessages, 5000);
+                }
+            }
+        }
                         showConnectionError('Gagal memuat pesan. Coba refresh halaman.');
                     }
                 });
@@ -625,6 +702,32 @@
                 return response;
             })
             .catch(error => console.error('Error leaving chat room:', error));
+        }
+        
+        // Helper function to retry API calls with token refresh
+        async function retryWithTokenRefresh(fetchFunction, maxRetries = 2) {
+            for (let attempt = 1; attempt <= maxRetries; attempt++) {
+                try {
+                    return await fetchFunction();
+                } catch (error) {
+                    console.warn(`API call attempt ${attempt} failed:`, error);
+                    
+                    // If this is a session/auth error and we have retries left
+                    if ((error.message === 'Session expired' || error.message.includes('401') || error.message.includes('419')) && attempt < maxRetries) {
+                        console.log(`Attempting to refresh CSRF token before retry ${attempt + 1}`);
+                        try {
+                            await refreshCsrfToken();
+                            console.log('Token refreshed, retrying API call...');
+                            // Continue to next iteration for retry
+                        } catch (tokenError) {
+                            console.error('Failed to refresh token:', tokenError);
+                            throw error; // Give up if token refresh fails
+                        }
+                    } else {
+                        throw error; // No more retries or different error
+                    }
+                }
+            }
         }
     });
 </script>
