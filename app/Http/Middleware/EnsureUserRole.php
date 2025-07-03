@@ -51,6 +51,13 @@ class EnsureUserRole
             // Allow all authenticated users to access UKM features
             return $next($request);
         }
+        
+        // Chat paths are accessible by all authenticated users
+        // Chat functionality should not be restricted by role
+        if (str_starts_with($path, 'chat/') || $path === 'chat') {
+            // Allow all authenticated users to access chat features
+            return $next($request);
+        }
 
         // Return the appropriate view for profile and other sections
         // Controller logic will handle which specific view to use
