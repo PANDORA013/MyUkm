@@ -15,7 +15,7 @@ $_SERVER['SERVER_NAME'] = 'localhost';
 $_SERVER['SERVER_PORT'] = '8000';
 $_SERVER['HTTPS'] = '';
 
-require_once __DIR__ . '/vendor/autoload.php';
+require_once __DIR__ . '/../../vendor/autoload.php';
 
 use Illuminate\Foundation\Application;
 use Illuminate\Http\Request;
@@ -29,7 +29,7 @@ echo "=== Test Admin Grup Layout ===\n\n";
 
 try {
     // Bootstrap Laravel app
-    $app = require_once __DIR__ . '/bootstrap/app.php';
+    $app = require_once __DIR__ . '/../../bootstrap/app.php';
     $kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);
     
     $request = Request::capture();
@@ -91,7 +91,7 @@ try {
     // Test 3: Test layout rendering (simulate)
     echo "\n3. Testing layout admin_grup rendering...\n";
     
-    $layoutPath = __DIR__ . '/resources/views/layouts/admin_grup.blade.php';
+    $layoutPath = __DIR__ . '/../../resources/views/layouts/admin_grup.blade.php';
     if (file_exists($layoutPath)) {
         echo "✅ File layout admin_grup.blade.php ditemukan\n";
         

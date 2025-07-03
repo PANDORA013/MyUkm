@@ -1,9 +1,9 @@
 <?php
 
 // Quick test script untuk debug 403 issue
-require_once 'vendor/autoload.php';
+require_once __DIR__ . '/../../vendor/autoload.php';
 
-$app = require_once 'bootstrap/app.php';
+$app = require_once __DIR__ . '/../../bootstrap/app.php';
 
 $kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);
 

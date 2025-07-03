@@ -1,8 +1,8 @@
 <?php
 
-require_once 'vendor/autoload.php';
+require_once __DIR__ . '/../../vendor/autoload.php';
 
-$app = require 'bootstrap/app.php';
+$app = require __DIR__ . '/../../bootstrap/app.php';
 $app->bind(
     Illuminate\Contracts\Console\Kernel::class,
     App\Console\Kernel::class

@@ -5,8 +5,8 @@
  */
 
 // Bootstrap Laravel
-require_once 'vendor/autoload.php';
-$app = require_once 'bootstrap/app.php';
+require_once __DIR__ . '/../../vendor/autoload.php';
+$app = require_once __DIR__ . '/../../bootstrap/app.php';
 
 // Get the Illuminate application instance
 $kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);

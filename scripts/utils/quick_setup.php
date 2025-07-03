@@ -4,4 +4,4 @@
 $_SERVER['argv'] = ['artisan', 'tinker'];
 $_SERVER['argc'] = 2;
 
-require __DIR__ . '/artisan';
+require __DIR__ . '/../../artisan';

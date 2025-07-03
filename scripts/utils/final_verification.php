@@ -3,9 +3,9 @@
  * Final verification script to ensure everything is working
  */
 
-require_once __DIR__ . '/vendor/autoload.php';
+require_once __DIR__ . '/../../vendor/autoload.php';
 
-$app = require_once __DIR__ . '/bootstrap/app.php';
+$app = require_once __DIR__ . '/../../bootstrap/app.php';
 $kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);
 $kernel->bootstrap();
 
@@ -37,7 +37,7 @@ try {
     ];
     
     foreach ($layouts as $path => $name) {
-        if (file_exists(__DIR__ . '/' . $path)) {
+        if (file_exists(__DIR__ . '/../../' . $path)) {
             echo "   ✅ {$name} exists\n";
         } else {
             echo "   ❌ {$name} missing\n";
@@ -52,7 +52,7 @@ try {
     ];
     
     foreach ($views as $path => $expectedContent) {
-        if (file_exists(__DIR__ . '/' . $path)) {
+        if (file_exists(__DIR__ . '/../../' . $path)) {
             $content = file_get_contents(__DIR__ . '/' . $path);
             if (strpos($content, $expectedContent) !== false) {
                 echo "   ✅ " . basename($path) . " has conditional extends\n";

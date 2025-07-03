@@ -1,8 +1,8 @@
 <?php
 
-require 'vendor/autoload.php';
+require __DIR__ . '/../../vendor/autoload.php';
 
-$app = require 'bootstrap/app.php';
+$app = require __DIR__ . '/../../bootstrap/app.php';
 $app->make('Illuminate\Contracts\Console\Kernel')->bootstrap();
 
 echo "Testing login for admin user...\n";
