@@ -24,3 +24,9 @@ Homestead.yaml
 npm-debug.log
 Thumbs.db
 yarn-error.log
+
+# Project organization - temporary files
+/temp/cache/*
+/temp/logs/*
+!/temp/cache/.gitkeep
+!/temp/logs/.gitkeep
