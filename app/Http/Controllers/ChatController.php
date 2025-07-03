@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Log;
 use App\Events\ChatMessageSent;
 use App\Jobs\ProcessChatMessage;
+use App\Jobs\BroadcastChatMessage;
+use App\Jobs\BroadcastOnlineStatus;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Routing\Controller as BaseController;
 
@@ -409,7 +411,8 @@ class ChatController extends BaseController
             $request->validate([
                 'message' => 'required|string|max:1000'
             ]);
-            
+
+            // Create chat message
             $chat = Chat::create([
                 'user_id' => $user->id,
                 'group_id' => $group->id,
@@ -418,18 +421,38 @@ class ChatController extends BaseController
             
             $chat->load('user:id,name');
             
-            // Broadcast the message
-            event(new ChatMessageSent($chat, $group->referral_code));
+            // Dispatch message broadcasting to queue for better performance and responsiveness
+            try {
+                dispatch(new BroadcastChatMessage($chat, $group->referral_code))
+                    ->onQueue('high'); // High priority for chat messages
+                
+                Log::info('Chat message dispatched to queue', [
+                    'chat_id' => $chat->id,
+                    'user_id' => $user->id,
+                    'group_code' => $group->referral_code
+                ]);
+            } catch (\Exception $queueException) {
+                // If queue fails, log error but don't fail the request
+                Log::error('Failed to dispatch chat message to queue', [
+                    'chat_id' => $chat->id,
+                    'error' => $queueException->getMessage()
+                ]);
+                
+                // Fallback: broadcast directly (synchronous)
+                event(new ChatMessageSent($chat, $group->referral_code));
+            }
             
             return response()->json([
                 'status' => 'success',
-                'message' => $chat
+                'message' => $chat,
+                'timestamp' => now()->toISOString()
             ]);
             
         } catch (\Exception $e) {
             Log::error('Error sending message', [
                 'error' => $e->getMessage(),
-                'code' => $code
+                'code' => $code,
+                'user_id' => Auth::id()
             ]);
             
             return response()->json(['error' => 'Failed to send message'], 500);
@@ -625,23 +648,10 @@ class ChatController extends BaseController
                 // Update last broadcast time
                 $user->update(['last_broadcast_at' => now()]);
                 
-                // Broadcast dengan data yang lebih lengkap
-                broadcast(new \App\Events\UserOnlineStatusChanged(
-                    $user->id,
-                    $user->name,
-                    true,
-                    $group->referral_code,
-                    $onlineMembers->map(function ($member) {
-                        return [
-                            'id' => $member->id,
-                            'name' => $member->name,
-                            'last_seen_at' => $member->last_seen_at->toISOString()
-                        ];
-                    })->toArray(),
-                    $totalMembers
-                ));
+                // Dispatch online status broadcasting to queue for better performance
+                dispatch(new BroadcastOnlineStatus($user->id, true, $group->referral_code));
                 
-                Log::info('Online status broadcasted', [
+                Log::info('Online status dispatched to queue', [
                     'user_id' => $user->id,
                     'group_code' => $group->referral_code,
                     'online_count' => $onlineMembers->count(),

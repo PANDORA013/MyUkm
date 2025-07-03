@@ -16,13 +16,42 @@ MyUKM is a comprehensive University Student Organization (UKM) management system
 ### Features
 
 - 🏛️ **Organization Management** - Complete UKM administration
-- 💬 **Real-time Chat System** - Live messaging with online status
+- 💬 **Real-time Chat System** - Live messaging with queue-optimized performance
+- ⚡ **Queue-powered Broadcasting** - Asynchronous message processing for better responsiveness
 - 👥 **User Management** - Role-based access control
 - 📊 **Admin Dashboard** - Comprehensive admin panel
 - 🔐 **Authentication** - Secure login and registration
 - 📱 **Responsive Design** - Mobile-friendly interface
 - 🌐 **Browser Compatibility** - IE 10+ support with modern fallbacks
 - 🔒 **Security** - Enhanced security headers and protection
+
+## ⚡ Real-time Performance Features
+
+MyUKM now includes optimized real-time features powered by Laravel Queue Workers:
+
+### Queue-Optimized Real-time Features
+- 🚀 **Asynchronous Chat Broadcasting** - Messages are processed in background for instant response
+- 👤 **Background Online Status Updates** - User presence handled via queue jobs
+- 📊 **Performance Monitoring** - Built-in queue performance tracking
+- 🔄 **Auto-retry Mechanism** - Failed broadcasts are automatically retried
+- 📈 **Scalable Architecture** - Handle multiple concurrent users efficiently
+
+### Real-time Development Mode
+```bash
+# Start with queue worker for optimal real-time performance:
+start-realtime-dev.bat
+```
+
+This will start:
+- Laravel development server (http://localhost:8000)
+- Queue worker for background job processing
+- Real-time feature monitoring
+
+### Queue Performance Testing
+```bash
+# Test queue performance:
+php scripts/test-realtime-performance.php
+```
 
 ## 🚀 Quick Start
 
