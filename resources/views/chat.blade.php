@@ -3,15 +3,21 @@
 @section('title', 'Chat UKM - ' . $groupName)
 
 @push('styles')
+<!--[if IE]>
+<link rel="stylesheet" href="{{ asset('css/ie-compatibility.css') }}">
+<![endif]-->
 <style>
     .chat-container {
         height: calc(100vh - 160px);
+        display: -ms-flexbox;
         display: flex;
+        -ms-flex-direction: column;
         flex-direction: column;
         border-radius: 0.5rem;
         overflow: hidden;
     }
     .chat-messages {
+        -ms-flex: 1;
         flex: 1;
         overflow-y: auto;
         padding: 12px;
@@ -63,11 +69,30 @@
         padding: 12px;
         background-color: #fff;
         border-top: 1px solid #e3e6f0;
+        display: -ms-flexbox;
+        display: flex;
+    }
+    .chat-form .form-control {
+        -ms-flex: 1;
+        flex: 1;
+        margin-right: 8px;
     }
     .chat-header {
         background-color: #fff;
         padding: 12px 15px;
         border-bottom: 1px solid #e3e6f0;
+    }
+    .d-flex {
+        display: -ms-flexbox !important;
+        display: flex !important;
+    }
+    .justify-content-between {
+        -ms-flex-pack: justify !important;
+        justify-content: space-between !important;
+    }
+    .align-items-center {
+        -ms-flex-align: center !important;
+        align-items: center !important;
     }
     .chat-online-indicator {
         width: 8px;

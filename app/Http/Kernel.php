@@ -21,6 +21,7 @@ class Kernel extends HttpKernel
         \Illuminate\Foundation\Http\Middleware\ValidatePostSize::class,
         \App\Http\Middleware\TrimStrings::class,
         \Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull::class,
+        \App\Http\Middleware\SecurityHeaders::class,
     ];
 
     protected $middlewareGroups = [
@@ -56,5 +57,6 @@ class Kernel extends HttpKernel
         'ensure.role' => \App\Http\Middleware\EnsureUserRole::class,
         'role' => \App\Http\Middleware\EnsureUserRole::class,
         'group.admin' => \App\Http\Middleware\EnsureGroupAdmin::class,
+        'security.headers' => \App\Http\Middleware\SecurityHeaders::class,
     ];
 }
