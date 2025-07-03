@@ -53,7 +53,8 @@ class User extends Authenticatable implements GroupAdminInterface
         'photo',
         'role',
         'ukm_id',
-        'last_seen_at'
+        'last_seen_at',
+        'last_broadcast_at'
     ];
     
     protected $hidden = [
@@ -65,6 +66,7 @@ class User extends Authenticatable implements GroupAdminInterface
     protected $casts = [
         'email_verified_at' => 'datetime',
         'last_seen_at' => 'datetime',
+        'last_broadcast_at' => 'datetime',
         'password' => 'hashed'
     ];
     
@@ -357,5 +359,67 @@ class User extends Authenticatable implements GroupAdminInterface
         
         $this->groups()->updateExistingPivot($groupId, ['is_admin' => false]);
         return true;
+    }
+
+    /**
+     * Check if user is currently online (active within last 5 minutes)
+     */
+    public function isOnline(): bool
+    {
+        if (!$this->last_seen_at) {
+            return false;
+        }
+        
+        return $this->last_seen_at->diffInMinutes(now()) <= 5;
+    }
+
+    /**
+     * Get online members in a specific group
+     */
+    public static function getOnlineMembersInGroup($groupId): Collection
+    {
+        return static::whereHas('groups', function ($query) use ($groupId) {
+            $query->where('group_id', $groupId)
+                  ->whereNull('group_user.deleted_at'); // Only active memberships
+        })
+        ->where('last_seen_at', '>=', now()->subMinutes(5))
+        ->select(['id', 'name', 'photo', 'last_seen_at'])
+        ->get();
+    }
+
+    /**
+     * Get count of online members in a specific group
+     */
+    public static function getOnlineCountInGroup($groupId): int
+    {
+        return static::whereHas('groups', function ($query) use ($groupId) {
+            $query->where('group_id', $groupId)
+                  ->whereNull('group_user.deleted_at');
+        })
+        ->where('last_seen_at', '>=', now()->subMinutes(5))
+        ->count();
+    }
+
+    /**
+     * Get online status for current user in a specific group context
+     */
+    public function getOnlineStatusInGroup($groupId): array
+    {
+        // Check if user is member of the group
+        $isMember = $this->groups()->where('group_id', $groupId)->exists();
+        
+        if (!$isMember) {
+            return [
+                'is_online' => false,
+                'is_member' => false,
+                'last_seen' => null
+            ];
+        }
+
+        return [
+            'is_online' => $this->isOnline(),
+            'is_member' => true,
+            'last_seen' => $this->last_seen_at ? $this->last_seen_at->diffForHumans() : null
+        ];
     }
 }

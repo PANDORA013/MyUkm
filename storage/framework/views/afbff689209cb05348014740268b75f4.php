@@ -76,6 +76,12 @@
         border-radius: 50%;
         display: inline-block;
         margin-right: 4px;
+        animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
     }
     .chat-offline-indicator {
         width: 8px;
@@ -92,6 +98,42 @@
         border-radius: 0.25rem;
         font-size: 0.75rem;
         margin-left: 0.5rem;
+        transition: all 0.3s ease;
+    }
+    .members-badge.updating {
+        background-color: #f59e0b;
+        animation: bounce 0.5s ease-in-out;
+    }
+    @keyframes bounce {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+    }
+    .online-status-updating {
+        opacity: 0.7;
+        transition: opacity 0.3s ease;
+    }
+    .connection-status {
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        z-index: 9999;
+        padding: 0.5rem 1rem;
+        border-radius: 0.25rem;
+        font-size: 0.8rem;
+        min-width: 120px;
+        text-align: center;
+    }
+    .connection-online {
+        background-color: #10b981;
+        color: white;
+    }
+    .connection-updating {
+        background-color: #f59e0b;
+        color: white;
+    }
+    .connection-offline {
+        background-color: #ef4444;
+        color: white;
     }
     .typing-indicator {
         font-size: 0.8rem;
@@ -131,6 +173,9 @@
                             <div class="text-muted small">
                                 <span class="chat-online-indicator"></span> <span id="onlineCount">0</span> online
                                 <span class="members-badge"><i class="fas fa-users me-1"></i> <span id="totalMembers">0</span></span>
+                            </div>
+                            <div class="text-muted small mt-1" id="onlineMembersList" style="font-size: 0.7rem;">
+                                <i class="fas fa-circle text-success" style="font-size: 0.5rem;"></i> <span id="onlineMembersText">Memuat...</span>
                             </div>
                         </div>
                         <a href="<?php echo e(route('ukm.index')); ?>" class="btn btn-outline-secondary btn-sm">
@@ -195,8 +240,64 @@
         // Variable to store current CSRF token
         let csrfToken = '<?php echo e(csrf_token()); ?>';
         
+        // Variabel untuk menyimpan anggota online
+        let onlineMembers = [];
+        let totalMembers = 0;
+        let lastOnlineUpdate = 0;
+        let isVisible = true;
+        let onlineStatusInterval;
+        let onlineMembersInterval;
+        
         // Refresh CSRF token and keep session alive every 10 minutes
         setInterval(refreshCsrfToken, 10 * 60 * 1000);
+        
+        // Dynamic polling - lebih sering saat aktif, lebih jarang saat tidak aktif
+        function startResponsivePolling() {
+            // Update online status lebih sering (15 detik saat aktif)
+            onlineStatusInterval = setInterval(() => {
+                if (isVisible) {
+                    updateOnlineStatus();
+                }
+            }, 15 * 1000);
+            
+            // Load anggota online dengan interval dinamis
+            onlineMembersInterval = setInterval(() => {
+                if (isVisible) {
+                    loadOnlineMembers();
+                }
+            }, 20 * 1000);
+        }
+        
+        // Page visibility handling untuk optimasi battery dan performance
+        document.addEventListener('visibilitychange', function() {
+            isVisible = !document.hidden;
+            if (isVisible) {
+                // Langsung update saat kembali aktif
+                updateOnlineStatus();
+                loadOnlineMembers();
+                console.log('Page active - resuming frequent updates');
+            } else {
+                console.log('Page hidden - reducing update frequency');
+            }
+        });
+        
+        // User activity detection untuk update yang lebih responsif
+        let userActivityTimeout;
+        function onUserActivity() {
+            clearTimeout(userActivityTimeout);
+            userActivityTimeout = setTimeout(() => {
+                // Update status saat ada aktivitas user
+                if (Date.now() - lastOnlineUpdate > 10000) { // Min 10 detik gap
+                    updateOnlineStatus();
+                    lastOnlineUpdate = Date.now();
+                }
+            }, 1000);
+        }
+        
+        // Monitor user activity
+        ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'].forEach(event => {
+            document.addEventListener(event, onUserActivity, { passive: true });
+        });
 
         // Also refresh session on user interaction (typing, clicking)
         document.addEventListener('click', function() {
@@ -396,6 +497,12 @@
             channel.bind('user-online', function(data) {
                 document.getElementById('onlineCount').textContent = data.online_count;
                 document.getElementById('totalMembers').textContent = data.total_members;
+            });
+            
+            // Handle user online status changed
+            channel.bind('user-online-status-changed', function(data) {
+                console.log('User online status changed:', data);
+                updateOnlineMembersDisplay(data.online_members, data.total_members);
             });
             
             // Handle user mute status changes
@@ -601,6 +708,19 @@
         // Load messages
         loadMessages();
         
+        // Load anggota online dan update status
+        loadOnlineMembers();
+        updateOnlineStatus();
+        
+        // Start responsive polling system
+        startResponsivePolling();
+        
+        // Immediate heartbeat on window focus
+        window.addEventListener('focus', function() {
+            updateOnlineStatus();
+            loadOnlineMembers();
+        });
+        
         // Handle window unload
         window.addEventListener('beforeunload', leaveChatRoom);
         
@@ -681,6 +801,217 @@
                 return response;
             })
             .catch(error => console.error('Error leaving chat room:', error));
+        }
+        
+        // Fungsi untuk load anggota online dengan caching
+        async function loadOnlineMembers() {
+            updateConnectionStatus('updating');
+            
+            try {
+                await retryWithTokenRefresh(async () => {
+                    const response = await fetch(`<?php echo e(route('chat.online-members')); ?>?group_id=${groupId}`, {
+                        headers: {
+                            'X-CSRF-TOKEN': csrfToken,
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    
+                    const data = await safeJsonParse(response);
+                    
+                    if (data.status === 'success') {
+                        // Update hanya jika ada perubahan
+                        const newOnlineMembers = data.online_members || [];
+                        const newTotalMembers = data.total_members || 0;
+                        
+                        if (JSON.stringify(onlineMembers) !== JSON.stringify(newOnlineMembers) || 
+                            totalMembers !== newTotalMembers) {
+                            
+                            onlineMembers = newOnlineMembers;
+                            totalMembers = newTotalMembers;
+                            
+                            updateOnlineMembersDisplay(onlineMembers, totalMembers);
+                            console.log('Online members updated:', onlineMembers.length, 'of', totalMembers);
+                        } else {
+                            updateConnectionStatus('online');
+                        }
+                    } else {
+                        throw new Error(data.message || 'Failed to load online members');
+                    }
+                    
+                    return data;
+                });
+            } catch (error) {
+                console.error('Error loading online members:', error);
+                updateConnectionStatus('offline');
+                
+                if (error.message !== 'Session expired') {
+                    // Fallback: tetap tampilkan data terakhir yang valid
+                    if (onlineMembers.length > 0) {
+                        console.warn('Using cached online members data');
+                        updateOnlineMembersDisplay(onlineMembers, totalMembers);
+                    }
+                }
+            }
+        }
+        
+        // Fungsi untuk update status online user dengan retry logic
+        async function updateOnlineStatus() {
+            updateConnectionStatus('updating');
+            
+            try {
+                await retryWithTokenRefresh(async () => {
+                    const response = await fetch('<?php echo e(route('chat.update-online-status')); ?>', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': csrfToken,
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: JSON.stringify({
+                            group_id: groupId
+                        })
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    
+                    const data = await safeJsonParse(response);
+                    
+                    if (data.status === 'success') {
+                        lastOnlineUpdate = Date.now();
+                        updateConnectionStatus('online');
+                        console.log('Online status updated successfully', {
+                            broadcast_sent: data.broadcast_sent,
+                            online_count: data.online_count
+                        });
+                    } else {
+                        throw new Error(data.message || 'Failed to update online status');
+                    }
+                    
+                    return data;
+                });
+            } catch (error) {
+                console.error('Error updating online status:', error);
+                updateConnectionStatus('offline');
+                
+                // Tidak menampilkan error ke user kecuali critical
+                if (error.message.includes('Session expired')) {
+                    showConnectionError('Sesi berakhir. Silakan refresh halaman.');
+                }
+            }
+        }
+        
+        // Fungsi untuk update tampilan anggota online dengan visual feedback
+        function updateOnlineMembersDisplay(onlineList, totalCount) {
+            const onlineCountEl = document.getElementById('onlineCount');
+            const totalMembersEl = document.getElementById('totalMembers');
+            const onlineMembersTextEl = document.getElementById('onlineMembersText');
+            const membersBadge = document.querySelector('.members-badge');
+            
+            // Tambahkan visual feedback saat updating
+            if (membersBadge) {
+                membersBadge.classList.add('updating');
+                setTimeout(() => {
+                    membersBadge.classList.remove('updating');
+                }, 500);
+            }
+            
+            if (onlineCountEl) {
+                // Smooth number update
+                const currentCount = parseInt(onlineCountEl.textContent) || 0;
+                const newCount = onlineList.length;
+                
+                if (currentCount !== newCount) {
+                    onlineCountEl.style.transform = 'scale(1.2)';
+                    setTimeout(() => {
+                        onlineCountEl.textContent = newCount;
+                        onlineCountEl.style.transform = 'scale(1)';
+                    }, 150);
+                }
+            }
+            
+            if (totalMembersEl) {
+                totalMembersEl.textContent = totalCount;
+            }
+            
+            // Update daftar nama anggota online
+            if (onlineMembersTextEl) {
+                if (onlineList.length === 0) {
+                    onlineMembersTextEl.textContent = 'Tidak ada anggota online';
+                    onlineMembersTextEl.previousElementSibling.className = 'fas fa-circle text-muted';
+                } else {
+                    const names = onlineList.map(m => m.name).join(', ');
+                    if (names.length > 50) {
+                        onlineMembersTextEl.textContent = `${onlineList.length} anggota online: ${names.substring(0, 47)}...`;
+                    } else {
+                        onlineMembersTextEl.textContent = `Online: ${names}`;
+                    }
+                    onlineMembersTextEl.previousElementSibling.className = 'fas fa-circle text-success';
+                }
+                
+                // Highlight animation for new members
+                onlineMembersTextEl.style.opacity = '0.7';
+                setTimeout(() => {
+                    onlineMembersTextEl.style.opacity = '1';
+                }, 200);
+            }
+            
+            // Update indikator online dengan animasi
+            const onlineIndicator = document.querySelector('.chat-online-indicator');
+            if (onlineIndicator) {
+                if (onlineList.length > 0) {
+                    onlineIndicator.style.backgroundColor = '#10b981'; // hijau untuk online
+                    onlineIndicator.style.animation = 'pulse 2s infinite';
+                } else {
+                    onlineIndicator.style.backgroundColor = '#9ca3af'; // abu-abu untuk offline
+                    onlineIndicator.style.animation = 'none';
+                }
+            }
+            
+            // Update connection status indicator
+            updateConnectionStatus('online');
+            
+            console.log(`Anggota online di grup: ${onlineList.length}/${totalCount}`);
+            console.log('Daftar anggota online:', onlineList.map(m => m.name).join(', '));
+        }
+        
+        // Function untuk show connection status
+        function updateConnectionStatus(status) {
+            let statusEl = document.getElementById('connectionStatus');
+            if (!statusEl) {
+                statusEl = document.createElement('div');
+                statusEl.id = 'connectionStatus';
+                statusEl.className = 'connection-status';
+                document.body.appendChild(statusEl);
+            }
+            
+            statusEl.className = 'connection-status';
+            
+            switch(status) {
+                case 'online':
+                    statusEl.classList.add('connection-online');
+                    statusEl.innerHTML = '<i class="fas fa-wifi me-1"></i>Online';
+                    // Auto hide after 2 seconds
+                    setTimeout(() => {
+                        statusEl.style.opacity = '0';
+                    }, 2000);
+                    break;
+                case 'updating':
+                    statusEl.classList.add('connection-updating');
+                    statusEl.innerHTML = '<i class="fas fa-sync fa-spin me-1"></i>Updating...';
+                    statusEl.style.opacity = '1';
+                    break;
+                case 'offline':
+                    statusEl.classList.add('connection-offline');
+                    statusEl.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i>Offline';
+                    statusEl.style.opacity = '1';
+                    break;
+            }
         }
         
         // Helper function to retry API calls with token refresh

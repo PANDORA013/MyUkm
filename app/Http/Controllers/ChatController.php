@@ -519,4 +519,158 @@ class ChatController extends BaseController
             ], 500);
         }
     }
+
+    /**
+     * Get online members in current group
+     */
+    public function getOnlineMembers(Request $request)
+    {
+        try {
+            /** @var \App\Models\User $user */
+            $user = Auth::user();
+            $groupId = Session::get('active_group_id');
+            
+            if (!$groupId) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'No active group'
+                ], 400);
+            }
+            
+            // Verify user is member of the group
+            if (!$user->groups()->where('group_id', $groupId)->exists()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Unauthorized access to group'
+                ], 403);
+            }
+            
+            $onlineMembers = User::getOnlineMembersInGroup($groupId);
+            $group = Group::find($groupId);
+            $totalMembers = $group ? $group->users()->count() : 0;
+            
+            return response()->json([
+                'status' => 'success',
+                'online_count' => $onlineMembers->count(),
+                'total_members' => $totalMembers,
+                'online_members' => $onlineMembers->map(function ($member) {
+                    return [
+                        'id' => $member->id,
+                        'name' => $member->name,
+                        'photo' => $member->photo,
+                        'last_seen_at' => $member->last_seen_at->toISOString(),
+                        'last_seen_human' => $member->last_seen_at->diffForHumans(),
+                        'is_current_user' => $member->id === Auth::id()
+                    ];
+                }),
+                'timestamp' => now()->toISOString()
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Error getting online members', [
+                'error' => $e->getMessage(),
+                'group_id' => Session::get('active_group_id'),
+                'user_id' => Auth::id()
+            ]);
+            
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to get online members'
+            ], 500);
+        }
+    }
+
+    /**
+     * Update user's online status dengan optimasi broadcasting
+     */
+    public function updateOnlineStatus(Request $request)
+    {
+        try {
+            /** @var \App\Models\User $user */
+            $user = Auth::user();
+            $groupId = Session::get('active_group_id');
+            
+            if (!$groupId) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'No active group'
+                ], 400);
+            }
+            
+            // Check if user was previously offline (untuk menghindari broadcast berlebihan)
+            $wasOnline = $user->isOnline();
+            
+            // Update last_seen_at
+            $user->update(['last_seen_at' => now()]);
+            
+            // Get group info
+            $group = Group::find($groupId);
+            if (!$group) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Group not found'
+                ], 404);
+            }
+            
+            // Get updated online members and count
+            $onlineMembers = User::getOnlineMembersInGroup($groupId);
+            $totalMembers = $group->users()->count();
+            
+            // Broadcast hanya jika status berubah dari offline ke online atau setiap 2 menit
+            $shouldBroadcast = !$wasOnline || 
+                              (!$user->last_broadcast_at || 
+                               $user->last_broadcast_at->diffInMinutes(now()) >= 2);
+            
+            if ($shouldBroadcast) {
+                // Update last broadcast time
+                $user->update(['last_broadcast_at' => now()]);
+                
+                // Broadcast dengan data yang lebih lengkap
+                broadcast(new \App\Events\UserOnlineStatusChanged(
+                    $user->id,
+                    $user->name,
+                    true,
+                    $group->referral_code,
+                    $onlineMembers->map(function ($member) {
+                        return [
+                            'id' => $member->id,
+                            'name' => $member->name,
+                            'last_seen_at' => $member->last_seen_at->toISOString()
+                        ];
+                    })->toArray(),
+                    $totalMembers
+                ));
+                
+                Log::info('Online status broadcasted', [
+                    'user_id' => $user->id,
+                    'group_code' => $group->referral_code,
+                    'online_count' => $onlineMembers->count(),
+                    'was_online' => $wasOnline
+                ]);
+            }
+            
+            return response()->json([
+                'status' => 'success',
+                'online_count' => $onlineMembers->count(),
+                'total_members' => $totalMembers,
+                'is_online' => true,
+                'message' => 'Online status updated',
+                'broadcast_sent' => $shouldBroadcast,
+                'timestamp' => now()->toISOString()
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Error updating online status', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'user_id' => Auth::id(),
+                'group_id' => Session::get('active_group_id')
+            ]);
+            
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to update online status'
+            ], 500);
+        }
+    }
 }

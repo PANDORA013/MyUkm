@@ -44,3 +44,51 @@ Broadcast::channel('chat.{groupId}', function ($user, $groupId) {
         return false;
     }
 });
+
+// Group channel for online status updates - requires group membership
+Broadcast::channel('group.{groupCode}', function ($user, $groupCode) {
+    try {
+        Log::info('Group channel authentication attempt', [
+            'channel' => 'group.'.$groupCode,
+            'user_id' => $user->id,
+            'group_code' => $groupCode
+        ]);
+
+        // Cari grup berdasarkan kode
+        $group = Group::where('code', $groupCode)->first();
+        if (!$group) {
+            Log::warning('Group not found for online status channel', [
+                'user_id' => $user->id,
+                'group_code' => $groupCode
+            ]);
+            return false;
+        }
+
+        // Cek apakah user adalah anggota grup
+        $isMember = $user->groups()->where('group_id', $group->id)->exists();
+        
+        if (!$isMember) {
+            Log::warning('Unauthorized group online status access attempt', [
+                'user_id' => $user->id,
+                'group_code' => $groupCode,
+                'group_id' => $group->id
+            ]);
+        } else {
+            Log::info('Group channel authentication successful', [
+                'user_id' => $user->id,
+                'group_code' => $groupCode,
+                'group_id' => $group->id
+            ]);
+        }
+        
+        return $isMember;
+    } catch (\Exception $e) {
+        Log::error('Error in group channel authorization', [
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString(),
+            'user_id' => $user->id,
+            'group_code' => $groupCode
+        ]);
+        return false;
+    }
+});

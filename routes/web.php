@@ -61,6 +61,10 @@ Route::middleware(['auth', 'ensure.role'])->group(function () {
     Route::post('/chat/typing', [ChatController::class, 'typing'])->name('chat.typing');
     Route::post('/chat/join', [ChatController::class, 'joinGroup'])->name('chat.join');
     
+    // Online status routes - untuk sinkronisasi status online anggota UKM
+    Route::get('/chat/online-members', [ChatController::class, 'getOnlineMembers'])->name('chat.online-members');
+    Route::post('/chat/update-online-status', [ChatController::class, 'updateOnlineStatus'])->name('chat.update-online-status');
+    
     // Profile Management for regular users - accessible by all authenticated users
     Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
     Route::post('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.updatePassword');
