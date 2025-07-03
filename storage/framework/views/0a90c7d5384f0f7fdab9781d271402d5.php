@@ -1,0 +1,273 @@
+
+
+<?php $__env->startSection('title', 'Detail Anggota'); ?>
+
+<?php $__env->startPush('styles'); ?>
+    <style>
+        .card {
+            border: none;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+        }
+        .card-header {
+            background-color: #f8f9fc;
+            border-bottom: 1px solid #e3e6f0;
+            padding: 1rem 1.25rem;
+            font-weight: 600;
+        }
+        .user-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 2rem;
+        }
+        .info-row {
+            border-bottom: 1px solid #e3e6f0;
+            padding: 0.75rem 0;
+        }
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        .badge {
+            font-size: 0.8em;
+            padding: 0.4em 0.6em;
+        }
+    </style>
+<?php $__env->stopPush(); ?>
+
+<?php $__env->startSection('content'); ?>
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Detail Anggota</h1>
+        <div>
+            <a href="<?php echo e(route('admin.members')); ?>" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Kembali
+            </a>
+            <?php if($member->role !== 'admin_website'): ?>
+                <a href="<?php echo e(route('admin.member.edit', $member->id)); ?>" class="btn btn-primary">
+                    <i class="fas fa-edit me-2"></i>Edit
+                </a>
+                <button type="button" 
+                        class="btn btn-danger" 
+                        onclick="confirmDeleteMember(<?php echo e($member->id); ?>, '<?php echo e($member->name); ?>')">
+                    <i class="fas fa-trash me-2"></i>Hapus
+                </button>
+            <?php endif; ?>
+        </div>
+    </div>
+
+    
+    <?php $__currentLoopData = ['success', 'error', 'info']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $msg): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+        <?php if(session($msg)): ?>
+            <div class="alert alert-<?php echo e($msg === 'error' ? 'danger' : $msg); ?> alert-dismissible fade show" role="alert">
+                <?php echo e(session($msg)); ?>
+
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        <?php endif; ?>
+    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+
+    <div class="row">
+        
+        <div class="col-md-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Profil Anggota</h6>
+                </div>
+                <div class="card-body text-center">
+                    <div class="user-avatar mx-auto mb-3">
+                        <?php echo e(strtoupper(substr($member->name, 0, 1))); ?>
+
+                    </div>
+                    <h5 class="font-weight-bold"><?php echo e($member->name); ?></h5>
+                    <p class="text-muted"><?php echo e($member->email); ?></p>
+                    
+                    <?php
+                        $badgeClass = [
+                            'admin_website' => 'bg-primary',
+                            'admin_grup' => 'bg-success',
+                            'member' => 'bg-secondary'
+                        ][$member->role] ?? 'bg-secondary';
+                    ?>
+                    <span class="badge <?php echo e($badgeClass); ?> mb-3">
+                        <?php echo e(ucfirst(str_replace('_', ' ', $member->role))); ?>
+
+                    </span>
+
+                    <?php if($member->nim): ?>
+                        <div class="mt-3">
+                            <small class="text-muted">NIM</small>
+                            <div class="font-weight-bold"><?php echo e($member->nim); ?></div>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+
+        
+        <div class="col-md-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Informasi Detail</h6>
+                </div>
+                <div class="card-body">
+                    <div class="info-row">
+                        <div class="row">
+                            <div class="col-sm-3">
+                                <strong>ID Anggota</strong>
+                            </div>
+                            <div class="col-sm-9">
+                                <code class="bg-light px-2 py-1 rounded"><?php echo e($member->id); ?></code>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="info-row">
+                        <div class="row">
+                            <div class="col-sm-3">
+                                <strong>Nama Lengkap</strong>
+                            </div>
+                            <div class="col-sm-9">
+                                <?php echo e($member->name); ?>
+
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="info-row">
+                        <div class="row">
+                            <div class="col-sm-3">
+                                <strong>Email</strong>
+                            </div>
+                            <div class="col-sm-9">
+                                <a href="mailto:<?php echo e($member->email); ?>"><?php echo e($member->email); ?></a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <?php if($member->nim): ?>
+                    <div class="info-row">
+                        <div class="row">
+                            <div class="col-sm-3">
+                                <strong>NIM</strong>
+                            </div>
+                            <div class="col-sm-9">
+                                <?php echo e($member->nim); ?>
+
+                            </div>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+
+                    <div class="info-row">
+                        <div class="row">
+                            <div class="col-sm-3">
+                                <strong>Role</strong>
+                            </div>
+                            <div class="col-sm-9">
+                                <span class="badge <?php echo e($badgeClass); ?>">
+                                    <?php echo e(ucfirst(str_replace('_', ' ', $member->role))); ?>
+
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="info-row">
+                        <div class="row">
+                            <div class="col-sm-3">
+                                <strong>Bergabung</strong>
+                            </div>
+                            <div class="col-sm-9">
+                                <?php echo e($member->created_at ? $member->created_at->format('d F Y, H:i') : 'Tidak diketahui'); ?>
+
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="info-row">
+                        <div class="row">
+                            <div class="col-sm-3">
+                                <strong>Terakhir Aktif</strong>
+                            </div>
+                            <div class="col-sm-9">
+                                <?php echo e($member->last_seen_at ? $member->last_seen_at->format('d F Y, H:i') : 'Tidak pernah login'); ?>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Keanggotaan UKM</h6>
+                </div>
+                <div class="card-body">
+                    <?php if($member->groups->isNotEmpty()): ?>
+                        <div class="row">
+                            <?php $__currentLoopData = $member->groups; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $group): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                <div class="col-md-6 mb-3">
+                                    <div class="border rounded p-3">
+                                        <h6 class="font-weight-bold mb-2"><?php echo e($group->name); ?></h6>
+                                        <p class="text-muted mb-1">
+                                            <strong>Kode:</strong> 
+                                            <code class="bg-light px-2 py-1 rounded"><?php echo e($group->referral_code); ?></code>
+                                        </p>
+                                        <small class="text-muted">
+                                            Bergabung: <?php echo e($group->pivot->created_at ? $group->pivot->created_at->format('d/m/Y') : 'Tidak diketahui'); ?>
+
+                                        </small>
+                                    </div>
+                                </div>
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                        </div>
+                    <?php else: ?>
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-users fa-3x mb-3 opacity-50"></i>
+                            <p>Anggota ini belum bergabung dengan UKM manapun</p>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+    </div>
+<?php $__env->stopSection(); ?>
+
+<?php $__env->startPush('scripts'); ?>
+<script>
+    // Function to confirm member deletion
+    function confirmDeleteMember(memberId, memberName) {
+        if (confirm('Apakah Anda yakin ingin menghapus anggota "' + memberName + '"?\n\nTindakan ini tidak dapat dibatalkan dan akan menghapus semua data terkait anggota ini.')) {
+            // Create form and submit
+            let form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/admin/member/' + memberId;
+            
+            // Add CSRF token
+            let csrfToken = document.createElement('input');
+            csrfToken.type = 'hidden';
+            csrfToken.name = '_token';
+            csrfToken.value = '<?php echo e(csrf_token()); ?>';
+            form.appendChild(csrfToken);
+            
+            // Add method spoofing for DELETE
+            let methodField = document.createElement('input');
+            methodField.type = 'hidden';
+            methodField.name = '_method';
+            methodField.value = 'DELETE';
+            form.appendChild(methodField);
+            
+            document.body.appendChild(form);
+            form.submit();
+        }
+    }
+</script>
+<?php $__env->stopPush(); ?>
+
+<?php echo $__env->make('layouts.admin', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\MyUkm-main\resources\views\admin\members\show.blade.php ENDPATH**/ ?>

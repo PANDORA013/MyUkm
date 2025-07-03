@@ -15,7 +15,7 @@
     <!-- Styles -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="<?php echo e(asset('css/app.css')); ?>">
+    <?php echo app('Illuminate\Foundation\Vite')(['resources/css/app.css', 'resources/js/app.js']); ?>
     
     <style>
         :root {
@@ -339,4 +339,4 @@
     <?php echo $__env->yieldPushContent('scripts'); ?>
 </body>
 </html>
-<?php /**PATH C:\xampp\htdocs\MyUkm-main\resources\views/layouts/admin_grup.blade.php ENDPATH**/ ?>
+<?php /**PATH C:\xampp\htdocs\MyUkm-main\resources\views\layouts\admin_grup.blade.php ENDPATH**/ ?>

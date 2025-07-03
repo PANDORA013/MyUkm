@@ -19,7 +19,8 @@ export default defineConfig({
     resolve: {
         alias: {
             '~': path.resolve(projectRoot, 'resources/js'),
-            '@': path.resolve(projectRoot, 'resources')
+            '@': path.resolve(projectRoot, 'resources'),
+            'pusher-js': 'pusher-js/with-encryption',
         }
     },
     build: {
@@ -32,13 +33,6 @@ export default defineConfig({
                 profile: 'resources/js/profile.js'
             },
             external: ['axios'],
-        },
-    },
-    resolve: {
-        alias: {
-            '@': path.resolve('resources/js'),
-            '~': path.resolve('resources'),
-            'pusher-js': 'pusher-js/with-encryption',
         },
     },
     optimizeDeps: {

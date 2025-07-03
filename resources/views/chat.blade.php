@@ -192,16 +192,38 @@
         // Variable to store current CSRF token
         let csrfToken = '{{ csrf_token() }}';
         
-        // Refresh CSRF token every 30 minutes to prevent session timeouts
-        setInterval(refreshCsrfToken, 30 * 60 * 1000);
+        // Refresh CSRF token and keep session alive every 10 minutes
+        setInterval(refreshCsrfToken, 10 * 60 * 1000);
+
+        // Also refresh session on user interaction (typing, clicking)
+        document.addEventListener('click', function() {
+            // Throttle to avoid too many requests - only refresh if last refresh was more than 5 minutes ago
+            if (!window.lastRefreshTime || (Date.now() - window.lastRefreshTime) > 5 * 60 * 1000) {
+                refreshCsrfToken();
+            }
+        });
+
+        // Debounce for typing to avoid excessive refreshes
+        let typingRefreshTimeout;
+        messageInput.addEventListener('input', function() {
+            clearTimeout(typingRefreshTimeout);
+            typingRefreshTimeout = setTimeout(() => {
+                if (!window.lastRefreshTime || (Date.now() - window.lastRefreshTime) > 5 * 60 * 1000) {
+                    refreshCsrfToken();
+                }
+            }, 5000);
+        });
         
-        // Function to refresh CSRF token
+        // Function to refresh CSRF token and keep session alive
         function refreshCsrfToken() {
+            window.lastRefreshTime = Date.now();
             fetch('/csrf-refresh', {
                 method: 'GET',
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest'
-                }
+                },
+                // Include credentials to ensure cookies are sent
+                credentials: 'same-origin'
             })
             .then(response => {
                 // Check for HTML response
@@ -215,13 +237,36 @@
             .then(data => {
                 if (data.token) {
                     csrfToken = data.token;
-                    console.log('CSRF token refreshed');
+                    console.log('CSRF token refreshed at ' + new Date().toLocaleTimeString());
+                    
+                    // If we previously had an error, hide it now
+                    const errorBanner = document.getElementById('connection-error');
+                    if (errorBanner && !errorBanner.classList.contains('hidden')) {
+                        errorBanner.classList.add('hidden');
+                    }
+                    
+                    // Re-load messages if we had a session expired error before
+                    if (window.hadSessionExpiredError) {
+                        window.hadSessionExpiredError = false;
+                        console.log('Attempting to reload messages after session refresh');
+                        loadMessages();
+                    }
                 }
             })
             .catch(error => {
                 console.warn('Failed to refresh CSRF token:', error);
                 if (error.message === 'Session expired') {
-                    showConnectionError('Sesi Anda telah berakhir. Silakan refresh halaman.');
+                    window.hadSessionExpiredError = true;
+                    showConnectionError('Sesi Anda telah berakhir. Mencoba memperbarui otomatis...');
+                    
+                    // Try to redirect to login if after multiple attempts we still have session issues
+                    if (window.sessionExpiredAttempts >= 3) {
+                        window.location.href = '{{ route('login') }}?redirect={{ urlencode(request()->fullUrl()) }}';
+                    } else {
+                        window.sessionExpiredAttempts = (window.sessionExpiredAttempts || 0) + 1;
+                        // Try again in 5 seconds
+                        setTimeout(refreshCsrfToken, 5000);
+                    }
                 }
             });
         }

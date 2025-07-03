@@ -213,4 +213,4 @@ unset($__errorArgs, $__bag); ?>
 </div>
 <?php $__env->stopSection(); ?>
 
-<?php echo $__env->make(Auth::user()->role === 'admin_grup' ? 'layouts.admin_grup' : 'layouts.user', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\MyUkm-main\resources\views/ukm/user_index.blade.php ENDPATH**/ ?>
+<?php echo $__env->make(Auth::user()->role === 'admin_grup' ? 'layouts.admin_grup' : 'layouts.user', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\MyUkm-main\resources\views\ukm\user_index.blade.php ENDPATH**/ ?>
