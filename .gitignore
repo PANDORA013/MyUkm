@@ -30,3 +30,9 @@ yarn-error.log
 /temp/logs/*
 !/temp/cache/.gitkeep
 !/temp/logs/.gitkeep
+ 
+# Organized directories 
+temp/ 
+archive/ 
+testing/temp_* 
+*.tmp 

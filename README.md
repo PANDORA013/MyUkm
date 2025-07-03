@@ -122,36 +122,73 @@ If you prefer manual setup:
    php artisan serve
    ```
 
-## 📁 Project Structure
+## 📁 Clean Project Structure
 
+MyUKM now features a well-organized, clean directory structure:
+
+### 🏗️ Root Directory (Essential Files Only)
 ```
 MyUkm/
-├── 📂 docs/                    # Documentation
-│   ├── reports/                # Bug reports and fixes
-│   ├── implementation/         # Feature implementation docs
-│   └── testing/               # Testing documentation
-├── 📂 scripts/                # Utility scripts
-│   ├── database/              # Database management
-│   ├── setup/                 # Setup scripts
-│   ├── testing/               # Test scripts
-│   └── utilities/             # General utilities
-├── 📂 app/                    # Laravel application
-├── 📂 resources/              # Views, CSS, JS
-├── 📂 public/                 # Public assets
-├── 📂 routes/                 # Route definitions
-└── 📂 temp/                   # Temporary files
+├── � Core Laravel Files          # .env, artisan, composer.json, etc.
+├── 🎬 Startup Scripts            # All *.bat files for easy development
+├── 📂 app/                       # Laravel application code
+├── 📂 resources/                 # Views, CSS, JS
+├── 📂 public/                    # Public web assets
+├── 📂 routes/                    # Route definitions
+└── 📂 config/                    # Configuration files
+```
+
+### 📚 Organized Documentation
+```
+📂 docs/                          # 📖 All documentation centralized
+├── 📄 QUEUE_SUCCESS_SUMMARY.md   # Queue implementation results
+├── 📄 REFACTORING_SUMMARY.md     # Code refactoring documentation  
+├── 📄 CLEAN_STRUCTURE.md         # Project organization guide
+├── 📄 PROJECT_STRUCTURE.md       # Detailed structure documentation
+└── 📄 Various implementation docs # Feature-specific documentation
+```
+
+### 🔧 Utility Scripts
+```
+📂 scripts/                       # 🛠️ Setup and utility scripts
+├── 📄 Database management scripts # DB setup, checks, migrations
+├── 📄 Testing scripts            # Performance and functionality tests
+├── � Queue monitoring tools     # Real-time queue performance
+└── 📄 Development utilities      # Various dev tools
+```
+
+### 🧪 Testing Environment  
+```
+📂 testing/                       # 🧪 Test files isolated
+├── � Chat system tests         # Real-time feature testing
+├── � Admin functionality tests # Admin panel testing  
+├── 📄 Layout and UI tests       # Frontend testing
+└── � Integration tests         # Full system testing
 ```
 
 ## 🛠️ Available Scripts
 
 | Script | Description | Usage |
 |--------|-------------|-------|
-| `quick-start.bat` | Fast server startup | Double-click |
-| `server-menu.bat` | Interactive menu with all options | Double-click |
-| `start-full-dev.bat` | Full development environment | Double-click |
-| `start-production-like.bat` | Production-like setup | Double-click |
-| `organize-files.bat` | Reorganize project files | Run when needed |
-| `create-shortcuts.bat` | Create desktop shortcuts | Run once |
+| `quick-start.bat` | ⚡ Fast server startup | Double-click |
+| `server-menu.bat` | 📋 Interactive menu with all options | Double-click |
+| `start-realtime-dev.bat` | 🚀 Real-time dev with queue worker | **Recommended** |
+| `start-full-dev.bat` | 🔧 Full development environment | Double-click |
+| `start-production-like.bat` | 🏭 Production-like setup | Double-click |
+| `start-queue-worker.bat` | ⚡ Queue worker only | For background jobs |
+| `create-shortcuts.bat` | 🖥️ Create desktop shortcuts | Run once |
+
+### 🎯 Recommended Development Workflow
+```bash
+# 1. Quick setup for first time
+scripts/quick_db_setup.php
+
+# 2. Start optimized development environment  
+start-realtime-dev.bat
+
+# 3. Test real-time performance
+php scripts/test-realtime-performance.php
+```
 
 ## 🌐 Application URLs
 
