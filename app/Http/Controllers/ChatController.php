@@ -27,7 +27,8 @@ class ChatController extends BaseController
     public function __construct()
     {
         $this->middleware('auth');
-        $this->middleware('role:member')->only(['index', 'showChat', 'sendChat']);
+        // Allow both regular members and admin_grup to access chat features
+        $this->middleware('role:member,admin_grup')->only(['index', 'showChat', 'sendChat']);
     }
 
     public function index(Request $request)
@@ -57,6 +58,7 @@ class ChatController extends BaseController
         // Check if user is muted
         $userMembership = $group->users()->where('user_id', $user->id)->first();
         $isMuted = $userMembership && $userMembership->pivot->is_muted;
+
 
         return view("chat", [
             "chats" => $chats,
