@@ -27,8 +27,8 @@ class ChatController extends BaseController
     public function __construct()
     {
         $this->middleware('auth');
-        // Allow both regular members and admin_grup to access chat features
-        $this->middleware('role:member,admin_grup')->only(['index', 'showChat', 'sendChat']);
+        // Allow all authenticated users to access chat features
+        // Role-based access will be controlled in individual methods based on group membership
     }
 
     public function index(Request $request)
@@ -433,6 +433,90 @@ class ChatController extends BaseController
             ]);
             
             return response()->json(['error' => 'Failed to send message'], 500);
+        }
+    }
+
+    /**
+     * Get messages for AJAX requests from chat.blade.php
+     * This method handles requests with group_id parameter
+     */
+    public function getMessagesAjax(Request $request)
+    {
+        try {
+            /** @var \App\Models\User $user */
+            $user = Auth::user();
+            
+            if (!$user instanceof \App\Models\User) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'User not authenticated'
+                ], 401);
+            }
+
+            $groupId = $request->query('group_id');
+            
+            if (!$groupId) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Group ID is required'
+                ], 400);
+            }
+
+            $group = Group::findOrFail($groupId);
+            
+            // Check if user is member of the group
+            if (!$user->groups()->where('group_id', $group->id)->exists()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Unauthorized access to this group'
+                ], 403);
+            }
+            
+            $messages = Chat::where('group_id', $group->id)
+                ->with('user:id,name')
+                ->orderBy('created_at', 'desc')
+                ->limit(self::MESSAGE_HISTORY_LIMIT)
+                ->get()
+                ->reverse()
+                ->values()
+                ->map(function ($message) {
+                    return [
+                        'id' => $message->id,
+                        'message' => $message->message,
+                        'user_id' => $message->user_id,
+                        'name' => $message->user->name,
+                        'created_at' => $message->created_at->toISOString(),
+                    ];
+                });
+            
+            return response()->json([
+                'status' => 'success',
+                'messages' => $messages,
+                'group_name' => $group->name
+            ]);
+            
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            Log::warning('Group not found for messages request', [
+                'group_id' => $request->query('group_id'),
+                'user_id' => Auth::id()
+            ]);
+            
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Group not found'
+            ], 404);
+            
+        } catch (\Exception $e) {
+            Log::error('Error loading messages via AJAX', [
+                'error' => $e->getMessage(),
+                'group_id' => $request->query('group_id'),
+                'user_id' => Auth::id()
+            ]);
+            
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to load messages'
+            ], 500);
         }
     }
 }

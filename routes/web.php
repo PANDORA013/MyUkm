@@ -57,7 +57,7 @@ Route::middleware(['auth', 'ensure.role'])->group(function () {
     Route::post('/chat/send', [ChatController::class, 'sendChat'])->name('chat.send');
     Route::post('/chat/logout', [ChatController::class, 'logoutGroup'])->name('chat.logout');
     Route::get('/chat/unread-count', [ChatController::class, 'getUnreadCount'])->name('chat.unread-count');
-    Route::get('/chat/messages', [ChatController::class, 'index'])->name('chat.messages');
+    Route::get('/chat/messages', [ChatController::class, 'getMessagesAjax'])->name('chat.messages');
     Route::post('/chat/typing', [ChatController::class, 'typing'])->name('chat.typing');
     Route::post('/chat/join', [ChatController::class, 'joinGroup'])->name('chat.join');
     
