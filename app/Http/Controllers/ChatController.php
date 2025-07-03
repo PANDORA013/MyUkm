@@ -345,4 +345,94 @@ class ChatController extends BaseController
             return collect();
         }
     }
+    
+    /**
+     * Get messages for a specific group
+     *
+     * @param string $code
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getMessages($code)
+    {
+        try {
+            /** @var \App\Models\User $user */
+            $user = Auth::user();
+            $group = Group::where('referral_code', $code)->firstOrFail();
+            
+            // Check if user is member of the group
+            if (!$user->groups()->where('group_id', $group->id)->exists()) {
+                return response()->json(['error' => 'Unauthorized'], 403);
+            }
+            
+            $messages = Chat::where('group_id', $group->id)
+                ->with('user:id,name')
+                ->orderBy('created_at', 'desc')
+                ->limit(self::MESSAGE_HISTORY_LIMIT)
+                ->get()
+                ->reverse()
+                ->values();
+            
+            return response()->json([
+                'messages' => $messages,
+                'group_name' => $group->name
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Error getting messages', [
+                'error' => $e->getMessage(),
+                'code' => $code
+            ]);
+            
+            return response()->json(['error' => 'Failed to get messages'], 500);
+        }
+    }
+    
+    /**
+     * Send message to a specific group
+     *
+     * @param Request $request
+     * @param string $code
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function sendMessage(Request $request, $code)
+    {
+        try {
+            /** @var \App\Models\User $user */
+            $user = Auth::user();
+            $group = Group::where('referral_code', $code)->firstOrFail();
+            
+            // Check if user is member of the group
+            if (!$user->groups()->where('group_id', $group->id)->exists()) {
+                return response()->json(['error' => 'Unauthorized'], 403);
+            }
+            
+            $request->validate([
+                'message' => 'required|string|max:1000'
+            ]);
+            
+            $chat = Chat::create([
+                'user_id' => $user->id,
+                'group_id' => $group->id,
+                'message' => $request->message
+            ]);
+            
+            $chat->load('user:id,name');
+            
+            // Broadcast the message
+            event(new ChatMessageSent($chat, $group->referral_code));
+            
+            return response()->json([
+                'status' => 'success',
+                'message' => $chat
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Error sending message', [
+                'error' => $e->getMessage(),
+                'code' => $code
+            ]);
+            
+            return response()->json(['error' => 'Failed to send message'], 500);
+        }
+    }
 }

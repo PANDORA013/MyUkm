@@ -40,9 +40,12 @@ Route::middleware(['auth', 'ensure.role'])->group(function () {
     
     // UKM routes - accessible by all authenticated users (member, admin_grup, admin_website)
     Route::get('/ukm', [UkmController::class, 'index'])->name('ukm.index');
+    Route::get('/ukm/{code}', [UkmController::class, 'show'])->name('ukm.show');
     Route::post('/ukm/join', [UkmController::class, 'join'])->name('ukm.join');
     Route::delete('/ukm/{code}/leave', [UkmController::class, 'leave'])->name('ukm.leave');
     Route::get('/ukm/{code}/chat', [UkmController::class, 'chat'])->name('ukm.chat');
+    Route::get('/ukm/{code}/messages', [ChatController::class, 'getMessages'])->name('ukm.messages');
+    Route::post('/ukm/{code}/messages', [ChatController::class, 'sendMessage'])->name('ukm.send-message');
     
     // Chat Functionality (with group membership check) - accessible by all authenticated users
     Route::post('/chat/send', [ChatController::class, 'sendChat'])->name('chat.send');

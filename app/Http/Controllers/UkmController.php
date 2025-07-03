@@ -114,4 +114,25 @@ class UkmController extends Controller
             'groupId' => $group->id
         ]);
     }
+
+    /**
+     * Display specific UKM details
+     *
+     * @param string $code
+     * @return \Illuminate\View\View
+     */
+    public function show($code)
+    {
+        /** @var User $user */
+        $user = Auth::user();
+        $group = Group::where('referral_code', $code)->firstOrFail();
+        
+        $isMember = $user->groups()->where('group_id', $group->id)->exists();
+        
+        return view('ukm.show', [
+            'group' => $group,
+            'isMember' => $isMember,
+            'members' => $group->members()->get()
+        ]);
+    }
 }
