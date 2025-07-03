@@ -1,4 +1,4 @@
-# MyUkm
+# MyUKM - University Student Organization Management System
 
 <p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
 
@@ -8,6 +8,132 @@
 <a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
 <a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
 </p>
+
+## About MyUKM
+
+MyUKM is a comprehensive University Student Organization (UKM) management system built with Laravel. It provides tools for managing student organizations, real-time chat systems, admin panels, and user management with modern web technologies.
+
+### Features
+
+- 🏛️ **Organization Management** - Complete UKM administration
+- 💬 **Real-time Chat System** - Live messaging with online status
+- 👥 **User Management** - Role-based access control
+- 📊 **Admin Dashboard** - Comprehensive admin panel
+- 🔐 **Authentication** - Secure login and registration
+- 📱 **Responsive Design** - Mobile-friendly interface
+- 🌐 **Browser Compatibility** - IE 10+ support with modern fallbacks
+- 🔒 **Security** - Enhanced security headers and protection
+
+## 🚀 Quick Start
+
+### Automated Startup (Recommended)
+
+We provide several automated startup scripts for easy development:
+
+#### Option 1: Quick Start (Fastest)
+```bash
+# Double-click or run:
+quick-start.bat
+```
+
+#### Option 2: Server Menu (All Options)
+```bash
+# Double-click or run:
+server-menu.bat
+```
+
+#### Option 3: Full Development Environment
+```bash
+# Double-click or run:
+start-full-dev.bat
+```
+
+#### Option 4: Production-like Environment
+```bash
+# Double-click or run:
+start-production-like.bat
+```
+
+### Create Desktop Shortcuts
+```bash
+# Run once to create desktop shortcuts:
+create-shortcuts.bat
+```
+
+### Manual Installation
+
+If you prefer manual setup:
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/PANDORA013/MyUkm.git
+   cd MyUkm
+   ```
+
+2. **Install dependencies**
+   ```bash
+   composer install
+   npm install
+   ```
+
+3. **Environment setup**
+   ```bash
+   cp .env.example .env
+   php artisan key:generate
+   ```
+
+4. **Database setup**
+   ```bash
+   php artisan migrate
+   php artisan db:seed
+   ```
+
+5. **Start development server**
+   ```bash
+   php artisan serve
+   ```
+
+## 📁 Project Structure
+
+```
+MyUkm/
+├── 📂 docs/                    # Documentation
+│   ├── reports/                # Bug reports and fixes
+│   ├── implementation/         # Feature implementation docs
+│   └── testing/               # Testing documentation
+├── 📂 scripts/                # Utility scripts
+│   ├── database/              # Database management
+│   ├── setup/                 # Setup scripts
+│   ├── testing/               # Test scripts
+│   └── utilities/             # General utilities
+├── 📂 app/                    # Laravel application
+├── 📂 resources/              # Views, CSS, JS
+├── 📂 public/                 # Public assets
+├── 📂 routes/                 # Route definitions
+└── 📂 temp/                   # Temporary files
+```
+
+## 🛠️ Available Scripts
+
+| Script | Description | Usage |
+|--------|-------------|-------|
+| `quick-start.bat` | Fast server startup | Double-click |
+| `server-menu.bat` | Interactive menu with all options | Double-click |
+| `start-full-dev.bat` | Full development environment | Double-click |
+| `start-production-like.bat` | Production-like setup | Double-click |
+| `organize-files.bat` | Reorganize project files | Run when needed |
+| `create-shortcuts.bat` | Create desktop shortcuts | Run once |
+
+## 🌐 Application URLs
+
+Once started, access the application at:
+
+- **Homepage**: http://localhost:8000/
+- **Login**: http://localhost:8000/login
+- **Register**: http://localhost:8000/register
+- **Dashboard**: http://localhost:8000/dashboard
+- **Chat System**: http://localhost:8000/chat
+- **Admin Panel**: http://localhost:8000/admin
 
 ## About Laravel
 
