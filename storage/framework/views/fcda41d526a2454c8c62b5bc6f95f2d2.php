@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title') - MyUkm</title>
+    <meta name="csrf-token" content="<?php echo e(csrf_token()); ?>">
+    <title><?php echo $__env->yieldContent('title'); ?> - MyUkm</title>
     
     <!-- Favicons -->
-    <link rel="icon" href="{{ asset('favicon.ico') }}" type="image/x-icon">
+    <link rel="icon" href="<?php echo e(asset('favicon.ico')); ?>" type="image/x-icon">
     
     <!-- Fonts -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
@@ -15,7 +15,7 @@
     <!-- Styles -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+    <link rel="stylesheet" href="<?php echo e(asset('css/app.css')); ?>">
     
     <style>
         body {
@@ -100,7 +100,7 @@
         }
     </style>
     
-    @stack('styles')
+    <?php echo $__env->yieldPushContent('styles'); ?>
 </head>
 
 <body>
@@ -111,23 +111,24 @@
                 Menu Navigasi
             </div>
             <div class="list-group list-group-flush">
-                <a href="{{ route('ukm.index') }}" class="list-group-item list-group-item-action {{ request()->routeIs('ukm.index') ? 'active' : '' }}">
+                <a href="<?php echo e(route('ukm.index')); ?>" class="list-group-item list-group-item-action <?php echo e(request()->routeIs('ukm.index') ? 'active' : ''); ?>">
                     <i class="fas fa-university"></i> Daftar UKM
                 </a>
-                <a href="{{ route('profile.show') }}" class="list-group-item list-group-item-action {{ request()->routeIs('profile.*') ? 'active' : '' }}">
+                <a href="<?php echo e(route('profile.show')); ?>" class="list-group-item list-group-item-action <?php echo e(request()->routeIs('profile.*') ? 'active' : ''); ?>">
                     <i class="fas fa-user-circle"></i> Profil Saya
                 </a>
                 <!-- Chat menu akan muncul jika user sudah bergabung dengan UKM -->
-                @if(Auth::user()->groups->count() > 0)
+                <?php if(Auth::user()->groups->count() > 0): ?>
                     <div class="sidebar-heading border-bottom mt-3">
                         UKM Saya
                     </div>
-                    @foreach(Auth::user()->groups as $group)
-                    <a href="{{ route('ukm.chat', $group->referral_code) }}" class="list-group-item list-group-item-action {{ request()->is('ukm/'.$group->referral_code.'/chat') ? 'active' : '' }}">
-                        <i class="fas fa-comments"></i> {{ $group->name }}
+                    <?php $__currentLoopData = Auth::user()->groups; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $group): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <a href="<?php echo e(route('ukm.chat', $group->referral_code)); ?>" class="list-group-item list-group-item-action <?php echo e(request()->is('ukm/'.$group->referral_code.'/chat') ? 'active' : ''); ?>">
+                        <i class="fas fa-comments"></i> <?php echo e($group->name); ?>
+
                     </a>
-                    @endforeach
-                @endif
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                <?php endif; ?>
             </div>
         </div>
         
@@ -139,8 +140,9 @@
                     <button class="btn btn-sm" id="menu-toggle">
                         <i class="fas fa-bars"></i>
                     </button>
-                    <a class="navbar-brand mx-3" href="{{ route('ukm.index') }}">
-                        <i class="fas fa-graduation-cap me-2"></i>MyUkm Portal</a>
+                    <a class="navbar-brand mx-3" href="<?php echo e(route('ukm.index')); ?>">
+                        <i class="fas fa-graduation-cap me-2"></i>MyUkm
+                    </a>
                     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
                         <span class="navbar-toggler-icon"></span>
                     </button>
@@ -149,15 +151,15 @@
                         <ul class="navbar-nav ms-auto">
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <img src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=4338ca&color=fff" alt="Profile" class="rounded-circle" width="32">
-                                    <span class="ms-2">{{ Auth::user()->name }}</span>
+                                    <img src="https://ui-avatars.com/api/?name=<?php echo e(urlencode(Auth::user()->name)); ?>&background=4338ca&color=fff" alt="Profile" class="rounded-circle" width="32">
+                                    <span class="ms-2"><?php echo e(Auth::user()->name); ?></span>
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                                    <li><a class="dropdown-item" href="{{ route('profile.show') }}"><i class="fas fa-user-circle me-2"></i>Profil</a></li>
+                                    <li><a class="dropdown-item" href="<?php echo e(route('profile.show')); ?>"><i class="fas fa-user-circle me-2"></i>Profil</a></li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li>
-                                        <form method="POST" action="{{ route('logout') }}">
-                                            @csrf
+                                        <form method="POST" action="<?php echo e(route('logout')); ?>">
+                                            <?php echo csrf_field(); ?>
                                             <button type="submit" class="dropdown-item">
                                                 <i class="fas fa-sign-out-alt me-2"></i>Keluar
                                             </button>
@@ -172,7 +174,7 @@
             
             <!-- Main Content -->
             <div class="container-fluid">
-                @yield('content')
+                <?php echo $__env->yieldContent('content'); ?>
             </div>
         </div>
     </div>
@@ -190,6 +192,7 @@
         });
     </script>
     
-    @stack('scripts')
+    <?php echo $__env->yieldPushContent('scripts'); ?>
 </body>
 </html>
+<?php /**PATH C:\xampp\htdocs\MyUkm-main\resources\views/layouts/user.blade.php ENDPATH**/ ?>

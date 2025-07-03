@@ -24,7 +24,7 @@ class EnsureUserRole
             $path = $request->path();
             
             // Jika user bukan admin_website tetapi mengakses halaman admin
-            if ($user->role !== 'admin_website' && str_starts_with($path, 'admin/')) {
+            if ($user->role !== 'admin_website' && (str_starts_with($path, 'admin/') || $path === 'admin')) {
                 if ($user->role === 'admin_grup') {
                     return redirect('/grup/dashboard');
                 }
@@ -32,11 +32,17 @@ class EnsureUserRole
             }
             
             // Jika user bukan admin_grup tetapi mengakses halaman grup admin
-            if ($user->role !== 'admin_grup' && str_starts_with($path, 'grup/')) {
+            if ($user->role !== 'admin_grup' && (str_starts_with($path, 'grup/') || $path === 'grup')) {
                 if ($user->role === 'admin_website') {
                     return redirect('/admin/dashboard');
                 }
                 return redirect()->route('ukm.index');
+            }
+
+            // Halaman profile harus menggunakan layout yang sesuai, jangan biarkan URL langsung
+            if ($path === 'profile' || str_starts_with($path, 'profile/')) {
+                // Middleware hanya mengecek, controller ProfileController akan menggunakan view yang sesuai
+                // berdasarkan role user
             }
         }
         

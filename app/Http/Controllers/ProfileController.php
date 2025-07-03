@@ -49,10 +49,20 @@ class ProfileController extends Controller
                 });
         }
 
-        return view('profile.index', [
-            'user' => $user,
-            'memberships' => $memberships
-        ]);
+        // Gunakan layout yang berbeda berdasarkan role user
+        if ($user->role === 'admin_website' || $user->role === 'admin_grup') {
+            // Admin menggunakan layout admin
+            return view('profile.index', [
+                'user' => $user,
+                'memberships' => $memberships
+            ]);
+        } else {
+            // User biasa menggunakan view profile dengan layout user
+            return view('profile.user', [
+                'user' => $user,
+                'memberships' => $memberships
+            ]);
+        }
     }
 
     public function updatePassword(Request $request): RedirectResponse
