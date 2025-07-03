@@ -12,6 +12,7 @@ use App\Models\UserActivity;
 use App\Models\Message;
 use App\Models\Chat;
 use App\Models\Role;
+use App\Contracts\GroupAdminInterface;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Auth as AuthFacade;
@@ -29,10 +30,17 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
  * @property string $nim
  * @property string $password
  * @property string|null $photo
+ * @property string $role
  * @property-read Collection|Group[] $groups
  * @property-read Collection|Chat[] $chats
+ * @method bool isAdminInGroup(Group|int $group)
+ * @method bool isMemberInGroup(Group|int $group)
+ * @method string|null getRoleInGroup(Group|int $group)
+ * @method bool promoteToAdminInGroup(Group|int $group)
+ * @method bool demoteFromAdminInGroup(Group|int $group)
+ * @method BelongsToMany adminGroups()
  */
-class User extends Authenticatable
+class User extends Authenticatable implements GroupAdminInterface
 {
     use Notifiable, SoftDeletes, HasFactory;
 
@@ -228,10 +236,10 @@ class User extends Authenticatable
     public function hasRole($roles): bool
     {
         if (is_string($roles)) {
-            return $this->role->name === $roles;
+            return $this->role === $roles;
         }
         
-        return in_array($this->role->name, $roles);
+        return in_array($this->role, $roles);
     }
     
     /**
@@ -241,7 +249,7 @@ class User extends Authenticatable
      */
     public function isAdmin(): bool
     {
-        return $this->role && in_array($this->role->name, ['admin_website', 'admin_ukm']);
+        return $this->role && in_array($this->role, ['admin_website', 'admin_grup']);
     }
     
     /**
@@ -251,7 +259,7 @@ class User extends Authenticatable
      */
     public function isMember(): bool
     {
-        return $this->role && $this->role->name === 'member';
+        return $this->role && $this->role === 'anggota';
     }
 
     /**

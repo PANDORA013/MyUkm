@@ -21,6 +21,7 @@ class GroupAdminController extends BaseController
      */
     public function dashboard($code)
     {
+        /** @var User $user */
         $user = Auth::user();
         $group = Group::where('referral_code', $code)->firstOrFail();
         
@@ -47,6 +48,7 @@ class GroupAdminController extends BaseController
      */
     public function members($code)
     {
+        /** @var User $user */
         $user = Auth::user();
         $group = Group::where('referral_code', $code)->firstOrFail();
         
@@ -73,6 +75,7 @@ class GroupAdminController extends BaseController
      */
     public function promoteToAdmin($code, Request $request)
     {
+        /** @var User $user */
         $user = Auth::user();
         $group = Group::where('referral_code', $code)->firstOrFail();
         
@@ -111,6 +114,7 @@ class GroupAdminController extends BaseController
      */
     public function demoteToMember($code, Request $request)
     {
+        /** @var User $user */
         $user = Auth::user();
         $group = Group::where('referral_code', $code)->firstOrFail();
         
@@ -150,6 +154,7 @@ class GroupAdminController extends BaseController
      */
     public function removeMember($code, Request $request)
     {
+        /** @var User $user */
         $user = Auth::user();
         $group = Group::where('referral_code', $code)->firstOrFail();
         
@@ -191,6 +196,7 @@ class GroupAdminController extends BaseController
      */
     public function updateSettings($code, Request $request)
     {
+        /** @var User $user */
         $user = Auth::user();
         $group = Group::where('referral_code', $code)->firstOrFail();
         

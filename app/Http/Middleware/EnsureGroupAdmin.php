@@ -43,6 +43,7 @@ class EnsureGroupAdmin
         }
         
         // Check if user is admin in this specific group
+        /** @var User $user */
         if (!$user->isAdminInGroup($group)) {
             return redirect()->route('ukm.index')
                 ->with('error', 'Anda tidak memiliki akses admin di grup ini');
