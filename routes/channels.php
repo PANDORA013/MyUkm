@@ -9,10 +9,10 @@ Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
     return (int) $user->id === (int) $id;
 });
 
-// Chat channel - requires both authentication and group membership
+// Chat channel - DEPRECATED - Use group.{groupCode} instead
 Broadcast::channel('chat.{groupId}', function ($user, $groupId) {
     try {
-        Log::info('Channel authentication attempt', [
+        Log::info('DEPRECATED: chat.{groupId} channel used - should use group.{groupCode}', [
             'channel' => 'chat.'.$groupId,
             'user_id' => $user->id,
             'group_id' => $groupId
@@ -45,7 +45,7 @@ Broadcast::channel('chat.{groupId}', function ($user, $groupId) {
     }
 });
 
-// Group channel for online status updates - requires group membership
+// Group channel for all group-related real-time features (chat, online status, etc.)
 Broadcast::channel('group.{groupCode}', function ($user, $groupCode) {
     try {
         Log::info('Group channel authentication attempt', [
@@ -54,10 +54,10 @@ Broadcast::channel('group.{groupCode}', function ($user, $groupCode) {
             'group_code' => $groupCode
         ]);
 
-        // Cari grup berdasarkan kode
-        $group = Group::where('code', $groupCode)->first();
+        // Cari grup berdasarkan referral code
+        $group = Group::where('referral_code', $groupCode)->first();
         if (!$group) {
-            Log::warning('Group not found for online status channel', [
+            Log::warning('Group not found for channel', [
                 'user_id' => $user->id,
                 'group_code' => $groupCode
             ]);
@@ -68,7 +68,7 @@ Broadcast::channel('group.{groupCode}', function ($user, $groupCode) {
         $isMember = $user->groups()->where('group_id', $group->id)->exists();
         
         if (!$isMember) {
-            Log::warning('Unauthorized group online status access attempt', [
+            Log::warning('Unauthorized group access attempt', [
                 'user_id' => $user->id,
                 'group_code' => $groupCode,
                 'group_id' => $group->id

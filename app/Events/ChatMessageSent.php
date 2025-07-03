@@ -29,6 +29,12 @@ class ChatMessageSent implements ShouldBroadcast
     {
         $this->chat = $chat;
         $this->user = $chat->user;
+        
+        // Ensure group relation is loaded
+        if (!$chat->relationLoaded('group')) {
+            $chat->load('group');
+        }
+        
         $this->chatId = $chat->id;
         $this->userId = $chat->user_id;
         $this->userName = $chat->user->name;
@@ -40,10 +46,10 @@ class ChatMessageSent implements ShouldBroadcast
     public function broadcastOn()
     {
         Log::info('Broadcasting on channel', [
-            'channel' => 'chat.' . $this->groupId,
+            'channel' => 'group.' . $this->chat->group->referral_code,
             'chat_id' => $this->chatId
         ]);
-        return new PrivateChannel('chat.' . $this->groupId);
+        return new PrivateChannel('group.' . $this->chat->group->referral_code);
     }
 
     public function broadcastAs()

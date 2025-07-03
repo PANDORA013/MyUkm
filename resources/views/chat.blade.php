@@ -22,11 +22,13 @@
         overflow-y: auto;
         padding: 12px;
         background-color: #f8f9fa;
+        scroll-behavior: smooth;
     }
     .message-container {
         overflow: hidden;
         margin-bottom: 10px;
         clear: both;
+        transition: all 0.3s ease;
     }
     .message {
         max-width: 80%;
@@ -36,6 +38,7 @@
         border-radius: 1rem;
         position: relative;
         display: inline-block;
+        transition: background-color 0.2s ease;
     }
     .message-outgoing {
         float: right;
@@ -53,6 +56,12 @@
         background-color: #e9ecef;
         color: #212529;
         border-bottom-left-radius: 0.2rem;
+    }
+    .message-incoming .message-content:hover {
+        background-color: rgba(0, 0, 0, 0.05);
+    }
+    .message-outgoing .message-content:hover {
+        background-color: rgba(255, 255, 255, 0.1);
     }
     .message-sender {
         font-size: 0.75rem;
@@ -167,6 +176,7 @@
         padding: 0 12px;
         margin: 4px 0;
         min-height: 20px;
+        transition: opacity 0.3s ease;
     }
     .page-header {
         margin-bottom: 1rem;
@@ -177,6 +187,80 @@
         margin-bottom: 0;
         border-radius: 0.5rem;
         overflow: hidden;
+    }
+    
+    /* TAMBAHAN: Optimasi CSS untuk responsivitas dan smooth animations */
+    .message-container {
+        transition: all 0.3s ease;
+    }
+    
+    .message-content {
+        transition: background-color 0.2s ease;
+    }
+    
+    .message-incoming .message-content:hover {
+        background-color: rgba(0, 0, 0, 0.05);
+    }
+    
+    .message-outgoing .message-content:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    /* Typing indicator animations */
+    .typing-indicator {
+        transition: opacity 0.3s ease;
+        font-style: italic;
+        color: #6b7280;
+        min-height: 18px;
+    }
+    
+    /* Optimasi scrolling */
+    .chat-messages {
+        scroll-behavior: smooth;
+    }
+    
+    /* Loading state untuk pesan yang sedang dikirim */
+    .message-sending {
+        opacity: 0.6;
+        position: relative;
+    }
+    
+    .message-sending::after {
+        content: '';
+        position: absolute;
+        right: 5px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 12px;
+        height: 12px;
+        border: 2px solid #4e73df;
+        border-top: 2px solid transparent;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+        0% { transform: translateY(-50%) rotate(0deg); }
+        100% { transform: translateY(-50%) rotate(360deg); }
+    }
+    
+    /* Notifikasi pesan baru */
+    .new-message-notification {
+        position: fixed;
+        top: 70px;
+        right: 20px;
+        background: #10b981;
+        color: white;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 14px;
+        z-index: 1000;
+        transform: translateX(100%);
+        transition: transform 0.3s ease;
+    }
+    
+    .new-message-notification.show {
+        transform: translateX(0);
     }
 </style>
 @endpush
@@ -250,6 +334,7 @@
 
 @push('scripts')
 <script src="https://js.pusher.com/7.0/pusher.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.15.0/dist/echo.iife.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const groupId = document.getElementById('group-id').value;
@@ -271,25 +356,38 @@
         let isVisible = true;
         let onlineStatusInterval;
         let onlineMembersInterval;
+        let chatRefreshInterval; // TAMBAHAN: untuk auto-refresh chat
+        let lastMessageId = 0; // TAMBAHAN: untuk tracking pesan terbaru
         
         // Refresh CSRF token and keep session alive every 10 minutes
         setInterval(refreshCsrfToken, 10 * 60 * 1000);
         
-        // Dynamic polling - lebih sering saat aktif, lebih jarang saat tidak aktif
+        // Dynamic polling - OPTIMIZED for maximum responsiveness
         function startResponsivePolling() {
-            // Update online status lebih sering (15 detik saat aktif)
+            // Update online status lebih sering (5 detik saat aktif untuk responsif maksimal)
             onlineStatusInterval = setInterval(() => {
                 if (isVisible) {
                     updateOnlineStatus();
                 }
-            }, 15 * 1000);
+            }, 5 * 1000); // Dipercepat dari 15 detik ke 5 detik
             
-            // Load anggota online dengan interval dinamis
+            // Load anggota online dengan interval yang lebih cepat
             onlineMembersInterval = setInterval(() => {
                 if (isVisible) {
                     loadOnlineMembers();
                 }
-            }, 20 * 1000);
+            }, 8 * 1000); // Dipercepat dari 20 detik ke 8 detik
+            
+            // TAMBAHAN: Auto-refresh chat messages untuk memastikan sinkronisasi
+            chatRefreshInterval = setInterval(() => {
+                if (isVisible && !document.hidden) {
+                    // Hanya refresh jika tidak ada aktivitas typing dalam 3 detik terakhir
+                    const now = Date.now();
+                    if (!window.lastTypingTime || (now - window.lastTypingTime) > 3000) {
+                        loadLatestMessages();
+                    }
+                }
+            }, 3 * 1000); // Refresh chat setiap 3 detik untuk responsif maksimal
         }
         
         // Page visibility handling untuk optimasi battery dan performance
@@ -331,10 +429,13 @@
             }
         });
 
-        // Debounce for typing and send typing indicator
+        // Debounce for typing and send typing indicator - OPTIMIZED
         let typingRefreshTimeout;
         let typingIndicatorTimeout;
         messageInput.addEventListener('input', function() {
+            // TAMBAHAN: Track typing time untuk optimasi refresh
+            window.lastTypingTime = Date.now();
+            
             // Handle CSRF token refresh
             clearTimeout(typingRefreshTimeout);
             typingRefreshTimeout = setTimeout(() => {
@@ -343,28 +444,31 @@
                 }
             }, 5000);
             
-            // Handle typing indicator
+            // Handle typing indicator - OPTIMIZED: lebih responsif
             clearTimeout(typingIndicatorTimeout);
             
-            fetch('{{ route('chat.typing') }}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken
-                },
-                body: JSON.stringify({
-                    group_id: groupId
+            // Kirim typing indicator lebih cepat
+            if (this.value.length > 0) {
+                fetch('{{ route('chat.typing') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken
+                    },
+                    body: JSON.stringify({
+                        group_id: groupId
+                    })
                 })
-            })
-            .then(response => {
-                if (response.headers.get('content-type')?.includes('application/json')) {
-                    return safeJsonParse(response);
-                }
-                return response;
-            })
-            .catch(error => console.error('Error sending typing indicator:', error));
+                .then(response => {
+                    if (response.headers.get('content-type')?.includes('application/json')) {
+                        return safeJsonParse(response);
+                    }
+                    return response;
+                })
+                .catch(error => console.error('Error sending typing indicator:', error));
+            }
             
-            typingIndicatorTimeout = setTimeout(() => {}, 3000);
+            typingIndicatorTimeout = setTimeout(() => {}, 2000); // Dipercepat dari 3 detik ke 2 detik
         });
         
         // Function to refresh CSRF token and keep session alive
@@ -458,79 +562,185 @@
             return response.json();
         }
         
-        // Pusher setup with error handling
+        // Configure Laravel Echo properly
         let pusher;
         let channel;
         
         try {
+            // Initialize Pusher first - OPTIMIZED dengan connection settings yang lebih responsif
             pusher = new Pusher('{{ env('PUSHER_APP_KEY') }}', {
                 cluster: '{{ env('PUSHER_APP_CLUSTER') }}',
-                forceTLS: true
+                forceTLS: true,
+                encrypted: true,
+                // TAMBAHAN: Optimasi connection untuk responsivitas maksimal
+                activityTimeout: 3000,           // Deteksi disconnection lebih cepat
+                pongTimeout: 2000,               // Ping response timeout lebih cepat  
+                unavailableTimeout: 1000,        // Mark sebagai unavailable lebih cepat
+                enabledTransports: ['ws', 'wss'], // Prioritas WebSocket untuk speed
+                disabledTransports: ['xhr_polling', 'xhr_streaming'] // Disable slow transports
             });
             
-            // Subscribe to the channel for this group
-            channel = pusher.subscribe('group.' + groupCode);
+            // Initialize Laravel Echo with Pusher instance - OPTIMIZED
+            window.Echo = new Echo({
+                broadcaster: 'pusher',
+                key: '{{ env('PUSHER_APP_KEY') }}',
+                cluster: '{{ env('PUSHER_APP_CLUSTER') }}',
+                forceTLS: true,
+                encrypted: true,
+                authEndpoint: '/broadcasting/auth',
+                auth: {
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    }
+                },
+                pusher: pusher
+            });
             
-            // Add connection error handling
+            console.log('✅ Laravel Echo initialized successfully');
+            
+            // Subscribe to private channel for this group
+            channel = window.Echo.private('group.' + groupCode);
+            console.log('✅ Subscribed to private channel:', 'group.' + groupCode);
+            
+            // Handle connection state changes
+            pusher.connection.bind('state_change', function(states) {
+                console.log('Pusher connection state changed:', states.current);
+                if (states.current === 'connected') {
+                    console.log('✅ Pusher connected successfully');
+                    // Hide any existing warnings
+                    const warnings = document.querySelectorAll('.pusher-warning');
+                    warnings.forEach(w => w.remove());
+                } else if (states.current === 'disconnected' || states.current === 'failed') {
+                    console.warn('❌ Pusher connection failed:', states.current);
+                    showConnectionWarning();
+                }
+            });
+            
+            // Handle connection errors
             pusher.connection.bind('error', function(err) {
-                console.warn('Pusher connection error:', err);
-                // Show a small notification that real-time updates are not available
+                console.error('Pusher connection error:', err);
                 showConnectionWarning();
             });
+            
         } catch (error) {
-            console.warn('Pusher initialization error:', error);
+            console.error('Echo initialization error:', error);
             showConnectionWarning();
+            
+            // Fallback: Use basic Pusher without Echo
+            try {
+                pusher = new Pusher('{{ env('PUSHER_APP_KEY') }}', {
+                    cluster: '{{ env('PUSHER_APP_CLUSTER') }}',
+                    forceTLS: true,
+                    encrypted: true,
+                    authEndpoint: '/broadcasting/auth',
+                    auth: {
+                        headers: {
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Accept': 'application/json'
+                        }
+                    }
+                });
+                
+                channel = pusher.subscribe('private-group.' + groupCode);
+                console.log('✅ Fallback: Using basic Pusher, subscribed to:', 'private-group.' + groupCode);
+                
+            } catch (fallbackError) {
+                console.error('Fallback Pusher error:', fallbackError);
+            }
         }
         
         // Function to show connection warning
         function showConnectionWarning() {
+            // Remove existing warnings first
+            const existingWarnings = document.querySelectorAll('.pusher-warning');
+            existingWarnings.forEach(w => w.remove());
+            
             const warningEl = document.createElement('div');
-            warningEl.className = 'alert alert-warning small m-1';
+            warningEl.className = 'alert alert-warning small m-1 pusher-warning';
             warningEl.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i> Notifikasi real-time tidak tersedia. Refresh halaman untuk melihat pesan terbaru.';
             
             // Insert before the chat form
-            document.querySelector('.chat-form').before(warningEl);
+            const chatForm = document.querySelector('.chat-form');
+            if (chatForm) {
+                chatForm.parentNode.insertBefore(warningEl, chatForm);
+            }
             
-            // Auto-hide after 10 seconds
+            // Auto-hide after 15 seconds
             setTimeout(() => {
-                warningEl.style.opacity = '0';
-                warningEl.style.transition = 'opacity 1s';
-                setTimeout(() => warningEl.remove(), 1000);
-            }, 10000);
+                if (warningEl.parentNode) {
+                    warningEl.style.opacity = '0';
+                    warningEl.style.transition = 'opacity 1s';
+                    setTimeout(() => {
+                        if (warningEl.parentNode) {
+                            warningEl.remove();
+                        }
+                    }, 1000);
+                }
+            }, 15000);
         }
         
-        // Only set up event handlers if channel exists (real-time available)
+        // Only set up event handlers if channel exists (real-time available) - OPTIMIZED
         if (channel) {
-            // Handle incoming messages
-            channel.bind('new-message', function(data) {
+            console.log('✅ Setting up event handlers for group:', groupCode);
+            
+            // Handle incoming messages - OPTIMIZED: Instant display dengan animation
+            channel.listen('ChatMessageSent', function(data) {
+                console.log('📨 Received chat message:', data);
+                
+                // TAMBAHAN: Instant response - langsung tampilkan tanpa delay
                 appendMessage(data);
-                scrollToBottom();
+                
+                // TAMBAHAN: Smooth scroll dengan animation
+                setTimeout(() => {
+                    scrollToBottom();
+                }, 100);
+                
+                // TAMBAHAN: Visual feedback untuk pesan baru
+                if (!document.hasFocus()) {
+                    // Update document title untuk notifikasi
+                    const originalTitle = document.title;
+                    document.title = '💬 Pesan Baru - ' + originalTitle;
+                    
+                    // Reset title saat window focus kembali
+                    const resetTitle = () => {
+                        document.title = originalTitle;
+                        window.removeEventListener('focus', resetTitle);
+                    };
+                    window.addEventListener('focus', resetTitle);
+                }
             });
             
-            // Handle typing indicators
-            channel.bind('typing', function(data) {
+            // Handle typing indicators - OPTIMIZED: Response lebih cepat
+            channel.listen('typing', function(data) {
                 if (data.user_id !== {{ Auth::id() }}) {
                     typingIndicator.textContent = data.name + ' sedang mengetik...';
+                    typingIndicator.style.opacity = '1';
+                    
+                    // Clear indicator lebih cepat untuk responsivitas
                     setTimeout(() => {
-                        typingIndicator.textContent = '';
-                    }, 3000);
+                        typingIndicator.style.opacity = '0';
+                        setTimeout(() => {
+                            typingIndicator.textContent = '';
+                        }, 200);
+                    }, 2000); // Dipercepat dari 3 detik ke 2 detik
                 }
             });
             
             // Handle online status updates
-            channel.bind('user-online', function(data) {
+            channel.listen('user-online', function(data) {
                 document.getElementById('onlineCount').textContent = data.online_count;
                 document.getElementById('totalMembers').textContent = data.total_members;
             });
             
             // Handle user online status changed
-            channel.bind('user-online-status-changed', function(data) {
+            channel.listen('user-online-status-changed', function(data) {
                 console.log('User online status changed:', data);
                 updateOnlineMembersDisplay(data.online_members, data.total_members);
             });
             
             // Handle user mute status changes
-            channel.bind('user-mute-status', function(data) {
+            channel.listen('user-mute-status', function(data) {
                 if (data.user_id === {{ Auth::id() }}) {
                     if (data.is_muted) {
                         // User was muted
@@ -589,7 +799,8 @@
                 sendButton.disabled = true;
                 
                 retryWithTokenRefresh(async () => {
-                    const response = await fetch('{{ route('chat.send') }}', {
+                    // Use the new asynchronous endpoint for better performance
+                    const response = await fetch(`/ukm/${groupCode}/messages`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -597,9 +808,7 @@
                             'X-Requested-With': 'XMLHttpRequest'
                         },
                         body: JSON.stringify({
-                            message: message,
-                            group_id: groupId,
-                            group_code: groupCode
+                            message: message
                         })
                     });
                     
@@ -726,6 +935,41 @@
             }
         }
         
+        // TAMBAHAN: Function untuk load pesan terbaru tanpa refresh seluruh chat
+        async function loadLatestMessages() {
+            try {
+                await retryWithTokenRefresh(async () => {
+                    const response = await fetch(`{{ route('chat.messages') }}?group_id=${groupId}&after=${lastMessageId}&limit=10`, {
+                        headers: {
+                            'X-CSRF-TOKEN': csrfToken,
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+                    
+                    const data = await safeJsonParse(response);
+                    
+                    if (data.status === 'success' && data.messages && data.messages.length > 0) {
+                        // Hanya append pesan baru yang belum ada
+                        data.messages.forEach(message => {
+                            if (message.id > lastMessageId) {
+                                appendMessage(message);
+                                lastMessageId = message.id;
+                            }
+                        });
+                        
+                        // Auto scroll jika user berada di bagian bawah chat
+                        const isAtBottom = chatMessages.scrollTop + chatMessages.clientHeight >= chatMessages.scrollHeight - 50;
+                        if (isAtBottom) {
+                            scrollToBottom();
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('Error loading latest messages:', error);
+                // Tidak perlu show error untuk background refresh
+            }
+        }
+
         // Join chat room
         joinChatRoom();
         
@@ -748,11 +992,23 @@
         // Handle window unload
         window.addEventListener('beforeunload', leaveChatRoom);
         
-        // Message template function
+        // Message template function - OPTIMIZED untuk tracking message ID
         function appendMessage(data) {
+            // TAMBAHAN: Update lastMessageId untuk tracking pesan terbaru
+            if (data.id && data.id > lastMessageId) {
+                lastMessageId = data.id;
+            }
+            
+            // Cek apakah pesan sudah ada untuk menghindari duplikasi
+            const existingMessage = document.querySelector(`[data-message-id="${data.id}"]`);
+            if (existingMessage) {
+                return; // Skip jika pesan sudah ada
+            }
+            
             const isCurrentUser = data.user_id === {{ Auth::id() }};
             const messageContainer = document.createElement('div');
             messageContainer.className = 'message-container';
+            messageContainer.setAttribute('data-message-id', data.id); // TAMBAHAN: ID tracking
             
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${isCurrentUser ? 'message-outgoing' : 'message-incoming'}`;
@@ -776,6 +1032,16 @@
             
             messageContainer.appendChild(messageDiv);
             chatMessages.appendChild(messageContainer);
+            
+            // TAMBAHAN: Animation untuk pesan baru
+            messageContainer.style.opacity = '0';
+            messageContainer.style.transform = 'translateY(10px)';
+            
+            setTimeout(() => {
+                messageContainer.style.transition = 'all 0.3s ease';
+                messageContainer.style.opacity = '1';
+                messageContainer.style.transform = 'translateY(0)';
+            }, 10);
         }
         
         function formatTime(timestamp) {

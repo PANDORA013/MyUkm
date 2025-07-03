@@ -23,14 +23,14 @@ class SecurityHeaders
         $response->headers->set('X-XSS-Protection', '1; mode=block');
         $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
         
-        // Content Security Policy
+        // Content Security Policy - Updated for Pusher/Echo compatibility
         $response->headers->set('Content-Security-Policy', 
             "default-src 'self'; " .
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval' js.pusher.com; " .
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' js.pusher.com cdn.jsdelivr.net; " .
             "style-src 'self' 'unsafe-inline' fonts.googleapis.com; " .
             "font-src 'self' fonts.gstatic.com; " .
             "img-src 'self' data: blob:; " .
-            "connect-src 'self' ws: wss: soketi.app pusher.com; " .
+            "connect-src 'self' ws: wss: *.pusher.com *.pusherapp.com soketi.app api-*.pusher.com; " .
             "frame-ancestors 'none';"
         );
 

@@ -158,12 +158,15 @@ class BroadcastChatMessage implements ShouldQueue
     }
 
     /**
-     * Ensure user relationship is loaded.
+     * Ensure user and group relationships are loaded.
      */
     private function ensureUserRelationLoaded(): void
     {
         if (!$this->chat->relationLoaded('user')) {
             $this->chat->load('user');
+        }
+        if (!$this->chat->relationLoaded('group')) {
+            $this->chat->load('group');
         }
     }
 

@@ -19,9 +19,16 @@ class BroadcastServiceProvider extends ServiceProvider
 
     /**
      * Bootstrap any application services.
-     */    public function boot(): void
+     */
+    public function boot(): void
     {
-        Broadcast::routes(['middleware' => ['web', 'auth']]);
+        // Ensure broadcasting is enabled
+        if (config('broadcasting.default') !== 'null') {
+            // Set up broadcasting routes with proper middleware
+            Broadcast::routes([
+                'middleware' => ['web', 'auth']
+            ]);
+        }
 
         require base_path('routes/channels.php');
     }

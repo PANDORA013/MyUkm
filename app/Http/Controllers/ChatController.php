@@ -96,107 +96,30 @@ class ChatController extends BaseController
         ]);
     }
 
+    /**
+     * DEPRECATED: Old sendChat method replaced by sendMessage for better performance
+     * This method is kept for backward compatibility but should not be used
+     * 
+     * @deprecated Use sendMessage() instead for asynchronous queue-based broadcasting
+     */
     public function sendChat(Request $request)
     {
-        try {
-            Log::info('Chat send attempt', [
-                'user_id' => Auth::id(),
-                'group_code' => $request->group_code
-            ]);
-
-            if (!Auth::check()) {
-                Log::warning('Unauthorized chat attempt - user not authenticated');
-                return response()->json([
-                    "status" => "error",
-                    "message" => "Sesi Anda telah berakhir. Silakan login kembali."
-                ], 401);
-            }
-
-            $user = Auth::user();
-
-            // Validasi input
-            $request->validate([
-                "message" => "required|string|min:1|max:1000",
-                "group_code" => "required|string|exists:groups,referral_code"
-            ], [
-                "message.required" => "Pesan tidak boleh kosong",
-                "message.max" => "Pesan terlalu panjang (maksimal 1000 karakter)",
-                "message.min" => "Pesan tidak boleh kosong",
-                "group_code.exists" => "Grup tidak ditemukan"
-            ]);
-
-            $group = Group::where("referral_code", $request->group_code)->first();
-            if (!$group) {
-                return response()->json([
-                    "status" => "error",
-                    "message" => "Grup tidak ditemukan"
-                ], 404);
-            }
-
-            // Cek keanggotaan user pada grup
-            $groupMembership = $group->users()->where("user_id", $user->id)->first();
-            if (!$groupMembership) {
-                return response()->json([
-                    "status" => "error",
-                    "message" => "Anda tidak tergabung dalam UKM ini"
-                ], 403);
-            }
-
-            // Cek mute
-            if ($groupMembership->pivot->is_muted) {
-                return response()->json([
-                    'status'  => 'error',
-                    'message' => 'Halo, kamu lagi di-mute dulu, biar suasana grup tetap adem kayak es kopi susu~ Balik ngobrol lagi nanti ya!'
-                ], 403);
-            }
-
-            // Bersihkan pesan (XSS, emoji, link)
-            $message = $this->filterMessage($request->message);
-
-            // Simpan chat
-            $chat = Chat::create([
-                "user_id" => $user->id,
-                "group_id" => $group->id,
-                "message" => $message
-            ]);
-
-            Log::info('Chat message created', [
-                'chat_id' => $chat->id,
-                'user_id' => $user->id,
-                'group_id' => $group->id
-            ]);
-
-            // Broadcast event (jika real-time) with safe broadcasting
-            BroadcastHelper::safeBroadcast(new ChatMessageSent($chat));
-
+        // Redirect to new method for consistency
+        Log::warning('DEPRECATED: sendChat method called - redirecting to sendMessage', [
+            'user_id' => Auth::id(),
+            'group_code' => $request->group_code
+        ]);
+        
+        // Extract group code and call new method
+        $groupCode = $request->group_code;
+        if (!$groupCode) {
             return response()->json([
-                "status" => "success",
-                "message" => "Pesan terkirim",
-                "data" => [
-                    "id" => $chat->id,
-                    "message" => $chat->message,
-                    "time" => $chat->created_at->format("H:i")
-                ]
-            ]);
-
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            Log::warning('Chat validation error', [
-                'errors' => $e->validator->errors()->toArray()
-            ]);
-            return response()->json([
-                "status" => "error",
-                "message" => $e->validator->errors()->first()
-            ], 422);
-        } catch (\Exception $e) {
-            Log::error('Chat error', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            return response()->json([
-                "status" => "error",
-                "message" => "Terjadi kesalahan. Silakan coba lagi."
-            ], 500);
+                'status' => 'error',
+                'message' => 'Group code required'
+            ], 400);
         }
+        
+        return $this->sendMessage($request, $groupCode);
     }
 
     /**
@@ -366,18 +289,23 @@ class ChatController extends BaseController
                 return response()->json(['error' => 'Unauthorized'], 403);
             }
             
-            $messages = Chat::where('group_id', $group->id)
-                ->with('user:id,name')
-                ->orderBy('created_at', 'desc')
-                ->limit(self::MESSAGE_HISTORY_LIMIT)
-                ->get()
-                ->reverse()
-                ->values();
+            // OPTIMIZED: Cache untuk performa maksimal dan response cepat
+            $cacheKey = "chat_messages_{$group->id}";
+            
+            $messages = Cache::remember($cacheKey, 30, function() use ($group) {
+                return Chat::where('group_id', $group->id)
+                    ->with('user:id,name')
+                    ->orderBy('created_at', 'desc')
+                    ->limit(self::MESSAGE_HISTORY_LIMIT)
+                    ->get()
+                    ->reverse()
+                    ->values();
+            });
             
             return response()->json([
                 'messages' => $messages,
                 'group_name' => $group->name
-            ]);
+            ], 200, [], JSON_UNESCAPED_UNICODE);
             
         } catch (\Exception $e) {
             Log::error('Error getting messages', [
@@ -390,41 +318,111 @@ class ChatController extends BaseController
     }
     
     /**
-     * Send message to a specific group
+     * Send message via asynchronous queue-based broadcasting (RECOMMENDED)
+     * This method provides better performance through background job processing
      *
      * @param Request $request
-     * @param string $code
+     * @param string $code Group referral code
      * @return \Illuminate\Http\JsonResponse
      */
     public function sendMessage(Request $request, $code)
     {
         try {
+            Log::info('Chat send attempt (async)', [
+                'user_id' => Auth::id(),
+                'group_code' => $code
+            ]);
+
             /** @var \App\Models\User $user */
             $user = Auth::user();
-            $group = Group::where('referral_code', $code)->firstOrFail();
             
-            // Check if user is member of the group
-            if (!$user->groups()->where('group_id', $group->id)->exists()) {
-                return response()->json(['error' => 'Unauthorized'], 403);
+            if (!$user) {
+                Log::warning('Unauthorized chat attempt - user not authenticated');
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Sesi Anda telah berakhir. Silakan login kembali.'
+                ], 401);
             }
-            
+
+            // Validate input
             $request->validate([
-                'message' => 'required|string|max:1000'
+                'message' => 'required|string|min:1|max:1000'
+            ], [
+                'message.required' => 'Pesan tidak boleh kosong',
+                'message.max' => 'Pesan terlalu panjang (maksimal 1000 karakter)',
+                'message.min' => 'Pesan tidak boleh kosong'
             ]);
+
+            $group = Group::where('referral_code', $code)->first();
+            if (!$group) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Grup tidak ditemukan'
+                ], 404);
+            }
+
+            // Check if user is member of the group
+            $groupMembership = $group->users()->where('user_id', $user->id)->first();
+            if (!$groupMembership) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Anda tidak tergabung dalam UKM ini'
+                ], 403);
+            }
+
+            // Check mute status
+            if ($groupMembership->pivot->is_muted) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Halo, kamu lagi di-mute dulu, biar suasana grup tetap adem kayak es kopi susu~ Balik ngobrol lagi nanti ya!'
+                ], 403);
+            }
+
+            // Filter message for security
+            $message = $this->filterMessage($request->message);
 
             // Create chat message
             $chat = Chat::create([
                 'user_id' => $user->id,
                 'group_id' => $group->id,
-                'message' => $request->message
+                'message' => $message
             ]);
             
-            $chat->load('user:id,name');
-            
-            // Dispatch message broadcasting to queue for better performance and responsiveness
+            // Load required relationships for broadcasting
+            $chat->load(['user:id,name', 'group:id,referral_code']);
+
+            Log::info('Chat message created (async)', [
+                'chat_id' => $chat->id,
+                'user_id' => $user->id,
+                'group_id' => $group->id,
+                'group_code' => $code
+            ]);
+
+            // Dispatch message broadcasting to queue for INSTANT responsiveness
             try {
+                // OPTIMIZED: Dispatch dengan priority tinggi dan timeout minimal
                 dispatch(new BroadcastChatMessage($chat, $group->referral_code))
-                    ->onQueue('high'); // High priority for chat messages
+                    ->onQueue('realtime') // Queue khusus real-time untuk prioritas tertinggi
+                    ->delay(0); // No delay untuk instant processing
+                
+                Log::info('Chat broadcast job dispatched successfully (instant)', [
+                    'chat_id' => $chat->id,
+                    'queue' => 'realtime'
+                ]);
+                
+                // TAMBAHAN: Instant response tanpa menunggu queue processing
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'Pesan berhasil dikirim',
+                    'data' => [
+                        'id' => $chat->id,
+                        'message' => $chat->message,
+                        'user_id' => $chat->user_id,
+                        'name' => $user->name,
+                        'created_at' => $chat->created_at->toISOString(),
+                        'timestamp' => $chat->created_at->timestamp
+                    ]
+                ], 200, [], JSON_UNESCAPED_UNICODE);
                 
                 Log::info('Chat message dispatched to queue', [
                     'chat_id' => $chat->id,
@@ -439,29 +437,58 @@ class ChatController extends BaseController
                 ]);
                 
                 // Fallback: broadcast directly (synchronous)
-                event(new ChatMessageSent($chat, $group->referral_code));
+                try {
+                    event(new ChatMessageSent($chat));
+                    Log::info('Chat message broadcasted synchronously as fallback');
+                } catch (\Exception $broadcastException) {
+                    Log::error('Failed to broadcast chat message (fallback)', [
+                        'chat_id' => $chat->id,
+                        'error' => $broadcastException->getMessage()
+                    ]);
+                }
             }
             
             return response()->json([
                 'status' => 'success',
-                'message' => $chat,
+                'message' => 'Pesan terkirim',
+                'data' => [
+                    'id' => $chat->id,
+                    'message' => $chat->message,
+                    'time' => $chat->created_at->format('H:i'),
+                    'user' => [
+                        'id' => $user->id,
+                        'name' => $user->name
+                    ]
+                ],
                 'timestamp' => now()->toISOString()
             ]);
             
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::warning('Chat validation error (async)', [
+                'errors' => $e->validator->errors()->toArray()
+            ]);
+            return response()->json([
+                'status' => 'error',
+                'message' => $e->validator->errors()->first()
+            ], 422);
         } catch (\Exception $e) {
-            Log::error('Error sending message', [
+            Log::error('Error sending message (async)', [
                 'error' => $e->getMessage(),
                 'code' => $code,
-                'user_id' => Auth::id()
+                'user_id' => Auth::id(),
+                'trace' => $e->getTraceAsString()
             ]);
             
-            return response()->json(['error' => 'Failed to send message'], 500);
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Terjadi kesalahan. Silakan coba lagi.'
+            ], 500);
         }
     }
 
     /**
-     * Get messages for AJAX requests from chat.blade.php
-     * This method handles requests with group_id parameter
+     * Get messages for AJAX requests from chat.blade.php - OPTIMIZED
+     * This method handles requests with group_id parameter and supports pagination
      */
     public function getMessagesAjax(Request $request)
     {
@@ -477,6 +504,8 @@ class ChatController extends BaseController
             }
 
             $groupId = $request->query('group_id');
+            $afterId = $request->query('after', 0); // TAMBAHAN: untuk load pesan setelah ID tertentu
+            $limit = min($request->query('limit', self::MESSAGE_HISTORY_LIMIT), 50); // TAMBAHAN: limit maksimal 50
             
             if (!$groupId) {
                 return response()->json([
@@ -495,13 +524,21 @@ class ChatController extends BaseController
                 ], 403);
             }
             
-            $messages = Chat::where('group_id', $group->id)
-                ->with('user:id,name')
-                ->orderBy('created_at', 'desc')
-                ->limit(self::MESSAGE_HISTORY_LIMIT)
+            // OPTIMIZED: Query dengan kondisi after untuk load pesan terbaru saja
+            $query = Chat::where('group_id', $group->id)
+                ->with('user:id,name');
+            
+            if ($afterId > 0) {
+                // Load hanya pesan yang lebih baru dari afterId
+                $query->where('id', '>', $afterId);
+                $query->orderBy('created_at', 'asc'); // ASC untuk pesan baru
+            } else {
+                // Load pesan awal
+                $query->orderBy('created_at', 'desc');
+            }
+            
+            $messages = $query->limit($limit)
                 ->get()
-                ->reverse()
-                ->values()
                 ->map(function ($message) {
                     return [
                         'id' => $message->id,
@@ -509,14 +546,22 @@ class ChatController extends BaseController
                         'user_id' => $message->user_id,
                         'name' => $message->user->name,
                         'created_at' => $message->created_at->toISOString(),
+                        'timestamp' => $message->created_at->timestamp
                     ];
                 });
+            
+            // Reverse jika bukan query after (pesan awal)
+            if ($afterId == 0) {
+                $messages = $messages->reverse()->values();
+            }
             
             return response()->json([
                 'status' => 'success',
                 'messages' => $messages,
-                'group_name' => $group->name
-            ]);
+                'group_name' => $group->name,
+                'total_messages' => $messages->count(),
+                'after_id' => $afterId
+            ], 200, [], JSON_UNESCAPED_UNICODE);
             
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             Log::warning('Group not found for messages request', [

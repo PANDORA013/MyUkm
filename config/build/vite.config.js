@@ -32,7 +32,6 @@ export default defineConfig({
                 app: 'resources/js/app.js',
                 profile: 'resources/js/profile.js'
             },
-            external: ['axios'],
         },
     },
     optimizeDeps: {

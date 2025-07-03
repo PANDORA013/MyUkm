@@ -1,0 +1,1 @@
+php artisan config:clear & php artisan route:clear & php artisan view:clear & php artisan cache:clear & start /min cmd /k "php artisan queue:work --timeout=60 --sleep=3 --tries=3" & timeout /t 3 & start http://localhost:8000 & php artisan serve --host=localhost --port=8000

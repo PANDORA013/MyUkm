@@ -251,6 +251,7 @@
 
 <?php $__env->startPush('scripts'); ?>
 <script src="https://js.pusher.com/7.0/pusher.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.15.0/dist/echo.iife.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const groupId = document.getElementById('group-id').value;
@@ -459,57 +460,131 @@
             return response.json();
         }
         
-        // Pusher setup with error handling
+        // Configure Laravel Echo properly
         let pusher;
         let channel;
         
         try {
+            // Initialize Pusher first
             pusher = new Pusher('<?php echo e(env('PUSHER_APP_KEY')); ?>', {
                 cluster: '<?php echo e(env('PUSHER_APP_CLUSTER')); ?>',
-                forceTLS: true
+                forceTLS: true,
+                encrypted: true
             });
             
-            // Subscribe to the channel for this group
-            channel = pusher.subscribe('group.' + groupCode);
+            // Initialize Laravel Echo with Pusher instance
+            window.Echo = new Echo({
+                broadcaster: 'pusher',
+                key: '<?php echo e(env('PUSHER_APP_KEY')); ?>',
+                cluster: '<?php echo e(env('PUSHER_APP_CLUSTER')); ?>',
+                forceTLS: true,
+                encrypted: true,
+                authEndpoint: '/broadcasting/auth',
+                auth: {
+                    headers: {
+                        'X-CSRF-TOKEN': '<?php echo e(csrf_token()); ?>',
+                        'Accept': 'application/json'
+                    }
+                },
+                pusher: pusher
+            });
             
-            // Add connection error handling
+            console.log('✅ Laravel Echo initialized successfully');
+            
+            // Subscribe to private channel for this group
+            channel = window.Echo.private('group.' + groupCode);
+            console.log('✅ Subscribed to private channel:', 'group.' + groupCode);
+            
+            // Handle connection state changes
+            pusher.connection.bind('state_change', function(states) {
+                console.log('Pusher connection state changed:', states.current);
+                if (states.current === 'connected') {
+                    console.log('✅ Pusher connected successfully');
+                    // Hide any existing warnings
+                    const warnings = document.querySelectorAll('.pusher-warning');
+                    warnings.forEach(w => w.remove());
+                } else if (states.current === 'disconnected' || states.current === 'failed') {
+                    console.warn('❌ Pusher connection failed:', states.current);
+                    showConnectionWarning();
+                }
+            });
+            
+            // Handle connection errors
             pusher.connection.bind('error', function(err) {
-                console.warn('Pusher connection error:', err);
-                // Show a small notification that real-time updates are not available
+                console.error('Pusher connection error:', err);
                 showConnectionWarning();
             });
+            
         } catch (error) {
-            console.warn('Pusher initialization error:', error);
+            console.error('Echo initialization error:', error);
             showConnectionWarning();
+            
+            // Fallback: Use basic Pusher without Echo
+            try {
+                pusher = new Pusher('<?php echo e(env('PUSHER_APP_KEY')); ?>', {
+                    cluster: '<?php echo e(env('PUSHER_APP_CLUSTER')); ?>',
+                    forceTLS: true,
+                    encrypted: true,
+                    authEndpoint: '/broadcasting/auth',
+                    auth: {
+                        headers: {
+                            'X-CSRF-TOKEN': '<?php echo e(csrf_token()); ?>',
+                            'Accept': 'application/json'
+                        }
+                    }
+                });
+                
+                channel = pusher.subscribe('private-group.' + groupCode);
+                console.log('✅ Fallback: Using basic Pusher, subscribed to:', 'private-group.' + groupCode);
+                
+            } catch (fallbackError) {
+                console.error('Fallback Pusher error:', fallbackError);
+            }
         }
         
         // Function to show connection warning
         function showConnectionWarning() {
+            // Remove existing warnings first
+            const existingWarnings = document.querySelectorAll('.pusher-warning');
+            existingWarnings.forEach(w => w.remove());
+            
             const warningEl = document.createElement('div');
-            warningEl.className = 'alert alert-warning small m-1';
+            warningEl.className = 'alert alert-warning small m-1 pusher-warning';
             warningEl.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i> Notifikasi real-time tidak tersedia. Refresh halaman untuk melihat pesan terbaru.';
             
             // Insert before the chat form
-            document.querySelector('.chat-form').before(warningEl);
+            const chatForm = document.querySelector('.chat-form');
+            if (chatForm) {
+                chatForm.parentNode.insertBefore(warningEl, chatForm);
+            }
             
-            // Auto-hide after 10 seconds
+            // Auto-hide after 15 seconds
             setTimeout(() => {
-                warningEl.style.opacity = '0';
-                warningEl.style.transition = 'opacity 1s';
-                setTimeout(() => warningEl.remove(), 1000);
-            }, 10000);
+                if (warningEl.parentNode) {
+                    warningEl.style.opacity = '0';
+                    warningEl.style.transition = 'opacity 1s';
+                    setTimeout(() => {
+                        if (warningEl.parentNode) {
+                            warningEl.remove();
+                        }
+                    }, 1000);
+                }
+            }, 15000);
         }
         
         // Only set up event handlers if channel exists (real-time available)
         if (channel) {
-            // Handle incoming messages
-            channel.bind('new-message', function(data) {
+            console.log('✅ Setting up event handlers for group:', groupCode);
+            
+            // Handle incoming messages - FIXED: Match backend event name
+            channel.listen('ChatMessageSent', function(data) {
+                console.log('📨 Received chat message:', data);
                 appendMessage(data);
                 scrollToBottom();
             });
             
             // Handle typing indicators
-            channel.bind('typing', function(data) {
+            channel.listen('typing', function(data) {
                 if (data.user_id !== <?php echo e(Auth::id()); ?>) {
                     typingIndicator.textContent = data.name + ' sedang mengetik...';
                     setTimeout(() => {
@@ -519,19 +594,19 @@
             });
             
             // Handle online status updates
-            channel.bind('user-online', function(data) {
+            channel.listen('user-online', function(data) {
                 document.getElementById('onlineCount').textContent = data.online_count;
                 document.getElementById('totalMembers').textContent = data.total_members;
             });
             
             // Handle user online status changed
-            channel.bind('user-online-status-changed', function(data) {
+            channel.listen('user-online-status-changed', function(data) {
                 console.log('User online status changed:', data);
                 updateOnlineMembersDisplay(data.online_members, data.total_members);
             });
             
             // Handle user mute status changes
-            channel.bind('user-mute-status', function(data) {
+            channel.listen('user-mute-status', function(data) {
                 if (data.user_id === <?php echo e(Auth::id()); ?>) {
                     if (data.is_muted) {
                         // User was muted
@@ -590,7 +665,8 @@
                 sendButton.disabled = true;
                 
                 retryWithTokenRefresh(async () => {
-                    const response = await fetch('<?php echo e(route('chat.send')); ?>', {
+                    // Use the new asynchronous endpoint for better performance
+                    const response = await fetch(`/ukm/${groupCode}/messages`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -598,9 +674,7 @@
                             'X-Requested-With': 'XMLHttpRequest'
                         },
                         body: JSON.stringify({
-                            message: message,
-                            group_id: groupId,
-                            group_code: groupCode
+                            message: message
                         })
                     });
                     
