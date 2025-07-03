@@ -26,7 +26,7 @@
                 <div class="ml-3 relative">
                     <div x-data="{ open: false }" @click.away="open = false" class="relative">
                         <div>
-                            <button @click="open = ! open" class="flex items-center text-sm bg-blue-600 text-white px-4 py-2 rounded-full hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-500 transition">
+                            <button @click="open = ! open" class="flex items-center text-sm bg-blue-600 text-white px-4 py-2 rounded-full hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-500 transition" aria-label="Buka menu profil" title="Buka menu profil pengguna">
                                 <div class="flex items-center space-x-2">
                                     <div class="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
                                         <span class="text-sm font-medium text-white">{{ substr(Auth::user()->name, 0, 1) }}</span>
@@ -50,7 +50,7 @@
                             <!-- Authentication -->
                             <form method="POST" action="{{ route('logout') }}">
                                 @csrf
-                                <button type="submit" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                <button type="submit" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" aria-label="Keluar dari akun" title="Keluar dari akun">
                                     Log Out
                                 </button>
                             </form>
@@ -62,11 +62,12 @@
 
             <!-- Hamburger -->
             <div class="-mr-2 flex items-center sm:hidden">
-                <button @click="open = ! open" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 focus:text-gray-500 transition duration-150 ease-in-out">
+                <button @click="open = ! open" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 focus:text-gray-500 transition duration-150 ease-in-out" aria-label="Toggle navigation menu" title="Buka/tutup menu navigasi">
                     <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
                         <path :class="{'hidden': open, 'inline-flex': ! open }" class="inline-flex" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
                         <path :class="{'hidden': ! open, 'inline-flex': open }" class="hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
+                    <span class="sr-only">Toggle navigation menu</span>
                 </button>
             </div>
         </div>

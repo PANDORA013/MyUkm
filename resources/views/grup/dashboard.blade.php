@@ -88,8 +88,8 @@
                     <i class="fas fa-info-circle me-2"></i> Tentang UKM
                 </h6>
                 @if(auth()->user()->role === 'admin_grup')
-                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editDescriptionModal">
-                        <i class="fas fa-edit me-1"></i> Edit Deskripsi
+                    <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editDescriptionModal" aria-label="Edit description" title="Edit deskripsi UKM">
+                        <i class="fas fa-edit me-1" aria-hidden="true"></i> Edit Deskripsi
                     </button>
                 @endif
             </div>
@@ -168,8 +168,9 @@
                                 <th>Kode Referral:</th>
                                 <td>
                                     <code class="bg-light px-2 py-1 rounded">{{ $group->referral_code }}</code>
-                                    <button class="btn btn-sm btn-outline-secondary ms-2" onclick="copyToClipboard('{{ $group->referral_code }}')">
-                                        <i class="fas fa-copy"></i>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary ms-2" onclick="copyToClipboard('{{ $group->referral_code }}')" aria-label="Copy referral code" title="Salin kode referral">
+                                        <i class="fas fa-copy" aria-hidden="true"></i>
+                                        <span class="visually-hidden">Salin kode</span>
                                     </button>
                                 </td>
                             </tr>

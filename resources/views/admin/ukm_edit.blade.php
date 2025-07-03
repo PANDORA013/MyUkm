@@ -156,7 +156,7 @@
                             <a href="{{ url('/admin/dashboard') }}" class="btn btn-secondary">
                                 <i class="fas fa-arrow-left me-2"></i>Kembali ke Dashboard
                             </a>
-                            <button type="submit" class="btn btn-primary">
+                            <button type="submit" class="btn btn-primary" aria-label="Simpan perubahan UKM" title="Simpan semua perubahan yang telah dibuat">
                                 <i class="fas fa-save me-2"></i>Simpan Perubahan
                             </button>
                         </div>

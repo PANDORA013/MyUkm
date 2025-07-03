@@ -221,8 +221,9 @@
     <nav class="top-navbar">
         <div class="container-fluid">
             <div class="d-flex justify-content-between align-items-center">
-                <button class="btn btn-link text-dark p-0 d-md-none" id="sidebar-toggle">
-                    <i class="fas fa-bars fa-lg"></i>
+                <button type="button" class="btn btn-link text-dark p-0 d-md-none" id="sidebar-toggle" aria-label="Toggle sidebar" title="Buka/tutup menu samping">
+                    <i class="fas fa-bars fa-lg" aria-hidden="true"></i>
+                    <span class="visually-hidden">Menu</span>
                 </button>
                 
                 <div class="dropdown">

@@ -76,7 +76,7 @@
                     />
                 </div>
                 <div class="col-md-4">
-                    <button type="submit" class="btn btn-primary w-100">
+                    <button type="submit" class="btn btn-primary w-100" aria-label="Gabung UKM dengan kode referral" title="Masukkan kode referral untuk bergabung dengan UKM">
                         <i class="fas fa-plus me-2"></i>Gabung UKM
                     </button>
                 </div>
@@ -125,6 +125,7 @@
                                             class="btn btn-sm btn-danger"
                                             onclick="return confirm('Apakah Anda yakin ingin keluar dari UKM ini?')"
                                             title="Keluar dari UKM"
+                                            aria-label="Keluar dari UKM {{ $ukm->name }}"
                                             data-bs-toggle="tooltip"
                                         >
                                             <i class="fas fa-sign-out-alt"></i> Keluar
@@ -157,6 +158,7 @@
                                         type="submit" 
                                         class="btn btn-sm btn-primary"
                                         title="Gabung UKM"
+                                        aria-label="Gabung UKM {{ $ukm->name }}"
                                         data-bs-toggle="tooltip"
                                     >
                                         <i class="fas fa-plus"></i> Gabung

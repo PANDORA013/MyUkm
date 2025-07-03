@@ -22,10 +22,11 @@
                     </p>
                 </div>
                 <div class="flex items-center gap-4">
-                    <button id="scroll-bottom" class="text-blue-600 hover:text-blue-800 hidden">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <button type="button" id="scroll-bottom" class="text-blue-600 hover:text-blue-800 hidden" aria-label="Scroll to bottom" title="Scroll ke bawah">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 13l-7 7-7-7m14-8l-7 7-7-7"></path>
                         </svg>
+                        <span class="sr-only">Scroll ke bawah</span>
                     </button>
                     <a href="{{ route('ukm.index') }}" class="text-blue-600 hover:text-blue-800">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

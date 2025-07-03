@@ -251,7 +251,7 @@
                             <h6>Bagikan Kode Referral</h6>
                             <div class="input-group">
                                 <input type="text" class="form-control" value="{{ $group->referral_code }}" readonly>
-                                <button class="btn btn-outline-secondary" onclick="copyToClipboard('{{ $group->referral_code }}')">
+                                <button type="button" class="btn btn-outline-secondary" onclick="copyToClipboard('{{ $group->referral_code }}')" aria-label="Salin kode referral" title="Salin kode referral ke clipboard">
                                     <i class="fas fa-copy me-1"></i>Salin
                                 </button>
                             </div>

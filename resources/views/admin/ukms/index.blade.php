@@ -17,11 +17,11 @@
                             <div class="input-group">
                                 <input type="text" name="search" class="form-control" 
                                        placeholder="Cari UKM..." value="{{ request('search') }}">
-                                <button class="btn btn-outline-secondary" type="submit">
+                                <button class="btn btn-outline-secondary" type="submit" aria-label="Cari UKM" title="Cari UKM berdasarkan nama">
                                     <i class="fas fa-search"></i>
                                 </button>
                                 @if(request('search'))
-                                    <a href="{{ route('admin.ukms') }}" class="btn btn-outline-danger">
+                                    <a href="{{ route('admin.ukms') }}" class="btn btn-outline-danger" aria-label="Hapus pencarian" title="Hapus filter pencarian UKM">
                                         <i class="fas fa-times"></i>
                                     </a>
                                 @endif
@@ -179,8 +179,8 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" aria-label="Batal" title="Batal membuat UKM baru">Batal</button>
+                    <button type="submit" class="btn btn-primary" aria-label="Simpan UKM baru" title="Simpan UKM baru dengan data yang telah diisi">
                         <i class="fas fa-save"></i> Simpan
                     </button>
                 </div>

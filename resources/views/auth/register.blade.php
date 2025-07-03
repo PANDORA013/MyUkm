@@ -39,7 +39,9 @@
                         class="w-full px-4 py-3 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
                 <button type="submit"
-                    class="w-full py-3 bg-blue-500 text-white rounded-full font-semibold hover:bg-blue-600 transition">
+                    class="w-full py-3 bg-blue-500 text-white rounded-full font-semibold hover:bg-blue-600 transition"
+                    aria-label="Daftar akun baru"
+                    title="Daftar akun baru dengan data yang telah diisi">
                     Daftar
                 </button>
 

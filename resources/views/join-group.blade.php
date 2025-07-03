@@ -48,6 +48,8 @@
             <button 
                 type="submit" 
                 class="w-full bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700 transition-colors"
+                aria-label="Gabung UKM dengan kode referral"
+                title="Gabung UKM dengan kode referral yang dimasukkan"
             >
                 Gabung UKM
             </button>

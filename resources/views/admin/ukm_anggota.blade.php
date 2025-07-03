@@ -215,11 +215,11 @@
                             <div class="input-group input-group-sm">
                                 <input type="text" name="search" class="form-control" 
                                        placeholder="Cari anggota..." value="{{ request('search') }}">
-                                <button class="btn btn-outline-secondary" type="submit">
+                                <button class="btn btn-outline-secondary" type="submit" aria-label="Cari anggota" title="Cari anggota berdasarkan nama atau NIM">
                                     <i class="fas fa-search"></i>
                                 </button>
                                 @if(request('search'))
-                                    <a href="{{ route('admin.ukm.anggota', $ukm->id) }}" class="btn btn-outline-danger">
+                                    <a href="{{ route('admin.ukm.anggota', $ukm->id) }}" class="btn btn-outline-danger" aria-label="Hapus pencarian" title="Hapus filter pencarian">
                                         <i class="fas fa-times"></i>
                                     </a>
                                 @endif

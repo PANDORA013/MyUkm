@@ -164,8 +164,9 @@
                                 <input type="hidden" id="group-code" value="{{ $groupCode }}">
                                 <input type="hidden" id="is-muted" value="{{ isset($isMuted) && $isMuted ? 'true' : 'false' }}">
                                 <input type="text" class="form-control me-2" id="message-input" placeholder="{{ isset($isMuted) && $isMuted ? 'Anda sedang dimute dan tidak dapat mengirim pesan' : 'Ketik pesan Anda...' }}" autocomplete="off" {{ isset($isMuted) && $isMuted ? 'disabled' : '' }}>
-                                <button type="submit" class="btn btn-primary" {{ isset($isMuted) && $isMuted ? 'disabled' : '' }}>
-                                    <i class="fas fa-paper-plane"></i>
+                                <button type="submit" class="btn btn-primary" {{ isset($isMuted) && $isMuted ? 'disabled' : '' }} aria-label="Kirim pesan" title="Kirim pesan">
+                                    <i class="fas fa-paper-plane" aria-hidden="true"></i>
+                                    <span class="visually-hidden">Kirim</span>
                                 </button>
                             </form>
                         </div>
@@ -187,6 +188,7 @@
         const chatForm = document.getElementById('chat-form');
         const chatMessages = document.getElementById('chat-messages');
         const typingIndicator = document.getElementById('typing-indicator');
+        const sendButton = document.querySelector('#chat-form button[type="submit"]');
         const isMuted = document.getElementById('is-muted').value === 'true';
         
         // Variable to store current CSRF token
@@ -483,27 +485,6 @@
                     messageInput.disabled = false;
                     sendButton.disabled = false;
                     messageInput.focus();
-                });
-                            }
-                            throw new Error('Error: ' + (data.message || response.status));
-                        });
-                    }
-                    return safeJsonParse(response);
-                })
-                .then(data => {
-                    if (data.status === 'success') {
-                        messageInput.value = '';
-                    } else {
-                        console.error('Error sending message:', data.message);
-                        showConnectionError(data.message || 'Error sending message');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error sending message:', error);
-                    // Hanya tampilkan error jika bukan session expired yang sudah ditangani
-                    if (error.message !== 'Session expired') {
-                        showConnectionError('Gagal mengirim pesan. Coba refresh halaman.');
-                    }
                 });
             }
         });
