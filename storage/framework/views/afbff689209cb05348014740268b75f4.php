@@ -320,7 +320,6 @@
                 }
                 throw error;
             });
-            });
         }
         
         // Helper function for safe JSON parsing that handles HTML responses
@@ -590,12 +589,10 @@
                 if (error.message !== 'Session expired') {
                     showConnectionError('Gagal memuat pesan. Mencoba lagi...');
                     setTimeout(loadMessages, 5000);
+                } else {
+                    showConnectionError('Gagal memuat pesan. Coba refresh halaman.');
                 }
             }
-        }
-                        showConnectionError('Gagal memuat pesan. Coba refresh halaman.');
-                    }
-                });
         }
         
         // Join chat room
