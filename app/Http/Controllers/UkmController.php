@@ -21,11 +21,21 @@ class UkmController extends Controller
         $joinedGroups = $user->groups()->with('users')->get();
         $availableGroups = Group::whereNotIn('id', $joinedGroups->pluck('id'))->get();
         
-        return view('ukm.index', [
-            'joinedGroups' => $joinedGroups,
-            'availableGroups' => $availableGroups,
-            'userUkm' => $user->ukm_id ? Group::find($user->ukm_id) : null
-        ]);
+        // Berdasarkan role user, tampilkan view yang sesuai
+        if ($user->role === 'admin_website' || $user->role === 'admin_grup') {
+            return view('ukm.index', [
+                'joinedGroups' => $joinedGroups,
+                'availableGroups' => $availableGroups,
+                'userUkm' => $user->ukm_id ? Group::find($user->ukm_id) : null
+            ]);
+        } else {
+            // Untuk user biasa (anggota), gunakan view khusus user
+            return view('ukm.user_index', [
+                'joinedGroups' => $joinedGroups,
+                'availableGroups' => $availableGroups,
+                'userUkm' => $user->ukm_id ? Group::find($user->ukm_id) : null
+            ]);
+        }
     }
 
     public function join(Request $request)

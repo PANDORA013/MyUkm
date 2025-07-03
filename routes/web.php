@@ -20,7 +20,8 @@ Route::get('/', function () {
         if ($user->role === 'admin_grup') {
             return redirect('/grup/dashboard');
         }
-        return redirect()->route('home');
+        // Untuk user biasa (role: member, anggota, dll), arahkan ke home/ukm.index
+        return redirect()->route('ukm.index');
     }
     return redirect()->route('login');
 });
@@ -33,7 +34,7 @@ Route::post('login', [AuthController::class, 'login']);
 Route::post('logout', [AuthController::class, 'logout'])->name('logout');
 
 // Protected routes
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth', 'ensure.role'])->group(function () {
     // Home alias and UKM routes  
     Route::get('/home', fn() => redirect()->route('ukm.index'))->name('home');
     Route::get('/ukm', [UkmController::class, 'index'])->name('ukm.index');
