@@ -148,8 +148,8 @@
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
                             <div class="text-xs font-weight-bold text-uppercase mb-1">Admin Grup</div>
-                            <div class="h5 mb-0 font-weight-bold">{{ $anggota->where('role', 'admin_grup')->count() }}</div>
-                            <div class="text-xs mt-1 opacity-75">Aktif</div>
+                            <div class="h5 mb-0 font-weight-bold">{{ $anggota->where('pivot.is_admin', true)->count() }}</div>
+                            <div class="text-xs mt-1 opacity-75">Di grup ini</div>
                         </div>
                         <div class="col-auto">
                             <i class="fas fa-user-shield fa-2x opacity-75"></i>
@@ -283,14 +283,22 @@
                                             <td><code>{{ $user->nim ?? '-' }}</code></td>
                                             <td>
                                                 @php
-                                                    $roleLabels = [
-                                                        'admin_website' => ['Admin Website', 'danger'],
-                                                        'admin_grup' => ['Admin Grup', 'warning'],
-                                                        'anggota' => ['Anggota', 'primary']
-                                                    ];
-                                                    $roleData = $roleLabels[$user->role] ?? ['Unknown', 'secondary'];
+                                                    // Role global dan status admin per grup
+                                                    $isAdminInGroup = $user->pivot && $user->pivot->is_admin;
+                                                    
+                                                    if ($user->role === 'admin_website') {
+                                                        $badge = ['Admin Website', 'danger'];
+                                                    } elseif ($isAdminInGroup) {
+                                                        $badge = ['Admin Grup', 'warning'];
+                                                    } else {
+                                                        $badge = ['Anggota', 'primary'];
+                                                    }
                                                 @endphp
-                                                <span class="badge bg-{{ $roleData[1] }}">{{ $roleData[0] }}</span>
+                                                <span class="badge bg-{{ $badge[1] }}">{{ $badge[0] }}</span>
+                                                
+                                                @if ($user->role === 'admin_grup' && !$isAdminInGroup)
+                                                    <br><small class="text-muted">Global: Admin Grup</small>
+                                                @endif
                                             </td>
                                             <td>
                                                 @php
@@ -317,18 +325,22 @@
                                                         <i class="fas fa-eye"></i>
                                                     </a>
                                                     @if(auth()->user()->role === 'admin_website' && $user->role !== 'admin_website')
-                                                        @if($user->role !== 'admin_grup')
+                                                        @php
+                                                            $isAdminInThisGroup = $user->pivot && $user->pivot->is_admin;
+                                                        @endphp
+                                                        
+                                                        @if(!$isAdminInThisGroup)
                                                             <button type="button" 
                                                                     class="btn btn-outline-success" 
-                                                                    title="Jadikan Admin Grup"
-                                                                    onclick="confirmMakeAdmin({{ $user->id }}, '{{ $user->name }}')">
+                                                                    title="Jadikan Admin di Grup Ini"
+                                                                    onclick="confirmMakeAdminInGroup({{ $user->id }}, '{{ $user->name }}', {{ $ukm->id }})">
                                                                 <i class="fas fa-user-shield"></i>
                                                             </button>
                                                         @else
                                                             <button type="button" 
                                                                     class="btn btn-outline-warning" 
-                                                                    title="Hapus Admin Grup"
-                                                                    onclick="confirmRemoveAdmin({{ $user->id }}, '{{ $user->name }}')">
+                                                                    title="Hapus Admin dari Grup Ini"
+                                                                    onclick="confirmRemoveAdminFromGroup({{ $user->id }}, '{{ $user->name }}', {{ $ukm->id }})">
                                                                 <i class="fas fa-user-minus"></i>
                                                             </button>
                                                         @endif
@@ -360,43 +372,61 @@
         $('.alert').fadeOut('slow');
     }, 5000);
     
-    // Function to confirm making user admin
-    function confirmMakeAdmin(userId, userName) {
-        if (confirm('Apakah Anda yakin ingin menjadikan "' + userName + '" sebagai Admin Grup?\n\nAdmin Grup dapat mengelola anggota UKM.')) {
-            // Create form and submit
-            let form = document.createElement('form');
-            form.method = 'POST';
-            form.action = '/admin/users/' + userId + '/make-admin';
-            
-            // Add CSRF token
-            let csrfToken = document.createElement('input');
-            csrfToken.type = 'hidden';
-            csrfToken.name = '_token';
-            csrfToken.value = '{{ csrf_token() }}';
-            form.appendChild(csrfToken);
-            
-            document.body.appendChild(form);
-            form.submit();
+    // Function to confirm making user admin in specific group
+    function confirmMakeAdminInGroup(userId, userName, ukmId) {
+        if (confirm('Apakah Anda yakin ingin menjadikan "' + userName + '" sebagai Admin di grup ini?\n\nUser akan memiliki akses admin hanya di grup ini.')) {
+            // Use fetch API with AJAX
+            fetch('/admin/users/' + userId + '/promote-in-group', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({
+                    ukm_id: ukmId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Terjadi kesalahan jaringan');
+            });
         }
     }
     
-    // Function to confirm removing admin
-    function confirmRemoveAdmin(userId, userName) {
-        if (confirm('Apakah Anda yakin ingin menghapus hak akses Admin Grup dari "' + userName + '"?\n\nUser akan kembali menjadi anggota biasa.')) {
-            // Create form and submit
-            let form = document.createElement('form');
-            form.method = 'POST';
-            form.action = '/admin/users/' + userId + '/remove-admin';
-            
-            // Add CSRF token
-            let csrfToken = document.createElement('input');
-            csrfToken.type = 'hidden';
-            csrfToken.name = '_token';
-            csrfToken.value = '{{ csrf_token() }}';
-            form.appendChild(csrfToken);
-            
-            document.body.appendChild(form);
-            form.submit();
+    // Function to confirm removing admin from specific group
+    function confirmRemoveAdminFromGroup(userId, userName, ukmId) {
+        if (confirm('Apakah Anda yakin ingin menghapus hak admin "' + userName + '" dari grup ini?\n\nUser akan tetap bisa jadi admin di grup lain.')) {
+            // Use fetch API with AJAX
+            fetch('/admin/users/' + userId + '/demote-from-group', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({
+                    ukm_id: ukmId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Terjadi kesalahan jaringan');
+            });
         }
     }
     

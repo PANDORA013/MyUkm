@@ -247,7 +247,7 @@ class AdminWebsiteController extends Controller
         if (!$group) {
             $anggota = collect();
         } else {
-            $query = $group->users();
+            $query = $group->users()->withPivot(['is_admin', 'is_muted', 'created_at']);
             
             // Add search functionality
             if ($request->filled('search')) {
@@ -488,5 +488,82 @@ class AdminWebsiteController extends Controller
         });
 
         return view('admin.ukms.index', compact('ukms'));
+    }
+
+    /**
+     * Promosikan user menjadi admin di grup tertentu
+     *
+     * @param int $userId
+     * @param int $groupId  
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function promoteToAdminInGroup(Request $request, $userId)
+    {
+        try {
+            $user = User::findOrFail($userId);
+            $ukmId = $request->input('ukm_id');
+            $ukm = UKM::findOrFail($ukmId);
+            $group = Group::where('referral_code', $ukm->code)->firstOrFail();
+            
+            // Cek apakah user adalah anggota grup
+            if (!$user->groups()->where('group_id', $group->id)->exists()) {
+                return response()->json(['error' => 'User bukan anggota grup ini'], 400);
+            }
+            
+            // Cek apakah user sudah admin di grup ini
+            if ($user->isAdminInGroup($group)) {
+                return response()->json(['error' => 'User sudah menjadi admin di grup ini'], 400);
+            }
+            
+            // Promosikan ke admin di grup ini
+            $user->promoteToAdminInGroup($group);
+            
+            return response()->json([
+                'success' => true, 
+                'message' => $user->name . ' berhasil dipromosikan menjadi admin di grup ' . $group->name
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Terjadi kesalahan: ' . $e->getMessage()], 500);
+        }
+    }
+    
+    /**
+     * Turunkan user dari admin menjadi anggota biasa di grup tertentu
+     *
+     * @param int $userId
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function demoteFromAdminInGroup(Request $request, $userId)
+    {
+        try {
+            $user = User::findOrFail($userId);
+            $ukmId = $request->input('ukm_id');
+            $ukm = UKM::findOrFail($ukmId);
+            $group = Group::where('referral_code', $ukm->code)->firstOrFail();
+            
+            // Cek apakah user adalah admin di grup ini
+            if (!$user->isAdminInGroup($group)) {
+                return response()->json(['error' => 'User bukan admin di grup ini'], 400);
+            }
+            
+            // Cek jangan sampai admin terakhir
+            $adminCount = $group->users()->wherePivot('is_admin', true)->count();
+            if ($adminCount <= 1) {
+                return response()->json(['error' => 'Tidak dapat menurunkan admin terakhir'], 400);
+            }
+            
+            // Turunkan dari admin di grup ini
+            $user->demoteFromAdminInGroup($group);
+            
+            return response()->json([
+                'success' => true,
+                'message' => $user->name . ' berhasil diturunkan dari admin di grup ' . $group->name
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Terjadi kesalahan: ' . $e->getMessage()], 500);
+        }
     }
 }

@@ -85,6 +85,15 @@ Route::middleware(['auth', 'ensure.role'])->group(function () {
             ->name('users.remove-admin')
             ->middleware('throttle:60,1');
             
+        // Promosi/demosi admin per grup
+        Route::post('/users/{id}/promote-in-group', [AdminWebsiteController::class, 'promoteToAdminInGroup'])
+            ->name('users.promote-in-group')
+            ->middleware('throttle:60,1');
+            
+        Route::post('/users/{id}/demote-from-group', [AdminWebsiteController::class, 'demoteFromAdminInGroup'])
+            ->name('users.demote-from-group')
+            ->middleware('throttle:60,1');
+            
         Route::delete('/users/{id}', [AdminWebsiteController::class, 'hapusAkun'])
             ->name('users.destroy')
             ->middleware('throttle:60,1');

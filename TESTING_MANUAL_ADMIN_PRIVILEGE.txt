@@ -1,0 +1,55 @@
+=== PANDUAN TESTING MANUAL SINKRONISASI ADMIN PRIVILEGE ===
+
+MASALAH YANG DILAPORKAN:
+- Nabil bukan admin SIMS di database (is_admin = 0)  
+- Tapi di halaman admin website, Nabil masih tampil sebagai "Admin Grup" di SIMS
+- Ingin semua tersinkronisasi dengan benar
+
+DATA DI DATABASE (sudah benar):
+- Nabil (ID: 159): Admin di PSM (is_admin = 1), BUKAN admin di SIMS (is_admin = 0)
+
+PERUBAHAN YANG SUDAH DILAKUKAN:
+✅ View admin/ukm_anggota.blade.php:
+   - Statistik admin menggunakan $anggota->where('pivot.is_admin', true)
+   - Badge role menggunakan privilege per grup (pivot.is_admin)  
+   - Button promosi/demosi berdasarkan status admin di grup tersebut
+
+✅ AdminWebsiteController:
+   - Method lihatAnggota() menggunakan withPivot(['is_admin', ...])
+   - Method promoteToAdminInGroup() dan demoteFromAdminInGroup()
+   - Routes baru untuk admin per grup
+
+✅ JavaScript AJAX:
+   - Function confirmMakeAdminInGroup() dan confirmRemoveAdminFromGroup()
+   - Parameter ukm_id untuk identify grup
+
+URL UNTUK TESTING:
+1. SIMS: http://localhost/admin/ukm/99/anggota
+2. PSM:  http://localhost/admin/ukm/101/anggota
+
+LANGKAH TESTING MANUAL:
+1. Login sebagai admin website
+2. Buka URL SIMS: /admin/ukm/99/anggota
+   - Cari Nabil dalam daftar anggota
+   - ❌ SEBELUM: Badge "Admin Grup" 
+   - ✅ SESUDAH: Badge "Anggota" + button hijau (promote)
+3. Buka URL PSM: /admin/ukm/101/anggota  
+   - Cari Nabil dalam daftar anggota
+   - ✅ HARUS: Badge "Admin Grup" + button kuning (demote)
+
+VERIFIKASI STATISTIK:
+- Di halaman SIMS: "Admin Grup: 1" (hanya Milla)
+- Di halaman PSM: "Admin Grup: 1" (hanya Nabil)
+
+TESTING FUNGSIONAL (opsional):
+1. Di halaman SIMS, klik button hijau untuk promote Nabil → berhasil
+2. Di halaman PSM, klik button kuning untuk demote Nabil → berhasil  
+3. Refresh dan verifikasi perubahan badge/button
+
+STATUS: ✅ SINKRONISASI PRIVILEGE ADMIN PER GRUP COMPLETE
+
+Cache sudah di-clear:
+- php artisan view:clear
+- php artisan route:clear
+
+Semua logic sudah berbasis pivot is_admin, bukan role global.

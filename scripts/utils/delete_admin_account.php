@@ -2,14 +2,9 @@
 
 require_once __DIR__ . '/../../vendor/autoload.php';
 
-$app = require __DIR__ . '/../../bootstrap/app.php';
-$app->bind(
-    \Illuminate\Contracts\Console\Kernel::class,
-    \App\Console\Kernel::class
-);
-
-$kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
-$kernel->bootstrap();
+// Bootstrap Laravel 11
+$app = require_once __DIR__ . '/../../bootstrap/app.php';
+$app->make(\Illuminate\Contracts\Console\Kernel::class)->bootstrap();
 
 use App\Models\User;
 use App\Models\UserDeletionHistory;
