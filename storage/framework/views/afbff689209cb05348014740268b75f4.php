@@ -206,15 +206,40 @@
             }
         });
 
-        // Debounce for typing to avoid excessive refreshes
+        // Debounce for typing and send typing indicator
         let typingRefreshTimeout;
+        let typingIndicatorTimeout;
         messageInput.addEventListener('input', function() {
+            // Handle CSRF token refresh
             clearTimeout(typingRefreshTimeout);
             typingRefreshTimeout = setTimeout(() => {
                 if (!window.lastRefreshTime || (Date.now() - window.lastRefreshTime) > 5 * 60 * 1000) {
                     refreshCsrfToken();
                 }
             }, 5000);
+            
+            // Handle typing indicator
+            clearTimeout(typingIndicatorTimeout);
+            
+            fetch('<?php echo e(route('chat.typing')); ?>', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken
+                },
+                body: JSON.stringify({
+                    group_id: groupId
+                })
+            })
+            .then(response => {
+                if (response.headers.get('content-type')?.includes('application/json')) {
+                    return safeJsonParse(response);
+                }
+                return response;
+            })
+            .catch(error => console.error('Error sending typing indicator:', error));
+            
+            typingIndicatorTimeout = setTimeout(() => {}, 3000);
         });
         
         // Function to refresh CSRF token and keep session alive
@@ -536,31 +561,6 @@
                 }, 5000);
             }
         }
-        
-        // Send typing indicator
-        let typingTimeout;
-        messageInput.addEventListener('input', function() {
-            clearTimeout(typingTimeout);
-            fetch('<?php echo e(route('chat.typing')); ?>', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken
-                },
-                body: JSON.stringify({
-                    group_id: groupId
-                })
-            })
-            .then(response => {
-                if (response.headers.get('content-type')?.includes('application/json')) {
-                    return safeJsonParse(response);
-                }
-                return response;
-            })
-            .catch(error => console.error('Error sending typing indicator:', error));
-            
-            typingTimeout = setTimeout(() => {}, 3000);
-        });
         
         // Load messages
         async function loadMessages() {
