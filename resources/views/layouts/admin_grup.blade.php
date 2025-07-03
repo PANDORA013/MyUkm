@@ -148,6 +148,28 @@
             font-weight: 600;
         }
         
+        /* Admin badge styling */
+        .admin-badge {
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            color: white;
+            padding: 0.2rem 0.5rem;
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-left: 0.5rem;
+            display: inline-flex;
+            align-items: center;
+        }
+        
+        .admin-menu-item {
+            background-color: #fef3c7 !important;
+            border-left: 3px solid #f59e0b !important;
+        }
+        
+        .admin-menu-item:hover {
+            background-color: #fde68a !important;
+        }
+        
         @media (max-width: 767.98px) {
             .sidebar {
                 margin-left: calc(-1 * var(--sidebar-width));
@@ -204,7 +226,22 @@
             </a>
         </div>
         
-        <!-- Chat menu akan muncul jika user sudah bergabung dengan UKM -->
+        <!-- Admin Groups Management Section -->
+        @if(Auth::user()->role === 'admin_grup' && Auth::user()->groups->count() > 0)
+            <div class="sidebar-heading border-bottom mt-2 mb-0">
+                <i class="fas fa-crown me-1" style="color: #f59e0b;"></i> Admin UKM
+            </div>
+            <div class="list-group list-group-flush">
+                <a href="{{ route('grup.dashboard') }}" class="list-group-item list-group-item-action {{ request()->routeIs('grup.dashboard') ? 'active' : '' }}">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                </a>
+                <a href="{{ route('grup.anggota') }}" class="list-group-item list-group-item-action {{ request()->routeIs('grup.anggota') ? 'active' : '' }}">
+                    <i class="fas fa-users-cog"></i> Kelola Anggota
+                </a>
+            </div>
+        @endif
+        
+        <!-- Regular User Groups Section -->
         @if(Auth::user()->groups->count() > 0)
             <div class="sidebar-heading border-bottom mt-2 mb-0">
                 UKM Saya
@@ -230,10 +267,26 @@
                         <div class="avatar">
                             {{ substr(Auth::user()->name, 0, 1) }}
                         </div>
-                        <span class="d-none d-sm-inline">{{ Auth::user()->name }}</span>
+                        <span class="d-none d-sm-inline">
+                            {{ Auth::user()->name }}
+                            @if(Auth::user()->role === 'admin_grup')
+                                <span class="admin-badge">
+                                    <i class="fas fa-crown me-1"></i>Admin UKM
+                                </span>
+                            @endif
+                        </span>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
                         <li><a class="dropdown-item" href="{{ route('profile.show') }}"><i class="fas fa-user-circle me-2"></i>Profil</a></li>
+                        @if(Auth::user()->role === 'admin_grup' && Auth::user()->groups && Auth::user()->groups->count() > 0)
+                            <li><hr class="dropdown-divider"></li>
+                            <li class="dropdown-header"><i class="fas fa-crown me-2" style="color: #f59e0b;"></i>Menu Admin UKM</li>
+                            @foreach(Auth::user()->groups as $group)
+                            <li><a class="dropdown-item" href="{{ route('grup.dashboard') }}"><i class="fas fa-tachometer-alt me-2"></i>Dashboard {{ $group->name }}</a></li>
+                            <li><a class="dropdown-item" href="{{ route('grup.anggota') }}"><i class="fas fa-users-cog me-2"></i>Kelola Anggota</a></li>
+                            <li><a class="dropdown-item" href="{{ route('ukm.chat', $group->referral_code) }}"><i class="fas fa-comments me-2"></i>Chat {{ $group->name }}</a></li>
+                            @endforeach
+                        @endif
                         <li><hr class="dropdown-divider"></li>
                         <li>
                             <form method="POST" action="{{ route('logout') }}">

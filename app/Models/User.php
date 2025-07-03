@@ -109,6 +109,25 @@ class User extends Authenticatable
     }
 
     /**
+     * The groups where the user is an admin.
+     */
+    public function adminGroups(): BelongsToMany
+    {
+        return $this->belongsToMany(Group::class, 'group_user', 'user_id', 'group_id')
+            ->using(GroupUser::class)
+            ->wherePivot('is_admin', true)
+            ->withPivot([
+                'is_muted',
+                'is_admin',
+                'created_at',
+                'updated_at',
+                'deleted_at'
+            ])
+            ->withTimestamps()
+            ->withTrashed();
+    }
+
+    /**
      * The UKMs that the user belongs to through groups.
      */
     public function ukms(): BelongsToMany

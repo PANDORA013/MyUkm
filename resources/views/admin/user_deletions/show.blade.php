@@ -57,31 +57,28 @@
                             </tr>
                             <tr>
                                 <td class="info-label">Nama Lengkap</td>
-                                <td class="info-value">{{ $deletion->name }}</td>
+                                <td class="info-value">{{ $deletion->user_name }}</td>
                             </tr>
                             <tr>
                                 <td class="info-label">NIM</td>
-                                <td class="info-value">{{ $deletion->nim ?? '-' }}</td>
+                                <td class="info-value">{{ $deletion->user_nim ?? '-' }}</td>
                             </tr>
                             <tr>
                                 <td class="info-label">Email</td>
-                                <td class="info-value">
-                                    {{ $deletion->email ?? '-' }}
-                                </td>
+                                <td class="info-value">{{ $deletion->user_email ?? '-' }}</td>
                             </tr>
                             <tr>
                                 <td class="info-label">Role</td>
                                 <td>
-                                    @php
-                                        $badgeClass = [
-                                            'admin_website' => 'bg-primary',
-                                            'admin_ukm' => 'bg-success',
-                                            'member' => 'bg-secondary'
-                                        ][$deletion->role] ?? 'bg-secondary';
-                                    @endphp
-                                    <span class="badge {{ $badgeClass }}">
-                                        {{ ucfirst(str_replace('_', ' ', $deletion->role)) }}
-                                    </span>
+                                    @if($deletion->user_role)
+                                        <span class="badge {{ $deletion->user_role == 'admin_website' ? 'bg-danger' : ($deletion->user_role == 'admin_grup' ? 'bg-primary' : 'bg-secondary') }}">
+                                            {{ $deletion->user_role }}
+                                        </span>
+                                    @else
+                                        <span class="badge bg-secondary">
+                                            Tidak tersedia
+                                        </span>
+                                    @endif
                                 </td>
                             </tr>
                         </table>
@@ -130,7 +127,7 @@
                                 <td class="info-value">
                                     <div class="alert alert-light border" role="alert">
                                         <i class="fas fa-quote-left me-2 text-muted"></i>
-                                        {{ $deletion->deletion_reason ?? 'Tidak ada informasi yang dicantumkan' }}
+                                        {{ $deletion->reason ?? 'Tidak ada informasi yang dicantumkan' }}
                                     </div>
                                 </td>
                             </tr>

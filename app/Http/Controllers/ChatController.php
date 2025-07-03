@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\BroadcastHelper;
 use App\Models\Chat;
 use App\Models\Group;
 use App\Models\User;
@@ -52,31 +53,42 @@ class ChatController extends BaseController
         $group = Group::findOrFail($activeGroupId);
         // Ambil chat terbaru langsung dari relasi
         $chats = $group->chats()->with('user')->orderBy('created_at', 'desc')->limit(self::MESSAGE_HISTORY_LIMIT)->get()->reverse();
+        
+        // Check if user is muted
+        $userMembership = $group->users()->where('user_id', $user->id)->first();
+        $isMuted = $userMembership && $userMembership->pivot->is_muted;
 
         return view("chat", [
             "chats" => $chats,
             "groupName" => $group->name,
-            "memberCount" => $group->users()->count(),
+            "memberCount" => $group->members()->count(),
             "groupCode" => $group->referral_code,
             "groupId" => $group->id,
             "typingTimeout" => self::TYPING_TIMEOUT,
+            "isMuted" => $isMuted,
         ]);
     }
 
     public function showChat($code)
     {
+        $user = Auth::user();
         $group = Group::where("referral_code", $code)->firstOrFail();
         Session::put("active_group_id", $group->id);
 
         $chats = $group->chats()->with('user')->orderBy('created_at', 'desc')->limit(self::MESSAGE_HISTORY_LIMIT)->get()->reverse();
+        
+        // Check if user is muted
+        $userMembership = $group->users()->where('user_id', $user->id)->first();
+        $isMuted = $userMembership && $userMembership->pivot->is_muted;
 
         return view("chat", [
             "chats" => $chats,
             "groupName" => $group->name,
-            "memberCount" => $group->users()->count(),
+            "memberCount" => $group->members()->count(),
             "groupCode" => $code,
             "groupId" => $group->id,
             "typingTimeout" => self::TYPING_TIMEOUT,
+            "isMuted" => $isMuted,
         ]);
     }
 
@@ -118,21 +130,21 @@ class ChatController extends BaseController
             }
 
             // Cek keanggotaan user pada grup
-            // if (!$user->groups()->where("group_id", $group->id)->exists()) {
-            //     return response()->json([
-            //         "status" => "error",
-            //         "message" => "Anda tidak tergabung dalam UKM ini"
-            //     ], 403);
-            // }
+            $groupMembership = $group->users()->where("user_id", $user->id)->first();
+            if (!$groupMembership) {
+                return response()->json([
+                    "status" => "error",
+                    "message" => "Anda tidak tergabung dalam UKM ini"
+                ], 403);
+            }
 
             // Cek mute
-            // $membership = $user->groups()->where('group_id', $group->id)->first()->pivot;
-            // if ($membership && $membership->is_muted) {
-            //     return response()->json([
-            //         'status'  => 'error',
-            //         'message' => 'Anda sedang dimute oleh admin grup dan tidak dapat mengirim pesan.'
-            //     ], 403);
-            // }
+            if ($groupMembership->pivot->is_muted) {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => 'Halo, kamu lagi di-mute dulu, biar suasana grup tetap adem kayak es kopi susu~ Balik ngobrol lagi nanti ya!'
+                ], 403);
+            }
 
             // Bersihkan pesan (XSS, emoji, link)
             $message = $this->filterMessage($request->message);
@@ -150,8 +162,8 @@ class ChatController extends BaseController
                 'group_id' => $group->id
             ]);
 
-            // Broadcast event (jika real-time)
-            broadcast(new ChatMessageSent($chat))->toOthers();
+            // Broadcast event (jika real-time) with safe broadcasting
+            BroadcastHelper::safeBroadcast(new ChatMessageSent($chat));
 
             return response()->json([
                 "status" => "success",
@@ -223,6 +235,112 @@ class ChatController extends BaseController
                 'status' => 'error',
                 'message' => 'Gagal mengambil jumlah pesan belum dibaca'
             ], 500);
+        }
+    }
+
+    public function typing(Request $request)
+    {
+        try {
+            /** @var \App\Models\User $user */
+            $user = Auth::user();
+            $groupId = $request->input('group_id');
+            
+            $group = Group::findOrFail($groupId);
+            
+            // Pastikan user adalah anggota grup
+            if (!$user->groups()->where('group_id', $groupId)->exists()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Anda bukan anggota grup ini'
+                ], 403);
+            }
+            
+            // Broadcast typing event safely
+            BroadcastHelper::safeBroadcast(new \App\Events\MessageTyping([
+                'user_id' => $user->id,
+                'name' => $user->name,
+                'group_id' => $groupId,
+                'group_code' => $group->referral_code
+            ]));
+            
+            return response()->json([
+                'status' => 'success'
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Typing indicator error', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Gagal mengirim indikator mengetik'
+            ], 500);
+        }
+    }
+    
+    public function joinGroup(Request $request)
+    {
+        try {
+            /** @var \App\Models\User $user */
+            $user = Auth::user();
+            $groupId = $request->input('group_id');
+            
+            $group = Group::findOrFail($groupId);
+            
+            // Pastikan user adalah anggota grup
+            if (!$user->groups()->where('group_id', $groupId)->exists()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Anda bukan anggota grup ini'
+                ], 403);
+            }
+            
+            // Set session active group
+            Session::put('active_group_id', $groupId);
+            
+            // Update online status
+            $onlineUsers = $this->getOnlineUsers($groupId);
+            $onlineCount = $onlineUsers ? $onlineUsers->count() : 0;
+            $totalMembers = $group->users ? $group->users()->count() : 0;
+            
+            // Broadcast user joining safely
+            BroadcastHelper::safeBroadcast(new \App\Events\UserOnline([
+                'user_id' => $user->id,
+                'name' => $user->name,
+                'group_id' => $groupId,
+                'group_code' => $group->referral_code,
+                'online_count' => $onlineCount,
+                'total_members' => $totalMembers
+            ]));
+            
+            return response()->json([
+                'status' => 'success',
+                'online_count' => $onlineCount,
+                'total_members' => $totalMembers
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Join group error', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Gagal bergabung dengan chat'
+            ], 500);
+        }
+    }
+    
+    private function getOnlineUsers($groupId)
+    {
+        try {
+            $group = Group::findOrFail($groupId);
+            return $group->users()->where('last_seen_at', '>=', now()->subMinutes(5))->get();
+        } catch (\Exception $e) {
+            Log::error('Error getting online users', [
+                'error' => $e->getMessage(),
+                'group_id' => $groupId
+            ]);
+            return collect();
         }
     }
 }

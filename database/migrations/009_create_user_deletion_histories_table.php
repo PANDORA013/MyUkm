@@ -13,6 +13,8 @@ return new class extends Migration
             $table->foreignId('user_id')->nullable()->constrained()->onDelete('set null');
             $table->string('user_nim')->nullable();
             $table->string('user_name')->nullable();
+            $table->string('user_email')->nullable();
+            $table->string('user_role')->nullable();
             $table->text('reason')->nullable();
             $table->foreignId('deleted_by')->nullable()->constrained('users')->onDelete('set null');
             $table->timestamps();

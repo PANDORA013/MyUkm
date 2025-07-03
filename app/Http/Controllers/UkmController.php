@@ -18,15 +18,24 @@ class UkmController extends Controller
     {
         /** @var User $user */
         $user = Auth::user();
-        $joinedGroups = $user->groups()->with('users')->get();
-        $availableGroups = Group::whereNotIn('id', $joinedGroups->pluck('id'))->get();
+        $joinedGroups = $user->groups()->with('members')->get();
+        $availableGroups = Group::with('members')->whereNotIn('id', $joinedGroups->pluck('id'))->get();
         
         // Berdasarkan role user, tampilkan view yang sesuai
-        if ($user->role === 'admin_website' || $user->role === 'admin_grup') {
-            return view('ukm.index', [
+        if ($user->role === 'admin_website') {
+            return view('admin.ukms.index', [
                 'joinedGroups' => $joinedGroups,
                 'availableGroups' => $availableGroups,
-                'userUkm' => $user->ukm_id ? Group::find($user->ukm_id) : null
+                'userUkm' => $user->ukm_id ? Group::find($user->ukm_id) : null,
+                'isAdminWebsite' => true
+            ]);
+        } else if ($user->role === 'admin_grup') {
+            // Admin grup menggunakan view user biasa tapi dengan layout admin_grup
+            return view('ukm.user_index', [
+                'joinedGroups' => $joinedGroups,
+                'availableGroups' => $availableGroups,
+                'userUkm' => $user->ukm_id ? Group::find($user->ukm_id) : null,
+                'isAdminGrup' => true
             ]);
         } else {
             // Untuk user biasa (anggota), gunakan view khusus user
@@ -98,6 +107,7 @@ class UkmController extends Controller
         // Store active group in session for chat actions
         session(['active_group_id' => $group->id]);
 
+        // Pastikan view chat.blade.php diakses dari resources/views/
         return view('chat', [
             'groupName' => $group->name,
             'groupCode' => $group->referral_code, // Only used for Pusher channel, not displayed

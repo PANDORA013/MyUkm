@@ -72,6 +72,25 @@ class Group extends Model
     }
     
     /**
+     * Get members excluding admin website users.
+     */
+    public function members(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'group_user')
+            ->using(GroupUser::class)
+            ->where('role', '!=', 'admin_website')
+            ->withPivot([
+                'is_muted',
+                'is_admin',
+                'created_at',
+                'updated_at',
+                'deleted_at'
+            ])
+            ->withTimestamps()
+            ->withTrashed();
+    }
+    
+    /**
      * Get the creator of the group.
      */
     public function creator()

@@ -1,6 +1,6 @@
-@extends('layouts.user')
+@extends('layouts.admin_grup')
 
-@section('title', 'Profil Saya')
+@section('title', 'Profil Admin Grup')
 
 @push('styles')
     <style>
@@ -30,7 +30,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background-color: #f0f2ff;
+            background-color: #e8f5f3;
         }
         .profile-name {
             font-size: 1.25rem;
@@ -63,7 +63,7 @@
             padding: 1rem;
         }
         .membership-card {
-            border-left: 4px solid #4e73df;
+            border-left: 4px solid #16a085;
             margin-bottom: 0.75rem;
             transition: all 0.2s;
         }
@@ -82,7 +82,17 @@
         }
         .form-control:focus {
             border-color: #bac8f3;
-            box-shadow: 0 0 0 0.25rem rgba(67, 56, 202, 0.1);
+            box-shadow: 0 0 0 0.25rem rgba(22, 160, 133, 0.1);
+        }
+        .admin-info-card {
+            background: linear-gradient(135deg, #16a085 0%, #138d75 100%);
+            color: white;
+            border: none;
+        }
+        .admin-info-card .card-header {
+            background: rgba(255, 255, 255, 0.1);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
         }
     </style>
 @endpush
@@ -90,7 +100,7 @@
 @section('content')
 <div class="container-fluid p-0">
     <h4 class="page-header">
-        <i class="fas fa-user-circle me-2"></i>Profil Saya
+        <i class="fas fa-user-shield me-2"></i>Profil Admin Grup
     </h4>
     
     {{-- Flash Messages --}}
@@ -117,8 +127,9 @@
                     @endif
                     <h5 class="profile-name">{{ $user->name }}</h5>
                     <div class="profile-nim">{{ $user->nim }}</div>
+                    <span class="badge bg-success mb-3">Admin Grup</span>
                     
-                    <form method="POST" action="{{ route('profile.updatePhoto') }}" enctype="multipart/form-data" class="mt-3">
+                    <form method="POST" action="{{ route('grup.profile.updatePhoto') }}" enctype="multipart/form-data" class="mt-3">
                         @csrf
                         <div class="mb-3">
                             <label for="photo" class="form-label d-block small">Upload Foto Baru</label>
@@ -145,8 +156,8 @@
                         <tr>
                             <th>Status</th>
                             <td>
-                                <span class="badge bg-info text-white">
-                                    {{ ucfirst($user->role) }}
+                                <span class="badge bg-success text-white">
+                                    Admin Grup
                                 </span>
                             </td>
                         </tr>
@@ -157,6 +168,33 @@
                     </table>
                 </div>
             </div>
+            
+            <!-- Info Grup yang Dikelola -->
+            @if($user->adminGroups->count() > 0)
+                @foreach($user->adminGroups as $group)
+                <div class="card admin-info-card">
+                    <div class="card-header">
+                        <i class="fas fa-users-cog me-1"></i> Grup yang Dikelola
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title">{{ $group->name }}</h5>
+                        <p class="card-text">
+                            <small><i class="fas fa-code me-1"></i> Kode: {{ $group->referral_code }}</small><br>
+                            <small><i class="fas fa-users me-1"></i> Total Anggota: {{ $group->members->count() }}</small><br>
+                            <small><i class="fas fa-calendar me-1"></i> Dibuat: {{ $group->created_at->format('d M Y') }}</small>
+                        </p>
+                        <div class="d-flex gap-2">
+                            <a href="{{ route('grup.dashboard') }}" class="btn btn-light btn-sm">
+                                <i class="fas fa-tachometer-alt me-1"></i> Dashboard
+                            </a>
+                            <a href="{{ route('grup.anggota') }}" class="btn btn-light btn-sm">
+                                <i class="fas fa-users me-1"></i> Kelola Anggota
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                @endforeach
+            @endif
         </div>
         
         <!-- Ubah Password & Keanggotaan -->
@@ -166,7 +204,7 @@
                     <i class="fas fa-key me-1"></i> Ubah Password
                 </div>
                 <div class="card-body">
-                    <form method="POST" action="{{ route('profile.updatePassword') }}" class="password-form">
+                    <form method="POST" action="{{ route('grup.profile.updatePassword') }}" class="password-form">
                         @csrf
                         <div class="row mb-3">
                             <div class="col-md-4">
@@ -207,7 +245,7 @@
             <!-- Keanggotaan UKM -->
             <div class="card">
                 <div class="card-header">
-                    <i class="fas fa-users me-1"></i> Keanggotaan UKM
+                    <i class="fas fa-university me-1"></i> Keanggotaan UKM Lainnya
                 </div>
                 <div class="card-body">
                     @if ($memberships->count() > 0)
@@ -225,7 +263,7 @@
                         @endforeach
                     @else
                         <div class="alert alert-info py-2 mb-0">
-                            <i class="fas fa-info-circle me-2"></i> Anda belum tergabung dalam UKM manapun.
+                            <i class="fas fa-info-circle me-2"></i> Anda belum tergabung dalam UKM lain sebagai anggota biasa.
                         </div>
                     @endif
                 </div>
@@ -235,7 +273,7 @@
             <div class="card danger-zone">
                 <div class="card-body">
                     <h5 class="text-danger mb-2"><i class="fas fa-exclamation-triangle me-2"></i> Zona Berbahaya</h5>
-                    <p class="mb-3">Menghapus akun akan menghapus semua data Anda dan tidak dapat dipulihkan.</p>
+                    <p class="mb-3">Menghapus akun akan menghapus semua data Anda dan tidak dapat dipulihkan. Grup UKM yang Anda kelola akan kehilangan admin.</p>
                     <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteAccountModal">
                         <i class="fas fa-trash me-1"></i> Hapus Akun Saya
                     </button>
@@ -256,6 +294,10 @@
             <div class="modal-body">
                 <p class="fw-bold">Apakah Anda yakin ingin menghapus akun Anda?</p>
                 <p>Tindakan ini tidak dapat dibatalkan. Semua data Anda akan dihapus secara permanen.</p>
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Peringatan:</strong> Grup UKM yang Anda kelola akan kehilangan admin dan perlu ditunjuk admin baru.
+                </div>
                 <form method="POST" action="{{ route('profile.destroy') }}" id="deleteAccountForm">
                     @csrf
                     @method('DELETE')

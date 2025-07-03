@@ -9,11 +9,11 @@ class UserDeletionHistory extends Model
 {
     protected $fillable = [
         'user_id',
-        'name',
-        'nim',
-        'email',
-        'role',
-        'deletion_reason',
+        'user_name',
+        'user_nim',
+        'user_email',
+        'user_role',
+        'reason',
         'deleted_by'
     ];
     

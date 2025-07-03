@@ -56,6 +56,7 @@
                                         <th>#</th>
                                         <th>Nama UKM</th>
                                         <th>Kode/Referral</th>
+                                        <th>Deskripsi</th>
                                         <th>Jumlah Anggota</th>
                                         <th>Tanggal Dibuat</th>
                                         <th>Aksi</th>
@@ -70,6 +71,15 @@
                                             </td>
                                             <td>
                                                 <code>{{ $ukm->kode ?? $ukm->referral_code }}</code>
+                                            </td>
+                                            <td>
+                                                @if($ukm->description)
+                                                    <span title="{{ $ukm->description }}">
+                                                        {{ \Illuminate\Support\Str::limit($ukm->description, 50) }}
+                                                    </span>
+                                                @else
+                                                    <small class="text-muted">-</small>
+                                                @endif
                                             </td>
                                             <td>
                                                 <span class="badge bg-info">
@@ -161,6 +171,11 @@
                         <label for="code" class="form-label">Kode UKM <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" id="code" name="code" maxlength="4" required>
                         <div class="form-text">Kode unik untuk UKM (maksimal 4 karakter, akan digunakan sebagai referral code)</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Deskripsi UKM</label>
+                        <textarea class="form-control" id="description" name="description" rows="4" placeholder="Masukkan deskripsi UKM..."></textarea>
+                        <div class="form-text">Deskripsi singkat tentang UKM (opsional)</div>
                     </div>
                 </div>
                 <div class="modal-footer">

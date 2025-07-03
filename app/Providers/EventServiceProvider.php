@@ -19,6 +19,7 @@ class EventServiceProvider extends ServiceProvider
             SendEmailVerificationNotification::class,
         ],
         \App\Events\ChatMessageSent::class => [],
+        \App\Events\UserMuteStatusChanged::class => [],
     ];
 
     /**

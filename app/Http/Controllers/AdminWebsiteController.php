@@ -138,21 +138,21 @@ class AdminWebsiteController extends Controller
             // Simpan riwayat penghapusan sebelum menghapus user
             UserDeletionHistory::create([
                 'user_id' => $user->id,
-                'name' => $user->name,
-                'nim' => $user->nim,
-                'email' => $user->email,
-                'role' => $user->role,
-                'deletion_reason' => 'Dihapus oleh admin website',
+                'user_name' => $user->name,
+                'user_nim' => $user->nim,
+                'user_email' => $user->email,
+                'user_role' => $user->role,
+                'reason' => 'Dihapus oleh admin website',
                 'deleted_by' => $currentUser->id,
             ]);
             
             // Hapus relasi di group_user terlebih dahulu
             $user->groups()->detach();
             
-            // Hapus user
-            $user->delete();
+            // Hapus user secara permanen (hard delete)
+            $user->forceDelete();
             
-            return back()->with('success', 'Anggota "' . $userName . '" berhasil dihapus dari sistem.');
+            return back()->with('success', 'Anggota "' . $userName . '" berhasil dihapus permanen dari sistem.');
             
         } catch (\Exception $e) {
             return back()->with('error', 'Terjadi kesalahan saat menghapus anggota: ' . $e->getMessage());
@@ -182,9 +182,10 @@ class AdminWebsiteController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'code' => 'required|string|max:4|unique:ukms,code'
+            'code' => 'required|string|max:4|unique:ukms,code',
+            'description' => 'nullable|string|max:1000'
         ]);
-        $ukm = UKM::create($request->only(['name', 'code']));
+        $ukm = UKM::create($request->only(['name', 'code', 'description']));
         // Buat entri group agar anggota bisa join menggunakan referral_code
         Group::create([
             'name' => $ukm->name,
@@ -279,9 +280,10 @@ class AdminWebsiteController extends Controller
         $oldCode = $ukm->code;
         $request->validate([
             'name' => 'required|string|max:255',
-            'code' => 'required|string|max:4|unique:ukms,code,' . $ukm->id
+            'code' => 'required|string|max:4|unique:ukms,code,' . $ukm->id,
+            'description' => 'nullable|string|max:1000'
         ]);
-        $ukm->update($request->only(['name', 'code']));
+        $ukm->update($request->only(['name', 'code', 'description']));
 
         // Jika kode berubah, hapus group lama
         if ($oldCode !== $ukm->code) {

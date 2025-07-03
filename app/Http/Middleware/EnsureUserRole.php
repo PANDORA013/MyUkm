@@ -15,37 +15,63 @@ class EnsureUserRole
      * @param  \Closure  $next
      * @return mixed
      */
-    public function handle(Request $request, Closure $next)
+    public function handle(Request $request, Closure $next, ...$roles)
     {
-        if (Auth::check()) {
-            $user = Auth::user();
-            
-            // Jika user mengakses halaman yang bukan untuk role-nya, redirect ke halaman yang sesuai
-            $path = $request->path();
-            
-            // Jika user bukan admin_website tetapi mengakses halaman admin
-            if ($user->role !== 'admin_website' && (str_starts_with($path, 'admin/') || $path === 'admin')) {
-                if ($user->role === 'admin_grup') {
-                    return redirect('/grup/dashboard');
-                }
-                return redirect()->route('ukm.index');
-            }
-            
-            // Jika user bukan admin_grup tetapi mengakses halaman grup admin
-            if ($user->role !== 'admin_grup' && (str_starts_with($path, 'grup/') || $path === 'grup')) {
-                if ($user->role === 'admin_website') {
-                    return redirect('/admin/dashboard');
-                }
-                return redirect()->route('ukm.index');
-            }
+        if (!Auth::check()) {
+            return redirect('login');
+        }
 
-            // Halaman profile harus menggunakan layout yang sesuai, jangan biarkan URL langsung
-            if ($path === 'profile' || str_starts_with($path, 'profile/')) {
-                // Middleware hanya mengecek, controller ProfileController akan menggunakan view yang sesuai
-                // berdasarkan role user
+        $user = Auth::user();
+        $path = $request->path();
+        
+        // If specific roles are required
+        if (!empty($roles) && !in_array($user->role, $roles)) {
+            return $this->redirectBasedOnRole($user->role);
+        }
+        
+        // Specific path restrictions regardless of route middleware
+        
+        // Admin website paths - only admin_website can access
+        if (str_starts_with($path, 'admin/') || $path === 'admin') {
+            if ($user->role !== 'admin_website') {
+                return $this->redirectBasedOnRole($user->role);
             }
         }
         
+        // Admin grup paths - only admin_grup can access
+        if (str_starts_with($path, 'grup/') || $path === 'grup') {
+            if ($user->role !== 'admin_grup') {
+                return $this->redirectBasedOnRole($user->role);
+            }
+        }
+
+        // UKM paths are accessible by all authenticated users
+        // UKM index, join, leave, chat should be accessible by all roles
+        if (str_starts_with($path, 'ukm/') || $path === 'ukm') {
+            // Allow all authenticated users to access UKM features
+            return $next($request);
+        }
+
+        // Return the appropriate view for profile and other sections
+        // Controller logic will handle which specific view to use
         return $next($request);
+    }
+    
+    /**
+     * Redirect user to appropriate page based on role
+     *
+     * @param string $role
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    private function redirectBasedOnRole($role)
+    {
+        switch ($role) {
+            case 'admin_website':
+                return redirect('/admin/dashboard');
+            case 'admin_grup':
+                return redirect('/grup/dashboard');
+            default:
+                return redirect()->route('ukm.index');
+        }
     }
 }

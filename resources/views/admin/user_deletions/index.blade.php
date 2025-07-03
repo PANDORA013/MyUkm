@@ -80,29 +80,20 @@
                             <tr>
                                 <td><code>{{ $deletion->user_id }}</code></td>
                                 <td>
-                                    <div class="fw-bold">{{ $deletion->name }}</div>
+                                    <div class="fw-bold">{{ $deletion->user_name }}</div>
                                 </td>
-                                <td>{{ $deletion->nim ?? '-' }}</td>
-                                <td>{{ $deletion->email ?? '-' }}</td>
+                                <td>{{ $deletion->user_nim ?? '-' }}</td>
+                                <td>{{ $deletion->user_email ?? '-' }}</td>
                                 <td>
-                                    @php
-                                        $badgeClass = [
-                                            'admin_website' => 'bg-primary',
-                                            'admin_grup' => 'bg-success',
-                                            'anggota' => 'bg-secondary',
-                                            'member' => 'bg-secondary'
-                                        ][$deletion->role] ?? 'bg-secondary';
-                                        
-                                        $roleText = [
-                                            'admin_website' => 'Admin Website',
-                                            'admin_grup' => 'Admin Grup',
-                                            'anggota' => 'Anggota',
-                                            'member' => 'Member'
-                                        ][$deletion->role] ?? ucfirst($deletion->role);
-                                    @endphp
-                                    <span class="badge {{ $badgeClass }}">
-                                        {{ $roleText }}
-                                    </span>
+                                    @if($deletion->user_role)
+                                        <span class="badge {{ $deletion->user_role == 'admin_website' ? 'bg-danger' : ($deletion->user_role == 'admin_grup' ? 'bg-primary' : 'bg-secondary') }}">
+                                            {{ $deletion->user_role }}
+                                        </span>
+                                    @else
+                                        <span class="badge bg-secondary">
+                                            Tidak tersedia
+                                        </span>
+                                    @endif
                                 </td>
                                 <td>
                                     @if($deletion->deletedBy)

@@ -64,6 +64,19 @@
         </a>
     </div>
 
+    @if($ukm->description)
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-info-circle me-2"></i>Deskripsi UKM
+            </h6>
+        </div>
+        <div class="card-body">
+            <p class="mb-0">{{ $ukm->description }}</p>
+        </div>
+    </div>
+    @endif
+
     {{-- Flash Messages --}}
     @foreach (['success', 'error', 'info'] as $msg)
         @if(session($msg))

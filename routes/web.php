@@ -35,34 +35,35 @@ Route::post('logout', [AuthController::class, 'logout'])->name('logout');
 
 // Protected routes
 Route::middleware(['auth', 'ensure.role'])->group(function () {
-    // Home alias and UKM routes  
+    // Home alias
     Route::get('/home', fn() => redirect()->route('ukm.index'))->name('home');
+    
+    // UKM routes - accessible by all authenticated users (member, admin_grup, admin_website)
     Route::get('/ukm', [UkmController::class, 'index'])->name('ukm.index');
     Route::post('/ukm/join', [UkmController::class, 'join'])->name('ukm.join');
     Route::delete('/ukm/{code}/leave', [UkmController::class, 'leave'])->name('ukm.leave');
     Route::get('/ukm/{code}/chat', [UkmController::class, 'chat'])->name('ukm.chat');
-
-    // Group routes that tests are looking for
-    Route::post('/group/join', [UkmController::class, 'join'])->name('group.join');
-    Route::post('/group/leave', [UkmController::class, 'leave'])->name('group.leave');
-
-    // Chat Functionality (with group membership check)
-    Route::middleware(['auth', 'role:member'])->group(function () {
-        Route::post('/chat/send', [ChatController::class, 'sendChat'])->name('chat.send');
-        Route::post('/chat/logout', [ChatController::class, 'logoutGroup'])->name('chat.logout');
-        Route::get('/chat/unread-count', [ChatController::class, 'getUnreadCount'])->name('chat.unread-count');
-        // Tambahkan route untuk chat.messages (misal: menampilkan pesan chat)
-        Route::get('/chat/messages', [ChatController::class, 'index'])->name('chat.messages');
-    });
-
-    // Profile Management
+    
+    // Chat Functionality (with group membership check) - accessible by all authenticated users
+    Route::post('/chat/send', [ChatController::class, 'sendChat'])->name('chat.send');
+    Route::post('/chat/logout', [ChatController::class, 'logoutGroup'])->name('chat.logout');
+    Route::get('/chat/unread-count', [ChatController::class, 'getUnreadCount'])->name('chat.unread-count');
+    Route::get('/chat/messages', [ChatController::class, 'index'])->name('chat.messages');
+    Route::post('/chat/typing', [ChatController::class, 'typing'])->name('chat.typing');
+    Route::post('/chat/join', [ChatController::class, 'joinGroup'])->name('chat.join');
+    
+    // Profile Management for regular users - accessible by all authenticated users
     Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
     Route::post('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.updatePassword');
     Route::post('/profile/photo', [ProfileController::class, 'updatePhoto'])->name('profile.updatePhoto');
     Route::delete('/profile/destroy', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    
+    // Group routes that tests are looking for
+    Route::post('/group/join', [UkmController::class, 'join'])->name('group.join');
+    Route::post('/group/leave', [UkmController::class, 'leave'])->name('group.leave');
 
     // Admin Website routes
-    Route::middleware(['auth', 'role:admin_website', 'verified'])->prefix('admin')->name('admin.')->group(function () {
+    Route::middleware(['role:admin_website'])->prefix('admin')->name('admin.')->group(function () {
         // Dashboard
         Route::get('/dashboard', [AdminWebsiteController::class, 'dashboard'])->name('dashboard');
         
@@ -103,22 +104,27 @@ Route::middleware(['auth', 'ensure.role'])->group(function () {
         Route::get('/member/{userId}/ukms', [AdminWebsiteController::class, 'showMemberUkms'])
             ->name('member-ukms')
             ->whereNumber('userId');
-    });
-
-    // Admin Website Routes
-    Route::prefix('admin')->middleware(['auth', 'role:admin_website'])->group(function () {
-        Route::get('/dashboard', [AdminWebsiteController::class, 'dashboard'])->name('admin.dashboard');
-        Route::get('/members', [AdminWebsiteController::class, 'members'])->name('admin.members');
-        Route::get('/member/{id}', [AdminWebsiteController::class, 'showMember'])->name('admin.member.show');
-        Route::get('/member/{id}/edit', [AdminWebsiteController::class, 'editMember'])->name('admin.member.edit');
-        Route::put('/member/{id}', [AdminWebsiteController::class, 'updateMember'])->name('admin.member.update');
-        Route::get('/ukms', [AdminWebsiteController::class, 'ukms'])->name('admin.ukms');
-        Route::post('/ukms', [AdminWebsiteController::class, 'tambahUKM'])->name('admin.tambah-ukm');
-        Route::delete('/ukm/{id}', [AdminWebsiteController::class, 'hapusUKM'])->name('admin.hapus-ukm');
-        Route::delete('/member/{id}', [AdminWebsiteController::class, 'hapusAkun'])->name('admin.hapus-member');
-        Route::get('/ukm', [AdminWebsiteController::class, 'ukms'])->name('admin.ukm.index'); // Add this route for tests
-        Route::get('/ukm-members/{ukm}', [AdminWebsiteController::class, 'ukmMembers'])->name('admin.ukm.members');
-        // Tambahkan resourceful route untuk users dan groups agar route admin.users.* dan admin.groups.* tersedia
+        
+        // Admin website profile management
+        Route::get('/profile', [ProfileController::class, 'show'])->name('profile');
+        Route::post('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.updatePassword');
+        Route::post('/profile/photo', [ProfileController::class, 'updatePhoto'])->name('profile.updatePhoto');
+        
+        // Members management
+        Route::get('/members', [AdminWebsiteController::class, 'members'])->name('members');
+        Route::get('/member/{id}', [AdminWebsiteController::class, 'showMember'])->name('member.show');
+        Route::get('/member/{id}/edit', [AdminWebsiteController::class, 'editMember'])->name('member.edit');
+        Route::put('/member/{id}', [AdminWebsiteController::class, 'updateMember'])->name('member.update');
+        
+        // UKM management
+        Route::get('/ukms', [AdminWebsiteController::class, 'ukms'])->name('ukms');
+        Route::post('/ukms', [AdminWebsiteController::class, 'tambahUKM'])->name('tambah-ukm');
+        Route::delete('/ukm/{id}', [AdminWebsiteController::class, 'hapusUKM'])->name('hapus-ukm');
+        Route::delete('/member/{id}', [AdminWebsiteController::class, 'hapusAkun'])->name('hapus-member');
+        Route::get('/ukm', [AdminWebsiteController::class, 'ukms'])->name('ukm.index'); // Add this route for tests
+        Route::get('/ukm-members/{ukm}', [AdminWebsiteController::class, 'ukmMembers'])->name('ukm.members');
+        
+        // Resourceful routes
         Route::resource('users', AdminWebsiteController::class, [
             'as' => 'admin',
             'parameters' => ['users' => 'id']
@@ -129,18 +135,30 @@ Route::middleware(['auth', 'ensure.role'])->group(function () {
         ]);
         
         // User Deletion History Routes
-        Route::prefix('user-deletions')->name('admin.user-deletions.')->group(function () {
+        Route::prefix('user-deletions')->name('user-deletions.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\UserDeletionHistoryController::class, 'index'])->name('index');
             Route::get('/{userDeletionHistory}', [\App\Http\Controllers\Admin\UserDeletionHistoryController::class, 'show'])->name('show');
         });
     });
 
     // Admin Grup routes
-    Route::prefix('grup')->middleware(['role:admin_grup'])->group(function () {
-        Route::get('/dashboard', [AdminGrupController::class, 'dashboard'])->name('grup.dashboard');
-        Route::get('/anggota', [AdminGrupController::class, 'lihatAnggota'])->name('grup.anggota');
-        Route::post('/keluarkan/{id}', [AdminGrupController::class, 'keluarkanAnggota'])->name('grup.keluarkan');
-        Route::post('/mute/{id}', [AdminGrupController::class, 'muteAnggota'])->name('grup.mute');
+    Route::middleware(['role:admin_grup'])->prefix('admin')->name('admin.')->group(function () {
+        Route::get('/groups/{id}/manage', [AdminGrupController::class, 'manageGroup'])->name('groups.manage');
+        Route::post('/groups/{id}/remove-member/{userId}', [AdminGrupController::class, 'removeMember'])->name('groups.remove-member');
+        Route::post('/groups/{id}/mute-member/{userId}', [AdminGrupController::class, 'muteMember'])->name('groups.mute-member');
+    });
+    
+    Route::middleware(['role:admin_grup'])->prefix('grup')->name('grup.')->group(function () {
+        Route::get('/dashboard', [AdminGrupController::class, 'dashboard'])->name('dashboard');
+        Route::get('/anggota', [AdminGrupController::class, 'lihatAnggota'])->name('anggota');
+        Route::post('/keluarkan/{id}', [AdminGrupController::class, 'keluarkanAnggota'])->name('keluarkan');
+        Route::post('/mute/{id}', [AdminGrupController::class, 'muteAnggota'])->name('mute');
+        Route::post('/update-description', [AdminGrupController::class, 'updateDescription'])->name('update-description');
+        
+        // Admin grup profile management
+        Route::get('/profile', [ProfileController::class, 'show'])->name('profile');
+        Route::post('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.updatePassword');
+        Route::post('/profile/photo', [ProfileController::class, 'updatePhoto'])->name('profile.updatePhoto');
     });
 
     // Pusher Test Routes
@@ -156,4 +174,9 @@ Route::middleware(['auth', 'ensure.role'])->group(function () {
         ]));
         return response()->json(['status' => 'Message sent!']);
     })->name('broadcast.test');
+    
+    // CSRF token refresh route
+    Route::get('/csrf-refresh', function () {
+        return response()->json(['token' => csrf_token()]);
+    })->name('csrf.refresh');
 });

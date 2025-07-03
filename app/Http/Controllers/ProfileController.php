@@ -50,9 +50,16 @@ class ProfileController extends Controller
         }
 
         // Gunakan layout yang berbeda berdasarkan role user
-        if ($user->role === 'admin_website' || $user->role === 'admin_grup') {
-            // Admin menggunakan layout admin
+        if ($user->role === 'admin_website') {
+            // Admin website menggunakan layout admin
             return view('profile.index', [
+                'user' => $user,
+                'memberships' => $memberships,
+                'isAdminWebsite' => true
+            ]);
+        } else if ($user->role === 'admin_grup') {
+            // Admin grup menggunakan layout admin grup
+            return view('grup.profile', [
                 'user' => $user,
                 'memberships' => $memberships
             ]);

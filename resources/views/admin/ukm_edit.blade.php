@@ -110,6 +110,25 @@
                         <div class="row">
                             <div class="col-12">
                                 <div class="mb-3">
+                                    <label for="description" class="form-label">Deskripsi UKM</label>
+                                    <textarea class="form-control @error('description') is-invalid @enderror" 
+                                              id="description" 
+                                              name="description" 
+                                              rows="5" 
+                                              placeholder="Masukkan deskripsi atau informasi tentang UKM ini...">{{ old('description', $ukm->description) }}</textarea>
+                                    <div class="form-text">Deskripsi singkat tentang UKM, kegiatan, dan informasi penting lainnya</div>
+                                    @error('description')
+                                        <div class="invalid-feedback">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="mb-3">
                                     <label class="form-label">Informasi UKM</label>
                                     <div class="row">
                                         <div class="col-md-6">
