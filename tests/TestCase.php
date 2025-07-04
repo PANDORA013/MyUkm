@@ -39,11 +39,6 @@ abstract class TestCase extends BaseTestCase
         // Show all errors in test environment
         $this->withoutExceptionHandling();
         
-        // Disable CSRF middleware for testing
-        $this->withoutMiddleware([
-            \App\Http\Middleware\VerifyCsrfToken::class,
-        ]);
-        
         // Ensure we're using the testing database
         $this->configureDatabase();
         

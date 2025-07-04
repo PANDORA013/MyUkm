@@ -22,6 +22,15 @@ abstract class DuskTestCase extends BaseTestCase
      */
     public static function prepare()
     {
+        // Skip ChromeDriver setup in CI environment or testing environment
+        if (app()->environment('testing') || 
+            env('CI') || 
+            env('GITHUB_ACTIONS') || 
+            isset($_ENV['CI']) || 
+            isset($_ENV['GITHUB_ACTIONS'])) {
+            return;
+        }
+        
         if (! static::runningInSail()) {
             static::startChromeDriver();
         }

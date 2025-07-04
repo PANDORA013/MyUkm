@@ -57,6 +57,10 @@ jobs:
         # Add Ably configuration
         echo "ABLY_KEY=" >> .env
         
+        # Set CI environment variables to skip browser tests
+        echo "CI=true" >> .env
+        echo "GITHUB_ACTIONS=true" >> .env
+        
         # Configure other services for testing
         echo "MAIL_MAILER=log" >> .env
         echo "QUEUE_CONNECTION=sync" >> .env
@@ -96,11 +100,11 @@ jobs:
         echo "::endgroup::"
       continue-on-error: true
 
-    - name: Execute Browser Tests (Dusk) with detailed output
+    - name: Execute All Non-Browser Tests with detailed output
       run: |
-        echo "::group::Browser Tests"
-        # Skip browser tests in CI for now due to ChromeDriver issues
-        echo "Browser tests skipped in CI environment"
+        echo "::group::All Tests (Excluding Browser)"
+        # Run all tests except Browser tests to avoid ChromeDriver dependency
+        vendor/bin/phpunit --exclude-group browser --debug --log-junit=results/all-tests.xml
         echo "::endgroup::"
       continue-on-error: true
 

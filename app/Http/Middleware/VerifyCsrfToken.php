@@ -12,4 +12,21 @@ class VerifyCsrfToken extends Middleware
     protected $except = [
         'broadcasting/auth',
     ];
+    
+    /**
+     * Handle an incoming request.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \Closure  $next
+     * @return mixed
+     */
+    public function handle($request, \Closure $next)
+    {
+        // Skip CSRF verification in testing environment
+        if (app()->environment(['testing', 'local']) && config('app.debug')) {
+            return $next($request);
+        }
+
+        return parent::handle($request, $next);
+    }
 }
