@@ -147,11 +147,11 @@ Route::middleware(['auth', 'ensure.role'])->group(function () {
         Route::get('/ukm-members/{ukm}', [AdminWebsiteController::class, 'ukmMembers'])->name('ukm.members');
         
         // Resourceful routes
-        Route::resource('users', AdminWebsiteController::class, [
+        Route::resource('users', \App\Http\Controllers\Admin\UsersController::class, [
             'as' => 'admin',
             'parameters' => ['users' => 'id']
         ]);
-        Route::resource('groups', AdminWebsiteController::class, [
+        Route::resource('groups', \App\Http\Controllers\Admin\GroupsController::class, [
             'as' => 'admin',
             'parameters' => ['groups' => 'id']
         ]);

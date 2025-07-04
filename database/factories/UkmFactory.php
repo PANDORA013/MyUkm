@@ -13,9 +13,8 @@ class UkmFactory extends Factory
     {
         return [
             'name' => $this->faker->company,
+            'code' => strtoupper($this->faker->unique()->lexify('???')), // Generate 3 letter code
             'description' => $this->faker->paragraph,
-            'pembina' => $this->faker->name,
-            'logo' => 'default-logo.png',
             'created_at' => now(),
             'updated_at' => now(),
         ];

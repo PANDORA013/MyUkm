@@ -59,14 +59,16 @@ class UserTest extends TestCase
     /** @test */
     public function user_can_register()
     {
-        $response = $this->post('/register', [
-            'name' => 'New User',
-            'nim' => '12345678',
-            'email' => 'newuser@test.com',
-            'password' => 'password',
-            'password_confirmation' => 'password',
-            'ukm_code' => 'TST'
-        ]);
+        $response = $this->withSession(['_token' => 'test-token'])
+            ->post('/register', [
+                'name' => 'New User',
+                'nim' => '12345678',
+                'email' => 'newuser@test.com',
+                'password' => 'password',
+                'password_confirmation' => 'password',
+                'ukm_code' => 'TST',
+                '_token' => 'test-token'
+            ]);
 
         $response->assertStatus(302);
         $this->assertDatabaseHas('users', [
@@ -81,10 +83,12 @@ class UserTest extends TestCase
     /** @test */
     public function user_can_login()
     {
-        $response = $this->post('/login', [
-            'nim' => 'USR001',
-            'password' => 'password',
-        ]);
+        $response = $this->withSession(['_token' => 'test-token'])
+            ->post('/login', [
+                'nim' => 'USR001',
+                'password' => 'password',
+                '_token' => 'test-token'
+            ]);
 
         $response->assertStatus(302);
         $response->assertRedirect('/home');
@@ -102,10 +106,12 @@ class UserTest extends TestCase
     /** @test */
     public function user_cannot_login_with_wrong_password()
     {
-        $response = $this->post('/login', [
-            'nim' => 'USR001',
-            'password' => 'wrongpassword',
-        ]);
+        $response = $this->withSession(['_token' => 'test-token'])
+            ->post('/login', [
+                'nim' => 'USR001',
+                'password' => 'wrongpassword',
+                '_token' => 'test-token'
+            ]);
         
         $response->assertStatus(302);
         $response->assertSessionHasErrors('nim');
@@ -117,7 +123,7 @@ class UserTest extends TestCase
     {
         $this->actingAs($this->admin);
         
-        $response = $this->get(route('admin.users.index'));
+        $response = $this->get(route('admin.admin.users.index'));
         $response->assertStatus(200);
         $response->assertViewHas('users');
     }
@@ -127,7 +133,7 @@ class UserTest extends TestCase
     {
         $this->actingAs($this->user);
         
-        $response = $this->get(route('admin.users.index'));
+        $response = $this->get(route('admin.admin.users.index'));
         $response->assertStatus(403);
     }
 }

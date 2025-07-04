@@ -21,6 +21,7 @@ class GroupTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        $this->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class);
         
         // Create a test UKM
         $this->ukm = UKM::create([
@@ -124,14 +125,14 @@ class GroupTest extends TestCase
         ]);
         
         $response = $this->actingAs($admin)
-            ->post(route('admin.groups.store'), [
+            ->post(route('admin.admin.groups.store'), [
                 'name' => 'New Group',
                 'referral_code' => 'NEWGRP',
                 'description' => 'New Group Description',
                 'ukm_id' => $this->ukm->id
             ]);
             
-        $response->assertRedirect(route('admin.groups.index'));
+        $response->assertRedirect(route('admin.admin.groups.index'));
         $this->assertDatabaseHas('groups', [
             'name' => 'New Group',
             'referral_code' => 'NEWGRP',

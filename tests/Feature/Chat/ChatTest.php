@@ -72,9 +72,11 @@ class ChatTest extends TestCase
     public function user_can_send_chat_message()
     {
         $response = $this->actingAs($this->user)
+            ->withSession(['_token' => 'test-token'])
             ->post(route('chat.send'), [
                 'message' => 'Hello World',
-                'group_code' => 'TEST123'
+                'group_code' => 'TEST123',
+                '_token' => 'test-token'
             ]);
             
         $response->assertStatus(200);
@@ -90,9 +92,11 @@ class ChatTest extends TestCase
     public function message_requires_content()
     {
         $response = $this->actingAs($this->user)
+            ->withSession(['_token' => 'test-token'])
             ->post(route('chat.send'), [
                 'message' => '',
-                'group_code' => 'TEST123'
+                'group_code' => 'TEST123',
+                '_token' => 'test-token'
             ]);
             
         $response->assertStatus(422)
@@ -132,9 +136,11 @@ class ChatTest extends TestCase
         ]);
         
         $response = $this->actingAs($this->user)
+            ->withSession(['_token' => 'test-token'])
             ->post(route('chat.send'), [
                 'message' => 'Unauthorized message',
-                'group_code' => 'OTHER123'
+                'group_code' => 'OTHER123',
+                '_token' => 'test-token'
             ]);
             
         $response->assertStatus(403);

@@ -132,7 +132,7 @@
                         </div>
                     <?php endif; ?>
                     
-                    <?php if($errors->any()): ?>
+                    <?php if(isset($errors) && $errors->any()): ?>
                         <div class="alert alert-danger alert-dismissible fade show" role="alert">
                             <ul class="mb-0">
                                 <?php $__currentLoopData = $errors->all(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $error): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
