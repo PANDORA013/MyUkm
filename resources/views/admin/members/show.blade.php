@@ -53,7 +53,7 @@
                 </a>
                 <button type="button" 
                         class="btn btn-danger" 
-                        onclick="confirmDeleteMember({{ $member->id }}, '{{ $member->name }}')">
+                        onclick="deleteUser({{ $member->id }}, '{{ addslashes($member->name) }}')">
                     <i class="fas fa-trash me-2"></i>Hapus
                 </button>
             @endif

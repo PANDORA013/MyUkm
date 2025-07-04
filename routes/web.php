@@ -146,6 +146,12 @@ Route::middleware(['auth', 'ensure.role'])->group(function () {
         Route::get('/ukm', [AdminWebsiteController::class, 'ukms'])->name('ukm.index'); // Add this route for tests
         Route::get('/ukm-members/{ukm}', [AdminWebsiteController::class, 'ukmMembers'])->name('ukm.members');
         
+        // Additional admin functions for absolute control
+        Route::get('/statistics', [AdminWebsiteController::class, 'getStatistics'])->name('statistics');
+        Route::post('/users/{id}/make-global-admin', [AdminWebsiteController::class, 'makeGlobalAdmin'])->name('users.make-global-admin');
+        Route::post('/users/{id}/remove-global-admin', [AdminWebsiteController::class, 'removeGlobalAdmin'])->name('users.remove-global-admin');
+        Route::delete('/users/{id}/force-delete', [AdminWebsiteController::class, 'forceDeleteUser'])->name('users.force-delete');
+        
         // Resourceful routes
         Route::resource('users', \App\Http\Controllers\Admin\UsersController::class, [
             'as' => 'admin',
@@ -171,6 +177,8 @@ Route::middleware(['auth', 'ensure.role'])->group(function () {
     });
     
     Route::middleware(['role:admin_grup'])->prefix('grup')->name('grup.')->group(function () {
+        // Dashboard and index routes
+        Route::get('/', [AdminGrupController::class, 'index'])->name('index');
         Route::get('/dashboard', [AdminGrupController::class, 'dashboard'])->name('dashboard');
         Route::get('/anggota', [AdminGrupController::class, 'lihatAnggota'])->name('anggota');
         Route::post('/keluarkan/{id}', [AdminGrupController::class, 'keluarkanAnggota'])->name('keluarkan');

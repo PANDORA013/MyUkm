@@ -164,10 +164,29 @@
         .admin-menu-item {
             background-color: #fef3c7 !important;
             border-left: 3px solid #f59e0b !important;
+            color: #92400e !important;
+            font-weight: 500 !important;
         }
         
         .admin-menu-item:hover {
             background-color: #fde68a !important;
+            color: #78350f !important;
+        }
+        
+        .admin-menu-item.active {
+            background-color: #f59e0b !important;
+            color: white !important;
+        }
+        
+        .admin-section-header {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+            padding: 0.5rem 1rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0;
         }
         
         @media (max-width: 767.98px) {
@@ -227,26 +246,45 @@
         </div>
         
         <!-- Admin Groups Management Section -->
-        @if(Auth::user()->role === 'admin_grup' && Auth::user()->groups->count() > 0)
-            <div class="sidebar-heading border-bottom mt-2 mb-0">
-                <i class="fas fa-crown me-1" style="color: #f59e0b;"></i> Admin UKM
-            </div>
-            <div class="list-group list-group-flush">
-                <a href="{{ route('grup.dashboard') }}" class="list-group-item list-group-item-action {{ request()->routeIs('grup.dashboard') ? 'active' : '' }}">
-                    <i class="fas fa-tachometer-alt"></i> Dashboard
-                </a>
-                <a href="{{ route('grup.anggota') }}" class="list-group-item list-group-item-action {{ request()->routeIs('grup.anggota') ? 'active' : '' }}">
-                    <i class="fas fa-users-cog"></i> Kelola Anggota
-                </a>
-            </div>
+        @if(Auth::user()->role === 'admin_grup')
+            @php
+                $managedGroups = Auth::user()->adminGroups;
+            @endphp
+            @if($managedGroups->count() > 0)
+                <div class="admin-section-header">
+                    <i class="fas fa-crown me-1"></i> Admin UKM
+                </div>
+                <div class="list-group list-group-flush">
+                    <a href="{{ route('grup.dashboard') }}" class="list-group-item list-group-item-action admin-menu-item {{ request()->routeIs('grup.dashboard') ? 'active' : '' }}">
+                        <i class="fas fa-tachometer-alt"></i> Dashboard Admin
+                    </a>
+                    <a href="{{ route('grup.anggota') }}" class="list-group-item list-group-item-action admin-menu-item {{ request()->routeIs('grup.anggota') ? 'active' : '' }}">
+                        <i class="fas fa-users-cog"></i> Kelola Anggota
+                    </a>
+                    @foreach($managedGroups as $group)
+                        <a href="{{ route('ukm.chat', $group->referral_code) }}" class="list-group-item list-group-item-action admin-menu-item {{ request()->is('ukm/'.$group->referral_code.'/chat') ? 'active' : '' }}">
+                            <i class="fas fa-comments"></i> Chat {{ $group->name }}
+                        </a>
+                    @endforeach
+                </div>
+            @endif
         @endif
         
         <!-- Regular User Groups Section -->
-        @if(Auth::user()->groups->count() > 0)
+        @php
+            $regularGroups = Auth::user()->groups;
+            if(Auth::user()->role === 'admin_grup') {
+                $managedGroupIds = Auth::user()->adminGroups->pluck('id')->toArray();
+                $regularGroups = $regularGroups->filter(function($group) use ($managedGroupIds) {
+                    return !in_array($group->id, $managedGroupIds);
+                });
+            }
+        @endphp
+        @if($regularGroups->count() > 0)
             <div class="sidebar-heading border-bottom mt-2 mb-0">
                 UKM Saya
             </div>
-            @foreach(Auth::user()->groups as $group)
+            @foreach($regularGroups as $group)
             <a href="{{ route('ukm.chat', $group->referral_code) }}" class="list-group-item list-group-item-action {{ request()->is('ukm/'.$group->referral_code.'/chat') ? 'active' : '' }}">
                 <i class="fas fa-comments"></i> {{ $group->name }}
             </a>
@@ -279,14 +317,19 @@
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
                         <li><a class="dropdown-item" href="{{ route('profile.show') }}"><i class="fas fa-user-circle me-2"></i>Profil</a></li>
-                        @if(Auth::user()->role === 'admin_grup' && Auth::user()->groups && Auth::user()->groups->count() > 0)
-                            <li><hr class="dropdown-divider"></li>
-                            <li class="dropdown-header"><i class="fas fa-crown me-2" style="color: #f59e0b;"></i>Menu Admin UKM</li>
-                            @foreach(Auth::user()->groups as $group)
-                            <li><a class="dropdown-item" href="{{ route('grup.dashboard') }}"><i class="fas fa-tachometer-alt me-2"></i>Dashboard {{ $group->name }}</a></li>
-                            <li><a class="dropdown-item" href="{{ route('grup.anggota') }}"><i class="fas fa-users-cog me-2"></i>Kelola Anggota</a></li>
-                            <li><a class="dropdown-item" href="{{ route('ukm.chat', $group->referral_code) }}"><i class="fas fa-comments me-2"></i>Chat {{ $group->name }}</a></li>
-                            @endforeach
+                        @if(Auth::user()->role === 'admin_grup')
+                            @php
+                                $managedGroups = Auth::user()->adminGroups;
+                            @endphp
+                            @if($managedGroups->count() > 0)
+                                <li><hr class="dropdown-divider"></li>
+                                <li class="dropdown-header"><i class="fas fa-crown me-2" style="color: #f59e0b;"></i>Menu Admin UKM</li>
+                                <li><a class="dropdown-item" href="{{ route('grup.dashboard') }}"><i class="fas fa-tachometer-alt me-2"></i>Dashboard Admin</a></li>
+                                <li><a class="dropdown-item" href="{{ route('grup.anggota') }}"><i class="fas fa-users-cog me-2"></i>Kelola Anggota</a></li>
+                                @foreach($managedGroups as $group)
+                                    <li><a class="dropdown-item" href="{{ route('ukm.chat', $group->referral_code) }}"><i class="fas fa-comments me-2"></i>Chat {{ $group->name }}</a></li>
+                                @endforeach
+                            @endif
                         @endif
                         <li><hr class="dropdown-divider"></li>
                         <li>

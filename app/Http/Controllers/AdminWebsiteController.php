@@ -196,20 +196,45 @@ class AdminWebsiteController extends Controller
 
     public function keluarkanAnggota($ukmId, $userId)
     {
-        $ukm = UKM::findOrFail($ukmId);
-        $group = Group::where('referral_code', $ukm->code)->first();
-        if ($group && $group->users()->where('users.id', $userId)->exists()) {
+        try {
+            $ukm = UKM::findOrFail($ukmId);
+            $group = Group::where('referral_code', $ukm->code)->first();
+            $user = User::find($userId);
+            
+            if (!$group) {
+                return back()->with('error', 'Grup tidak ditemukan');
+            }
+            
+            if (!$user) {
+                return back()->with('error', 'User tidak ditemukan');
+            }
+            
+            if (!$group->users()->where('users.id', $userId)->exists()) {
+                return back()->with('error', 'Anggota tidak ditemukan dalam grup');
+            }
+            
+            // Admin website memiliki kontrol absolut - bisa mengeluarkan siapa saja
             // Detach user from group
             $group->users()->detach($userId);
-            // If that user was an admin_grup, downgrade role to anggota
-            $user = User::find($userId);
-            if ($user && $user->role === 'admin_grup') {
-                $user->role = 'anggota';
+            
+            // If that user was an admin_grup and no longer admin in any group, downgrade role to member
+            if ($user->role === 'admin_grup' && !$user->adminGroups()->exists()) {
+                $user->role = 'member';
                 $user->save();
+                
+                // If user is currently logged in, log them out
+                if (Auth::id() === $user->id) {
+                    Auth::logout();
+                    session()->flash('info', 'Status admin Anda telah dicabut karena Anda tidak lagi menjadi admin di grup manapun');
+                    return redirect()->route('login');
+                }
             }
-            return back()->with('success', 'Anggota dikeluarkan dari grup');
+            
+            return back()->with('success', 'Anggota "' . $user->name . '" berhasil dikeluarkan dari grup');
+            
+        } catch (\Exception $e) {
+            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
-        return back()->with('error', 'Anggota tidak ditemukan dalam grup');
     }
 
     public function hapusUKM($id)
@@ -494,7 +519,7 @@ class AdminWebsiteController extends Controller
      * Promosikan user menjadi admin di grup tertentu
      *
      * @param int $userId
-     * @param int $groupId  
+     * @param Request $request  
      * @return \Illuminate\Http\JsonResponse
      */
     public function promoteToAdminInGroup(Request $request, $userId)
@@ -515,8 +540,19 @@ class AdminWebsiteController extends Controller
                 return response()->json(['error' => 'User sudah menjadi admin di grup ini'], 400);
             }
             
+            // Don't promote admin_website to group admin
+            if ($user->role === 'admin_website') {
+                return response()->json(['error' => 'Admin website tidak perlu dipromosikan ke admin grup'], 400);
+            }
+            
             // Promosikan ke admin di grup ini
             $user->promoteToAdminInGroup($group);
+            
+            // If user is not admin_grup yet, promote them to admin_grup role
+            if ($user->role !== 'admin_grup') {
+                $user->role = 'admin_grup';
+                $user->save();
+            }
             
             return response()->json([
                 'success' => true, 
@@ -548,14 +584,30 @@ class AdminWebsiteController extends Controller
                 return response()->json(['error' => 'User bukan admin di grup ini'], 400);
             }
             
-            // Cek jangan sampai admin terakhir
-            $adminCount = $group->users()->wherePivot('is_admin', true)->count();
-            if ($adminCount <= 1) {
-                return response()->json(['error' => 'Tidak dapat menurunkan admin terakhir'], 400);
+            // Admin website memiliki kontrol absolut - bisa menurunkan admin terakhir
+            $currentUser = Auth::user();
+            if ($currentUser->role !== 'admin_website') {
+                // Untuk non-admin website, cek jangan sampai admin terakhir
+                $adminCount = $group->users()->wherePivot('is_admin', true)->count();
+                if ($adminCount <= 1) {
+                    return response()->json(['error' => 'Tidak dapat menurunkan admin terakhir'], 400);
+                }
             }
             
             // Turunkan dari admin di grup ini
             $user->demoteFromAdminInGroup($group);
+            
+            // Jika user yang diturunkan adalah admin_grup dan tidak lagi admin di grup manapun
+            if ($user->role === 'admin_grup' && !$user->adminGroups()->exists()) {
+                $user->role = 'member';
+                $user->save();
+                
+                // Jika user sedang login, logout paksa
+                if (Auth::id() === $user->id) {
+                    Auth::logout();
+                    session()->flash('info', 'Status admin Anda telah dicabut karena Anda tidak lagi menjadi admin di grup manapun');
+                }
+            }
             
             return response()->json([
                 'success' => true,
@@ -565,5 +617,177 @@ class AdminWebsiteController extends Controller
         } catch (\Exception $e) {
             return response()->json(['error' => 'Terjadi kesalahan: ' . $e->getMessage()], 500);
         }
+    }
+    
+    /**
+     * Get UKM members for a specific UKM
+     */
+    public function ukmMembers($ukm)
+    {
+        $ukm = UKM::findOrFail($ukm);
+        
+        // Find the group associated with this UKM
+        $group = Group::where('referral_code', $ukm->code)->first();
+        
+        if (!$group) {
+            $members = collect();
+        } else {
+            $members = $group->users()
+                ->withPivot(['is_admin', 'is_muted', 'created_at'])
+                ->orderBy('name')
+                ->get();
+        }
+        
+        return view('admin.ukm_members', [
+            'ukm' => $ukm,
+            'members' => $members
+        ]);
+    }
+    
+    /**
+     * Search for members (for AJAX requests)
+     */
+    public function searchMember(Request $request)
+    {
+        $query = $request->get('query');
+        
+        if (!$query) {
+            return response()->json(['users' => []]);
+        }
+        
+        $users = User::where('name', 'like', '%' . $query . '%')
+            ->orWhere('nim', 'like', '%' . $query . '%')
+            ->orWhere('email', 'like', '%' . $query . '%')
+            ->limit(10)
+            ->get(['id', 'name', 'nim', 'email']);
+            
+        return response()->json(['users' => $users]);
+    }
+    
+    /**
+     * Make a user admin globally (admin_grup role)
+     */
+    public function makeGlobalAdmin($userId)
+    {
+        try {
+            $user = User::findOrFail($userId);
+            
+            // Check if user is already admin_grup
+            if ($user->role === 'admin_grup') {
+                return response()->json(['error' => 'User sudah menjadi admin grup'], 400);
+            }
+            
+            // Don't allow changing admin_website role
+            if ($user->role === 'admin_website') {
+                return response()->json(['error' => 'Tidak dapat mengubah role admin website'], 400);
+            }
+            
+            $user->role = 'admin_grup';
+            $user->save();
+            
+            return response()->json([
+                'success' => true,
+                'message' => $user->name . ' berhasil dijadikan admin grup'
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Terjadi kesalahan: ' . $e->getMessage()], 500);
+        }
+    }
+    
+    /**
+     * Remove global admin status (change admin_grup to member)
+     */
+    public function removeGlobalAdmin($userId)
+    {
+        try {
+            $user = User::findOrFail($userId);
+            
+            // Check if user is admin_website
+            if ($user->role === 'admin_website') {
+                return response()->json(['error' => 'Tidak dapat mengubah role admin website'], 400);
+            }
+            
+            // Check if user is not admin_grup
+            if ($user->role !== 'admin_grup') {
+                return response()->json(['error' => 'User bukan admin grup'], 400);
+            }
+            
+            $user->role = 'member';
+            $user->save();
+            
+            return response()->json([
+                'success' => true,
+                'message' => $user->name . ' berhasil diturunkan dari admin grup'
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Terjadi kesalahan: ' . $e->getMessage()], 500);
+        }
+    }
+    
+    /**
+     * Force delete a user account (for admin website absolute control)
+     */
+    public function forceDeleteUser($userId)
+    {
+        try {
+            $user = User::findOrFail($userId);
+            $currentUser = Auth::user();
+            
+            // Only admin_website can force delete
+            if ($currentUser->role !== 'admin_website') {
+                return response()->json(['error' => 'Tidak memiliki izin untuk menghapus akun'], 403);
+            }
+            
+            // Cannot delete other admin_website
+            if ($user->role === 'admin_website') {
+                return response()->json(['error' => 'Tidak dapat menghapus admin website lain'], 400);
+            }
+            
+            $userName = $user->name;
+            
+            // Save deletion history
+            UserDeletionHistory::create([
+                'user_id' => $user->id,
+                'user_name' => $user->name,
+                'user_nim' => $user->nim,
+                'user_email' => $user->email,
+                'user_role' => $user->role,
+                'reason' => 'Force delete by admin website',
+                'deleted_by' => $currentUser->id,
+            ]);
+            
+            // Remove all group memberships
+            $user->groups()->detach();
+            
+            // Force delete the user
+            $user->forceDelete();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Akun ' . $userName . ' berhasil dihapus permanen'
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Terjadi kesalahan: ' . $e->getMessage()], 500);
+        }
+    }
+    
+    /**
+     * Get statistics for dashboard
+     */
+    public function getStatistics()
+    {
+        $stats = [
+            'total_members' => User::count(),
+            'total_ukms' => UKM::count(),
+            'total_admin_grup' => User::where('role', 'admin_grup')->count(),
+            'active_users_today' => User::where('last_seen_at', '>=', now()->subDay())->count(),
+            'new_users_this_month' => User::where('created_at', '>=', now()->startOfMonth())->count(),
+            'total_deleted_accounts' => UserDeletionHistory::count(),
+        ];
+        
+        return response()->json($stats);
     }
 }

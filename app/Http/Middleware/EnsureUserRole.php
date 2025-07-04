@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Models\User;
 
 class EnsureUserRole
 {
@@ -21,6 +22,7 @@ class EnsureUserRole
             return redirect('login');
         }
 
+        /** @var \App\Models\User $user */
         $user = Auth::user();
         $path = $request->path();
         
@@ -42,6 +44,16 @@ class EnsureUserRole
         if (str_starts_with($path, 'grup/') || $path === 'grup') {
             if ($user->role !== 'admin_grup') {
                 return $this->redirectBasedOnRole($user->role);
+            }
+            
+            // Additionally check if admin_grup has at least one group they're admin of
+            if (!$user->adminGroups()->exists()) {
+                // If they don't have any groups they're admin of, redirect and demote
+                $user->role = 'member';
+                $user->save();
+                Auth::logout();
+                session()->flash('error', 'Anda tidak lagi menjadi admin grup manapun. Silakan login kembali.');
+                return redirect()->route('login');
             }
         }
 

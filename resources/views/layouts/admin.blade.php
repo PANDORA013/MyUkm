@@ -130,7 +130,7 @@
                         </div>
                     @endif
                     
-                    @if(isset($errors) && $errors->any())
+                    @if($errors->any())
                         <div class="alert alert-danger alert-dismissible fade show" role="alert">
                             <ul class="mb-0">
                                 @foreach($errors->all() as $error)
@@ -149,7 +149,15 @@
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
+        // Setup CSRF token for AJAX requests
+        $.ajaxSetup({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            }
+        });
+
         // Enable tooltips
         var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
         var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
@@ -161,6 +169,169 @@
         var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
             return new bootstrap.Popover(popoverTriggerEl);
         });
+
+        // Global functions for admin actions
+        function confirmAction(message, callback) {
+            if (confirm(message)) {
+                callback();
+            }
+        }
+
+        function showAlert(type, message) {
+            const alertHtml = `
+                <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            `;
+            $('.content').prepend(alertHtml);
+        }
+
+        // AJAX helper function
+        function makeAjaxRequest(url, method, data, successCallback, errorCallback) {
+            $.ajax({
+                url: url,
+                method: method,
+                data: data,
+                success: function(response) {
+                    if (response.success) {
+                        showAlert('success', response.message);
+                        if (successCallback) successCallback(response);
+                    } else {
+                        showAlert('danger', response.error || 'Terjadi kesalahan');
+                        if (errorCallback) errorCallback(response);
+                    }
+                },
+                error: function(xhr) {
+                    const errorMessage = xhr.responseJSON?.error || 'Terjadi kesalahan pada server';
+                    showAlert('danger', errorMessage);
+                    if (errorCallback) errorCallback(xhr.responseJSON);
+                }
+            });
+        }
+
+        // User management functions
+        function makeAdminGrup(userId, userName) {
+            confirmAction(
+                `Apakah Anda yakin ingin menjadikan ${userName} sebagai admin grup?`,
+                function() {
+                    makeAjaxRequest(
+                        `/admin/users/${userId}/make-admin`,
+                        'POST',
+                        {},
+                        function() { location.reload(); }
+                    );
+                }
+            );
+        }
+
+        function removeAdminGrup(userId, userName) {
+            confirmAction(
+                `Apakah Anda yakin ingin menghapus status admin grup dari ${userName}?`,
+                function() {
+                    makeAjaxRequest(
+                        `/admin/users/${userId}/remove-admin`,
+                        'POST',
+                        {},
+                        function() { location.reload(); }
+                    );
+                }
+            );
+        }
+
+        function deleteUser(userId, userName) {
+            confirmAction(
+                `PERINGATAN: Apakah Anda yakin ingin menghapus akun ${userName} secara permanen?\n\nTindakan ini tidak dapat dibatalkan dan akan menghapus semua data terkait user ini.`,
+                function() {
+                    makeAjaxRequest(
+                        `/admin/users/${userId}`,
+                        'DELETE',
+                        {},
+                        function() { location.reload(); }
+                    );
+                }
+            );
+        }
+
+        // UKM management functions
+        function deleteUKM(ukmId, ukmName) {
+            confirmAction(
+                `PERINGATAN: Apakah Anda yakin ingin menghapus UKM "${ukmName}" beserta semua anggotanya?\n\nTindakan ini tidak dapat dibatalkan.`,
+                function() {
+                    makeAjaxRequest(
+                        `/admin/ukm/${ukmId}`,
+                        'DELETE',
+                        {},
+                        function() { location.reload(); }
+                    );
+                }
+            );
+        }
+
+        function removeFromUKM(ukmId, userId, userName) {
+            confirmAction(
+                `Apakah Anda yakin ingin mengeluarkan ${userName} dari UKM ini?`,
+                function() {
+                    makeAjaxRequest(
+                        `/admin/ukm/${ukmId}/keluarkan/${userId}`,
+                        'POST',
+                        {},
+                        function() { location.reload(); }
+                    );
+                }
+            );
+        }
+
+        function promoteToAdmin(userId, ukmId, userName) {
+            confirmAction(
+                `Apakah Anda yakin ingin menjadikan ${userName} sebagai admin di grup ini?`,
+                function() {
+                    makeAjaxRequest(
+                        `/admin/users/${userId}/promote-in-group`,
+                        'POST',
+                        { ukm_id: ukmId },
+                        function() { location.reload(); }
+                    );
+                }
+            );
+        }
+
+        function demoteFromAdmin(userId, ukmId, userName) {
+            confirmAction(
+                `Apakah Anda yakin ingin menurunkan ${userName} dari admin di grup ini?`,
+                function() {
+                    makeAjaxRequest(
+                        `/admin/users/${userId}/demote-from-group`,
+                        'POST',
+                        { ukm_id: ukmId },
+                        function() { location.reload(); }
+                    );
+                }
+            );
+        }
+
+        // Auto-refresh functionality for dashboard statistics
+        function refreshStats() {
+            if (window.location.pathname === '/admin/dashboard') {
+                makeAjaxRequest(
+                    '/admin/statistics',
+                    'GET',
+                    {},
+                    function(response) {
+                        // Update stat cards if they exist
+                        if (response.total_members !== undefined) {
+                            $('.stat-total-members').text(response.total_members.toLocaleString());
+                        }
+                        // Add more stat updates as needed
+                    }
+                );
+            }
+        }
+
+        // Refresh stats every 30 seconds on dashboard
+        if (window.location.pathname === '/admin/dashboard') {
+            setInterval(refreshStats, 30000);
+        }
     </script>
     @stack('scripts')
 </body>

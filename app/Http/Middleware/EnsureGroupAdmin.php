@@ -42,8 +42,14 @@ class EnsureGroupAdmin
                 ->with('error', 'Grup tidak ditemukan');
         }
         
-        // Check if user is admin in this specific group
+        // First check if user is a member of this group
         /** @var User $user */
+        if (!$user->groups()->where('group_id', $group->id)->exists()) {
+            return redirect()->route('ukm.index')
+                ->with('error', 'Anda bukan anggota grup ini');
+        }
+        
+        // Then check if user is admin in this specific group
         if (!$user->isAdminInGroup($group)) {
             return redirect()->route('ukm.index')
                 ->with('error', 'Anda tidak memiliki akses admin di grup ini');

@@ -106,7 +106,7 @@
                                                     <button type="button" 
                                                             class="btn btn-outline-danger" 
                                                             title="Hapus UKM"
-                                                            onclick="confirmDeleteUKM({{ $ukm->id }}, '{{ $ukm->nama ?? $ukm->name }}')">
+                                                            onclick="deleteUKM({{ $ukm->id }}, '{{ addslashes($ukm->nama ?? $ukm->name) }}')">
                                                         <i class="fas fa-trash"></i>
                                                     </button>
                                                 </div>

@@ -36,12 +36,13 @@ class UkmController extends Controller
                 'isAdminWebsite' => true
             ]);
         } else if ($user->role === 'admin_grup') {
-            // Admin grup menggunakan view user biasa tapi dengan layout admin_grup
-            return view('ukm.user_index', [
+            // Admin grup menggunakan view khusus dengan layout admin_grup
+            return view('grup.ukm_index', [
                 'joinedGroups' => $joinedGroups,
                 'availableGroups' => $availableGroups,
                 'userUkm' => $user->ukm_id ? Group::find($user->ukm_id) : null,
-                'isAdminGrup' => true
+                'isAdminGrup' => true,
+                'managedGroups' => $user->adminGroups()->get()
             ]);
         } else {
             // Untuk user biasa (anggota), gunakan view khusus user
@@ -93,10 +94,38 @@ class UkmController extends Controller
             return redirect()->route('ukm.index')
                 ->with('error', 'Anda tidak tergabung di UKM ini');
         }
-
+        
+        // Check if user is admin in this group
+        $isAdminInGroup = $user->isAdminInGroup($group);
+        
+        // Remove user from group
         $user->groups()->detach($group->id);
+        
+        // Store group name for message
+        $groupName = $group->name;
+        
+        // If user is admin_grup and was admin in this group
+        if ($user->role === 'admin_grup' && $isAdminInGroup) {
+            // Check if user is still admin in any other group
+            $stillAdminSomewhere = $user->adminGroups()->exists();
+            
+            // If not admin in any other group, demote user to regular member
+            if (!$stillAdminSomewhere) {
+                $user->role = 'member';
+                $user->save();
+                
+                // Also logout to force re-login with new role
+                Auth::logout();
+                session()->flash('success', 'Anda telah keluar dari grup ' . $groupName . ' dan tidak lagi menjadi admin. Silakan login kembali.');
+                return redirect()->route('login');
+            }
+        }
+        
+        // Invalidate any sessions or caches related to this group for this user
+        session()->forget('group_' . $group->id);
+        
         return redirect()->route('ukm.index')
-            ->with('success', 'Berhasil keluar dari ' . $group->name);
+            ->with('success', 'Berhasil keluar dari ' . $groupName);
     }
 
     public function chat($code)

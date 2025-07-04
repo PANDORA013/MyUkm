@@ -193,7 +193,7 @@
                                                     class="btn btn-sm btn-danger" 
                                                     title="Hapus Anggota"
                                                     data-bs-toggle="tooltip"
-                                                    onclick="confirmDeleteMember({{ $member->id }}, '{{ $member->name }}')">
+                                                    onclick="deleteUser({{ $member->id }}, '{{ addslashes($member->name) }}')">
                                                 <i class="fas fa-trash"></i>
                                             </button>
                                         @endif

@@ -54,12 +54,33 @@
 
 @section('content')
 <div class="container-fluid p-0">
-    <h4 class="page-header">
-        <i class="fas fa-tachometer-alt me-2"></i>Dashboard Admin Grup
-        @if($group)
-            <span class="text-muted">- {{ $group->name }}</span>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="page-header mb-0">
+            <i class="fas fa-tachometer-alt me-2"></i>Dashboard Admin Grup
+            @if($group)
+                <span class="text-muted">- {{ $group->name }}</span>
+            @endif
+        </h4>
+        
+        @if($managedGroups->count() > 1)
+            <div class="dropdown">
+                <button class="btn btn-outline-primary dropdown-toggle" type="button" id="groupSelector" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-exchange-alt me-2"></i>
+                    {{ $group ? $group->name : 'Pilih UKM' }}
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="groupSelector">
+                    @foreach($managedGroups as $managedGroup)
+                        <li>
+                            <a class="dropdown-item {{ $group && $group->id === $managedGroup->id ? 'active' : '' }}" 
+                               href="{{ route('grup.dashboard', ['group_id' => $managedGroup->id]) }}">
+                                <i class="fas fa-university me-2"></i>{{ $managedGroup->name }}
+                            </a>
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
         @endif
-    </h4>
+    </div>
     
     {{-- Flash Messages --}}
     @foreach (['success', 'error', 'info'] as $msg)
@@ -74,7 +95,7 @@
     @if(!$group)
         <div class="alert alert-warning">
             <i class="fas fa-exclamation-triangle me-2"></i>
-            Anda belum tergabung dalam grup UKM manapun. Silakan hubungi administrator untuk bergabung dengan grup.
+            Anda belum mengelola grup UKM manapun sebagai admin. Silakan hubungi administrator website untuk mendapatkan akses admin grup.
         </div>
     @else
         <!-- UKM Description Card -->
