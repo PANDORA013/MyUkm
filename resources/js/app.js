@@ -24,6 +24,15 @@ window.helpers = {
 
 // Simple form validation
 document.addEventListener('DOMContentLoaded', function() {
+    // Setup CSRF token for jQuery AJAX if jQuery is available
+    if (typeof $ !== 'undefined') {
+        $.ajaxSetup({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            }
+        });
+    }
+    
     // Basic form interaction
     const forms = document.querySelectorAll('form');
     forms.forEach(form => {

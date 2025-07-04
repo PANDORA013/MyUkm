@@ -356,10 +356,19 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     
     <script>
-        // Setup CSRF token for AJAX requests
-        $.ajaxSetup({
-            headers: {
-                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        // Wait for DOM to be ready
+        $(document).ready(function() {
+            // Setup CSRF token for AJAX requests
+            const csrfToken = $('meta[name="csrf-token"]').attr('content');
+            if (csrfToken) {
+                $.ajaxSetup({
+                    headers: {
+                        'X-CSRF-TOKEN': csrfToken
+                    }
+                });
+                console.log('CSRF token setup completed for jQuery');
+            } else {
+                console.error('CSRF token meta tag not found');
             }
         });
         
