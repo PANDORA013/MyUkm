@@ -45,15 +45,15 @@ class AdminGrupController extends Controller
             if ($selectedGroup) {
                 // Get group members with their roles in this group
                 $members = $selectedGroup->users()
-                    ->withPivot('role')
-                    ->orderBy('pivot_role', 'asc')
+                    ->withPivot('is_admin', 'is_muted', 'muted_until', 'created_at')
+                    ->orderBy('pivot_is_admin', 'desc')
                     ->get();
                 
                 // Calculate stats
                 $stats = [
                     'total_anggota' => $members->count(),
-                    'anggota_aktif' => $members->where('pivot.role', 'member')->count() + $members->where('pivot.role', 'admin')->count(),
-                    'anggota_muted' => $members->where('pivot.role', 'muted')->count()
+                    'anggota_aktif' => $members->where('pivot.is_muted', false)->count(),
+                    'anggota_muted' => $members->where('pivot.is_muted', true)->count()
                 ];
             }
         }
@@ -121,8 +121,8 @@ class AdminGrupController extends Controller
             if ($selectedGroup) {
                 // Get group members with their roles in this group
                 $members = $selectedGroup->users()
-                    ->withPivot('role')
-                    ->orderBy('pivot_role', 'asc')
+                    ->withPivot('is_admin', 'is_muted', 'muted_until', 'created_at')
+                    ->orderBy('pivot_is_admin', 'desc')
                     ->get();
             }
         }
@@ -300,7 +300,8 @@ class AdminGrupController extends Controller
         
         // Get group members
         $members = $group->users()
-            ->withPivot('role', 'is_muted', 'muted_until')
+            ->withPivot('is_admin', 'is_muted', 'muted_until', 'created_at')
+            ->orderBy('pivot_is_admin', 'desc')
             ->get();
             
         return view('grup.manage', [
