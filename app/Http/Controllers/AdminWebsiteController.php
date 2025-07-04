@@ -496,10 +496,9 @@ class AdminWebsiteController extends Controller
         if ($request->has('search') && !empty($request->search)) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
-                $q->where('nama', 'like', '%' . $search . '%')
-                  ->orWhere('name', 'like', '%' . $search . '%')
-                  ->orWhere('kode', 'like', '%' . $search . '%')
-                  ->orWhere('referral_code', 'like', '%' . $search . '%');
+                $q->where('name', 'like', '%' . $search . '%')
+                  ->orWhere('code', 'like', '%' . $search . '%')
+                  ->orWhere('description', 'like', '%' . $search . '%');
             });
         }
 
@@ -507,7 +506,7 @@ class AdminWebsiteController extends Controller
 
         // Add member count to each UKM
         $ukms->getCollection()->transform(function ($ukm) {
-            $group = Group::where('referral_code', $ukm->code ?? $ukm->referral_code)->first();
+            $group = Group::where('referral_code', $ukm->code)->first();
             $ukm->members_count = $group ? $group->users()->count() : 0;
             return $ukm;
         });

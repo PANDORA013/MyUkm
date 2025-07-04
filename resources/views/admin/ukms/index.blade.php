@@ -67,10 +67,18 @@
                                         <tr>
                                             <td>{{ $ukms->firstItem() + $index }}</td>
                                             <td>
-                                                <strong>{{ $ukm->nama ?? $ukm->name }}</strong>
+                                                <strong>{{ $ukm->name }}</strong>
                                             </td>
                                             <td>
-                                                <code>{{ $ukm->kode ?? $ukm->referral_code }}</code>
+                                                <div class="d-flex align-items-center">
+                                                    <code class="me-2 fs-6 fw-bold text-primary">{{ $ukm->code }}</code>
+                                                    <button class="btn btn-sm btn-outline-success copy-code-btn" 
+                                                            data-code="{{ $ukm->code }}"
+                                                            title="Copy kode referral">
+                                                        <i class="fas fa-copy"></i>
+                                                    </button>
+                                                </div>
+                                                <small class="text-muted d-block">Kode untuk bergabung</small>
                                             </td>
                                             <td>
                                                 @if($ukm->description)
@@ -196,6 +204,45 @@
     setTimeout(function() {
         $('.alert').fadeOut('slow');
     }, 5000);
+    
+    // Function to copy referral code
+    document.addEventListener('DOMContentLoaded', function() {
+        const copyButtons = document.querySelectorAll('.copy-code-btn');
+        
+        copyButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const code = this.getAttribute('data-code');
+                
+                // Create temporary textarea to copy text
+                const textarea = document.createElement('textarea');
+                textarea.value = code;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                
+                // Show feedback
+                const originalIcon = this.innerHTML;
+                this.innerHTML = '<i class="fas fa-check text-success"></i>';
+                this.classList.remove('btn-outline-success');
+                this.classList.add('btn-success');
+                
+                // Show toast notification
+                if (typeof showToast === 'function') {
+                    showToast('Kode referral "' + code + '" berhasil disalin!', 'success');
+                } else {
+                    alert('Kode referral "' + code + '" berhasil disalin!');
+                }
+                
+                // Reset button after 2 seconds
+                setTimeout(() => {
+                    this.innerHTML = originalIcon;
+                    this.classList.remove('btn-success');
+                    this.classList.add('btn-outline-success');
+                }, 2000);
+            });
+        });
+    });
     
     // Function to confirm UKM deletion
     function confirmDeleteUKM(ukmId, ukmName) {
