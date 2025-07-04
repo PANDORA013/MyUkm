@@ -23,6 +23,7 @@ class Group extends Model
         'created_by',
         'is_active',
         'settings',
+        'ukm_id',
     ];
 
     protected $casts = [
