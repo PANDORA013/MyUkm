@@ -194,6 +194,8 @@
                                                                 <li>
                                                                     <form action="{{ route('grup.mute', $member->id) }}" method="POST" class="d-inline">
                                                                         @csrf
+                                                                        <input type="hidden" name="group_id" value="{{ $group->id }}">
+                                                                        <input type="hidden" name="duration" value="60">
                                                                         <button type="submit" class="dropdown-item {{ $member->pivot->is_muted ? 'text-success' : 'text-warning' }}" onclick="return confirm('{{ $member->pivot->is_muted ? 'Unmute' : 'Mute' }} anggota {{ $member->name }}?')">
                                                                             <i class="fas fa-{{ $member->pivot->is_muted ? 'volume-up' : 'volume-mute' }} me-2"></i>
                                                                             {{ $member->pivot->is_muted ? 'Unmute' : 'Mute' }}
@@ -204,6 +206,7 @@
                                                                 <li>
                                                                     <form action="{{ route('grup.keluarkan', $member->id) }}" method="POST" class="d-inline">
                                                                         @csrf
+                                                                        <input type="hidden" name="group_id" value="{{ $group->id }}">
                                                                         <button type="submit" class="dropdown-item text-danger" onclick="return confirm('Keluarkan {{ $member->name }} dari grup? Tindakan ini tidak dapat dibatalkan.')">
                                                                             <i class="fas fa-user-minus me-2"></i>
                                                                             Keluarkan

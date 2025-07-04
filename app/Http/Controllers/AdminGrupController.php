@@ -243,19 +243,37 @@ class AdminGrupController extends Controller
             return back()->with('error', 'Tidak dapat membisukan admin');
         }
         
-        // Calculate mute expiry time
-        $expiryTime = now()->addMinutes($duration);
-        
-        // Update the group_user pivot to add mute status
-        DB::table('group_user')
+        // Get current mute status
+        $currentPivot = DB::table('group_user')
             ->where('user_id', $id)
             ->where('group_id', $groupId)
-            ->update([
-                'is_muted' => true,
-                'muted_until' => $expiryTime
-            ]);
+            ->first();
             
-        return back()->with('success', "Berhasil membisukan {$targetUser->name} untuk {$duration} menit");
+        if ($currentPivot && $currentPivot->is_muted) {
+            // Unmute the user
+            DB::table('group_user')
+                ->where('user_id', $id)
+                ->where('group_id', $groupId)
+                ->update([
+                    'is_muted' => false,
+                    'muted_until' => null
+                ]);
+                
+            return back()->with('success', "Berhasil unmute {$targetUser->name}");
+        } else {
+            // Mute the user
+            $expiryTime = now()->addMinutes($duration);
+            
+            DB::table('group_user')
+                ->where('user_id', $id)
+                ->where('group_id', $groupId)
+                ->update([
+                    'is_muted' => true,
+                    'muted_until' => $expiryTime
+                ]);
+                
+            return back()->with('success', "Berhasil membisukan {$targetUser->name} untuk {$duration} menit");
+        }
     }
     
     /**
@@ -379,18 +397,36 @@ class AdminGrupController extends Controller
             return back()->with('error', 'User tidak ditemukan');
         }
         
-        // Calculate mute expiry time
-        $expiryTime = now()->addMinutes($duration);
-        
-        // Update the group_user pivot to add mute status
-        DB::table('group_user')
+        // Get current mute status
+        $currentPivot = DB::table('group_user')
             ->where('user_id', $userId)
             ->where('group_id', $id)
-            ->update([
-                'is_muted' => true,
-                'muted_until' => $expiryTime
-            ]);
+            ->first();
             
-        return back()->with('success', "{$targetUser->name} berhasil dibisukan untuk {$duration} menit");
+        if ($currentPivot && $currentPivot->is_muted) {
+            // Unmute the user
+            DB::table('group_user')
+                ->where('user_id', $userId)
+                ->where('group_id', $id)
+                ->update([
+                    'is_muted' => false,
+                    'muted_until' => null
+                ]);
+                
+            return back()->with('success', "{$targetUser->name} berhasil di-unmute");
+        } else {
+            // Mute the user
+            $expiryTime = now()->addMinutes($duration);
+            
+            DB::table('group_user')
+                ->where('user_id', $userId)
+                ->where('group_id', $id)
+                ->update([
+                    'is_muted' => true,
+                    'muted_until' => $expiryTime
+                ]);
+                
+            return back()->with('success', "{$targetUser->name} berhasil dibisukan untuk {$duration} menit");
+        }
     }
 }

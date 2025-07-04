@@ -356,6 +356,13 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     
     <script>
+        // Setup CSRF token for AJAX requests
+        $.ajaxSetup({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            }
+        });
+        
         // Toggle sidebar for mobile
         document.getElementById('sidebar-toggle').addEventListener('click', function() {
             document.getElementById('sidebar').classList.toggle('show');
@@ -375,6 +382,16 @@
                 document.body.classList.remove('sidebar-open');
             }
         });
+        
+        // Copy to clipboard function
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(function() {
+                // Show success message
+                alert('Kode berhasil disalin!');
+            }, function(err) {
+                console.error('Could not copy text: ', err);
+            });
+        }
     </script>
     
     @stack('scripts')
