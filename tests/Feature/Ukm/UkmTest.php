@@ -30,9 +30,7 @@ class UkmTest extends TestCase
         $this->ukm = UKM::create([
             'name' => 'Test UKM',
             'code' => 'TST',
-            'description' => 'Test UKM Description',
-            'created_at' => now(),
-            'updated_at' => now()
+            'description' => 'Test UKM Description'
         ]);
         
         // Create admin user
@@ -43,9 +41,7 @@ class UkmTest extends TestCase
             'password' => Hash::make('admin123'),
             'password_plain' => 'admin123',
             'role' => 'admin_website',
-            'ukm_id' => $this->ukm->id,
-            'created_at' => now(),
-            'updated_at' => now()
+            'ukm_id' => $this->ukm->id
         ]);
         
         // Create regular user
@@ -56,9 +52,7 @@ class UkmTest extends TestCase
             'password' => Hash::make('password'),
             'password_plain' => 'password',
             'role' => 'member',
-            'ukm_id' => $this->ukm->id,
-            'created_at' => now(),
-            'updated_at' => now()
+            'ukm_id' => $this->ukm->id
         ]);
     }
 

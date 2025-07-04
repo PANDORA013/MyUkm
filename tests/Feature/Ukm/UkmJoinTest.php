@@ -30,9 +30,7 @@ class UkmJoinTest extends TestCase
         $this->ukm = UKM::create([
             'name' => 'Test UKM',
             'code' => 'TST',
-            'description' => 'Test UKM Description',
-            'created_at' => now(),
-            'updated_at' => now()
+            'description' => 'Test UKM Description'
         ]);
         
         // Create a test user
@@ -43,9 +41,7 @@ class UkmJoinTest extends TestCase
             'password' => Hash::make('password'),
             'password_plain' => 'password',
             'role' => 'member',
-            'ukm_id' => $this->ukm->id,
-            'created_at' => now(),
-            'updated_at' => now()
+            'ukm_id' => $this->ukm->id
         ]);
         
         // Create a test group
@@ -54,9 +50,7 @@ class UkmJoinTest extends TestCase
             'referral_code' => 'TST1', // Changed to exactly 4 characters
             'description' => 'Test Description',
             'ukm_id' => $this->ukm->id,
-            'is_active' => true,
-            'created_at' => now(),
-            'updated_at' => now()
+            'is_active' => true
         ]);
     }
 

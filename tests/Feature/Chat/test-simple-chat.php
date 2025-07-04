@@ -34,8 +34,6 @@ try {
         'email' => 'test@example.com',
         'password' => password_hash('password', PASSWORD_DEFAULT),
         'role' => 'member',
-        'created_at' => now(),
-        'updated_at' => now(),
     ]);
     
     echo "Created user with ID: $userId\n";
@@ -45,8 +43,6 @@ try {
         'name' => 'Test Group',
         'referral_code' => 'TEST123',
         'description' => 'Test Description',
-        'created_at' => now(),
-        'updated_at' => now(),
     ]);
     
     echo "Created group with ID: $groupId and referral code: TEST123\n";
@@ -55,8 +51,6 @@ try {
     DB::table('group_user')->insert([
         'user_id' => $userId,
         'group_id' => $groupId,
-        'created_at' => now(),
-        'updated_at' => now(),
     ]);
     
     echo "Added user to group\n";
@@ -66,8 +60,6 @@ try {
         'user_id' => $userId,
         'group_id' => $groupId,
         'message' => 'Hello World',
-        'created_at' => now(),
-        'updated_at' => now(),
     ]);
     
     echo "Created chat message with ID: $chatId\n";

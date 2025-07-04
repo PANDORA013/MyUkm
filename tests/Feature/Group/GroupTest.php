@@ -27,9 +27,7 @@ class GroupTest extends TestCase
         $this->ukm = UKM::create([
             'name' => 'Test UKM',
             'code' => 'TST',
-            'description' => 'Test UKM Description',
-            'created_at' => now(),
-            'updated_at' => now()
+            'description' => 'Test UKM Description'
         ]);
         
         // Create a test user
@@ -40,9 +38,7 @@ class GroupTest extends TestCase
             'password' => Hash::make('password'),
             'password_plain' => 'password',
             'role' => 'member',
-            'ukm_id' => $this->ukm->id,
-            'created_at' => now(),
-            'updated_at' => now()
+            'ukm_id' => $this->ukm->id
         ]);
         
         // Create a test group
@@ -50,9 +46,7 @@ class GroupTest extends TestCase
             'name' => 'Test Group',
             'referral_code' => 'TEST123',
             'description' => 'Test Description',
-            'ukm_id' => $this->ukm->id,
-            'created_at' => now(),
-            'updated_at' => now()
+            'ukm_id' => $this->ukm->id
         ]);
     }
     
