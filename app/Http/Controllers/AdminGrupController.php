@@ -63,6 +63,7 @@ class AdminGrupController extends Controller
             'selectedGroup' => $selectedGroup,
             'group' => $selectedGroup, // Add alias for backward compatibility
             'members' => $members,
+            'anggota' => $members, // Add alias for Indonesian naming convention
             'stats' => $stats
         ]);
     }
@@ -131,7 +132,8 @@ class AdminGrupController extends Controller
             'managedGroups' => $managedGroups,
             'selectedGroup' => $selectedGroup,
             'group' => $selectedGroup, // Add alias for backward compatibility
-            'members' => $members
+            'members' => $members,
+            'anggota' => $members // Add alias for Indonesian naming convention
         ]);
     }
     
