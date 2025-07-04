@@ -358,17 +358,10 @@
     <script>
         // Wait for DOM to be ready
         $(document).ready(function() {
-            // Setup CSRF token for AJAX requests
+            // CSRF token is already handled in app.js, just log confirmation
             const csrfToken = $('meta[name="csrf-token"]').attr('content');
             if (csrfToken) {
-                $.ajaxSetup({
-                    headers: {
-                        'X-CSRF-TOKEN': csrfToken
-                    }
-                });
-                console.log('CSRF token setup completed for jQuery');
-            } else {
-                console.error('CSRF token meta tag not found');
+                console.log('Layout: CSRF token confirmed available');
             }
         });
         

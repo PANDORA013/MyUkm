@@ -26,11 +26,17 @@ window.helpers = {
 document.addEventListener('DOMContentLoaded', function() {
     // Setup CSRF token for jQuery AJAX if jQuery is available
     if (typeof $ !== 'undefined') {
-        $.ajaxSetup({
-            headers: {
-                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-            }
-        });
+        const csrfToken = $('meta[name="csrf-token"]').attr('content');
+        if (csrfToken) {
+            $.ajaxSetup({
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken
+                }
+            });
+            console.log('jQuery CSRF token setup completed');
+        } else {
+            console.warn('CSRF token meta tag not found for jQuery');
+        }
     }
     
     // Basic form interaction
