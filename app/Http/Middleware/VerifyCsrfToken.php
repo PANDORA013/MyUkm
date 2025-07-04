@@ -21,9 +21,14 @@ class VerifyCsrfToken extends Middleware
      * @return mixed
      */
     public function handle($request, \Closure $next)
-    {
-        // Skip CSRF verification in testing environment
-        if (app()->environment(['testing', 'local']) && config('app.debug')) {
+    {        
+        // Skip CSRF verification completely in testing environment
+        if (app()->environment('testing')) {
+            return $next($request);
+        }
+        
+        // Skip CSRF verification in local environment when debug is enabled
+        if (app()->environment('local') && config('app.debug')) {
             return $next($request);
         }
 

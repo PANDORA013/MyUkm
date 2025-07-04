@@ -36,8 +36,11 @@ abstract class TestCase extends BaseTestCase
     {
         parent::setUp();
         
-        // Show all errors in test environment
-        $this->withoutExceptionHandling();
+        // Disable CSRF protection for testing
+        $this->withoutMiddleware(\App\Http\Middleware\VerifyCsrfToken::class);
+        
+        // Remove exception handling to see full errors - comment out for production tests
+        // $this->withoutExceptionHandling();
         
         // Ensure we're using the testing database
         $this->configureDatabase();
