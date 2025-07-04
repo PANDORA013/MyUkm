@@ -33,6 +33,7 @@ Route::post('register', [AuthController::class, 'register']);
 Route::get('login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('login', [AuthController::class, 'login']);
 Route::post('logout', [AuthController::class, 'logout'])->name('logout');
+Route::get('logout', [AuthController::class, 'logout'])->name('logout.get');
 
 // CSRF token refresh route - accessible without auth but requires web middleware for session
 Route::middleware(['web'])->get('/csrf-refresh', function () {
