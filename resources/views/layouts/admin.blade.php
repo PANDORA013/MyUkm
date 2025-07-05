@@ -178,6 +178,9 @@
         }
 
         function showAlert(type, message) {
+            // Remove existing alerts to prevent accumulation
+            $('.alert').remove();
+            
             const alertHtml = `
                 <div class="alert alert-${type} alert-dismissible fade show" role="alert">
                     ${message}
@@ -185,9 +188,14 @@
                 </div>
             `;
             $('.content').prepend(alertHtml);
+            
+            // Auto-dismiss alert after 5 seconds
+            setTimeout(function() {
+                $('.alert').alert('close');
+            }, 5000);
         }
 
-        // AJAX helper function
+        // AJAX helper function with better error handling
         function makeAjaxRequest(url, method, data, successCallback, errorCallback) {
             $.ajax({
                 url: url,
@@ -203,8 +211,11 @@
                     }
                 },
                 error: function(xhr) {
-                    const errorMessage = xhr.responseJSON?.error || 'Terjadi kesalahan pada server';
-                    showAlert('danger', errorMessage);
+                    // Only show error alerts for non-404 errors to prevent spam
+                    if (xhr.status !== 404) {
+                        const errorMessage = xhr.responseJSON?.error || 'Terjadi kesalahan pada server';
+                        showAlert('danger', errorMessage);
+                    }
                     if (errorCallback) errorCallback(xhr.responseJSON);
                 }
             });
@@ -310,7 +321,9 @@
             );
         }
 
-        // Auto-refresh functionality for dashboard statistics
+        // Auto-refresh functionality disabled to prevent error spam
+        // TODO: Implement proper statistics endpoint if needed
+        /*
         function refreshStats() {
             if (window.location.pathname === '/admin/dashboard') {
                 makeAjaxRequest(
@@ -323,6 +336,10 @@
                             $('.stat-total-members').text(response.total_members.toLocaleString());
                         }
                         // Add more stat updates as needed
+                    },
+                    function(error) {
+                        // Silently handle errors for auto-refresh
+                        console.log('Stats refresh failed:', error);
                     }
                 );
             }
@@ -332,6 +349,7 @@
         if (window.location.pathname === '/admin/dashboard') {
             setInterval(refreshStats, 30000);
         }
+        */
     </script>
     @stack('scripts')
 </body>
