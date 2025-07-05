@@ -151,7 +151,7 @@ class AdminGrupController extends Controller
         }
         
         // Make sure the user is admin of this group
-        $group = $user->adminGroups()->where('id', $groupId)->first();
+        $group = $user->adminGroups()->where('groups.id', $groupId)->first();
         
         if (!$group) {
             return back()->with('error', 'Anda tidak memiliki akses ke grup ini');
@@ -215,7 +215,7 @@ class AdminGrupController extends Controller
         }
         
         // Make sure the user is admin of this group
-        $group = $user->adminGroups()->where('id', $groupId)->first();
+        $group = $user->adminGroups()->where('groups.id', $groupId)->first();
         
         if (!$group) {
             return back()->with('error', 'Anda tidak memiliki akses ke grup ini');
@@ -291,7 +291,7 @@ class AdminGrupController extends Controller
         }
         
         // Make sure the user is admin of this group
-        $group = $user->adminGroups()->where('id', $groupId)->first();
+        $group = $user->adminGroups()->where('groups.id', $groupId)->first();
         
         if (!$group) {
             return back()->with('error', 'Anda tidak memiliki akses ke grup ini');
@@ -312,7 +312,7 @@ class AdminGrupController extends Controller
         $user = Auth::user();
         
         // Make sure the user is admin of this group
-        $group = $user->adminGroups()->where('id', $id)->first();
+        $group = $user->adminGroups()->where('groups.id', $id)->first();
         
         if (!$group) {
             return back()->with('error', 'Anda tidak memiliki akses ke grup ini');
@@ -339,7 +339,7 @@ class AdminGrupController extends Controller
         $user = Auth::user();
         
         // Make sure the user is admin of this group
-        $group = $user->adminGroups()->where('id', $id)->first();
+        $group = $user->adminGroups()->where('groups.id', $id)->first();
         
         if (!$group) {
             return back()->with('error', 'Anda tidak memiliki akses ke grup ini');
@@ -379,7 +379,7 @@ class AdminGrupController extends Controller
         $duration = $request->input('duration', 60); // Default to 60 minutes
         
         // Make sure the user is admin of this group
-        $group = $user->adminGroups()->where('id', $id)->first();
+        $group = $user->adminGroups()->where('groups.id', $id)->first();
         
         if (!$group) {
             return back()->with('error', 'Anda tidak memiliki akses ke grup ini');
