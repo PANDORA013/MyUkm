@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\UserDeletion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Crypt;
@@ -67,6 +68,13 @@ class AuthController extends Controller
             'nim' => 'required|string',
             'password' => 'required|string',
         ]);
+
+        // Cek apakah user dengan NIM ini pernah dihapus
+        $isUserDeleted = UserDeletion::where('deleted_user_nim', $credentials['nim'])->exists();
+        
+        if ($isUserDeleted) {
+            return back()->withErrors(['nim' => 'Akun ini telah dihapus oleh admin dan tidak dapat digunakan lagi.'])->onlyInput('nim');
+        }
 
         if (Auth::attempt(['nim' => $credentials['nim'], 'password' => $credentials['password']])) {
             $request->session()->regenerate();

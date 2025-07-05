@@ -111,7 +111,7 @@
                         </li>
 
                         <li class="nav-item">
-                            <a class="nav-link {{ request()->routeIs('admin.user-deletions.*') ? 'active' : '' }}" href="{{ route('admin.user-deletions.index') }}">
+                            <a class="nav-link {{ request()->routeIs('admin.riwayat-penghapusan') ? 'active' : '' }}" href="{{ route('admin.riwayat-penghapusan') }}">
                                 <i class="fas fa-fw fa-trash-alt"></i>
                                 Riwayat Penghapusan
                             </a>
@@ -130,7 +130,7 @@
                         </div>
                     @endif
                     
-                    @if($errors->any())
+                    @if(isset($errors) && $errors->any())
                         <div class="alert alert-danger alert-dismissible fade show" role="alert">
                             <ul class="mb-0">
                                 @foreach($errors->all() as $error)

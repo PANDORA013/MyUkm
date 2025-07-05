@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\UKM;
 use App\Models\Group;
-use App\Models\UserDeletionHistory;
+use App\Models\UserDeletion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -36,7 +36,7 @@ class AdminWebsiteController extends Controller
         $newUsersThisMonth = User::where('created_at', '>=', now()->startOfMonth())->count();
         
         // Hitung total akun yang sudah dihapus
-        $totalDeletedAccounts = UserDeletionHistory::count();
+        $totalDeletedAccounts = UserDeletion::count();
         
         return view('admin.dashboard', compact(
             'totalMembers', 
@@ -136,13 +136,13 @@ class AdminWebsiteController extends Controller
             $userName = $user->name;
             
             // Simpan riwayat penghapusan sebelum menghapus user
-            UserDeletionHistory::create([
-                'user_id' => $user->id,
-                'user_name' => $user->name,
-                'user_nim' => $user->nim,
-                'user_email' => $user->email,
-                'user_role' => $user->role,
-                'reason' => 'Dihapus oleh admin website',
+            UserDeletion::create([
+                'deleted_user_id' => $user->id,
+                'deleted_user_name' => $user->name,
+                'deleted_user_nim' => $user->nim,
+                'deleted_user_email' => $user->email,
+                'deleted_user_role' => $user->role,
+                'deletion_reason' => 'Dihapus oleh admin website',
                 'deleted_by' => $currentUser->id,
             ]);
             
@@ -747,13 +747,13 @@ class AdminWebsiteController extends Controller
             $userName = $user->name;
             
             // Save deletion history
-            UserDeletionHistory::create([
-                'user_id' => $user->id,
-                'user_name' => $user->name,
-                'user_nim' => $user->nim,
-                'user_email' => $user->email,
-                'user_role' => $user->role,
-                'reason' => 'Force delete by admin website',
+            UserDeletion::create([
+                'deleted_user_id' => $user->id,
+                'deleted_user_name' => $user->name,
+                'deleted_user_nim' => $user->nim,
+                'deleted_user_email' => $user->email,
+                'deleted_user_role' => $user->role,
+                'deletion_reason' => 'Force delete by admin website',
                 'deleted_by' => $currentUser->id,
             ]);
             
@@ -774,6 +774,24 @@ class AdminWebsiteController extends Controller
     }
     
     /**
+     * Tampilkan riwayat penghapusan user
+     */
+    public function riwayatPenghapusan()
+    {
+        try {
+            // Ambil semua riwayat penghapusan dengan informasi admin yang menghapus
+            $deletions = UserDeletion::with('deletedBy')
+                ->orderBy('created_at', 'desc')
+                ->paginate(20);
+            
+            return view('admin.riwayat-penghapusan', compact('deletions'));
+            
+        } catch (\Exception $e) {
+            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+    
+    /**
      * Get statistics for dashboard
      */
     public function getStatistics()
@@ -784,7 +802,7 @@ class AdminWebsiteController extends Controller
             'total_admin_grup' => User::where('role', 'admin_grup')->count(),
             'active_users_today' => User::where('last_seen_at', '>=', now()->subDay())->count(),
             'new_users_this_month' => User::where('created_at', '>=', now()->startOfMonth())->count(),
-            'total_deleted_accounts' => UserDeletionHistory::count(),
+            'total_deleted_accounts' => UserDeletion::count(),
         ];
         
         return response()->json($stats);

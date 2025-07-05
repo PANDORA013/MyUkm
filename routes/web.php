@@ -149,6 +149,7 @@ Route::middleware(['auth', 'ensure.role'])->group(function () {
         
         // Additional admin functions for absolute control
         Route::get('/statistics', [AdminWebsiteController::class, 'getStatistics'])->name('statistics');
+        Route::get('/riwayat-penghapusan', [AdminWebsiteController::class, 'riwayatPenghapusan'])->name('riwayat-penghapusan');
         Route::post('/users/{id}/make-global-admin', [AdminWebsiteController::class, 'makeGlobalAdmin'])->name('users.make-global-admin');
         Route::post('/users/{id}/remove-global-admin', [AdminWebsiteController::class, 'removeGlobalAdmin'])->name('users.remove-global-admin');
         Route::delete('/users/{id}/force-delete', [AdminWebsiteController::class, 'forceDeleteUser'])->name('users.force-delete');
