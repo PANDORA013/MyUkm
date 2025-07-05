@@ -208,7 +208,12 @@ class AdminGrupController extends Controller
         /** @var User $user */
         $user = Auth::user();
         $groupId = $request->input('group_id');
-        $duration = $request->input('duration', 60); // Default to 60 minutes
+        $duration = (int) $request->input('duration', 60); // Convert to integer
+        
+        // Validate duration is positive
+        if ($duration <= 0) {
+            $duration = 60; // Default to 60 minutes if invalid
+        }
         
         if (!$groupId) {
             return back()->with('error', 'ID grup tidak ditemukan');
@@ -376,7 +381,12 @@ class AdminGrupController extends Controller
     {
         /** @var User $user */
         $user = Auth::user();
-        $duration = $request->input('duration', 60); // Default to 60 minutes
+        $duration = (int) $request->input('duration', 60); // Convert to integer
+        
+        // Validate duration is positive
+        if ($duration <= 0) {
+            $duration = 60; // Default to 60 minutes if invalid
+        }
         
         // Make sure the user is admin of this group
         $group = $user->adminGroups()->where('groups.id', $id)->first();
