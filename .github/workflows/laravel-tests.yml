@@ -10,16 +10,6 @@ jobs:
   laravel-tests:
     runs-on: ubuntu-latest
 
-    services:
-      mysql:
-        image: mysql:8.0
-        env:
-          MYSQL_ROOT_PASSWORD: password
-          MYSQL_DATABASE: myukm_test
-        ports:
-          - 3306:3306
-        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
-
     steps:
     - uses: actions/checkout@v4
 
@@ -35,13 +25,13 @@ jobs:
 
     - name: Configure Environment for Testing
       run: |
-        # Configure database for testing
-        sed -i 's/DB_CONNECTION=.*/DB_CONNECTION=mysql/' .env
-        sed -i 's/DB_HOST=.*/DB_HOST=127.0.0.1/' .env
-        sed -i 's/DB_PORT=.*/DB_PORT=3306/' .env
-        sed -i 's/DB_DATABASE=.*/DB_DATABASE=myukm_test/' .env
-        sed -i 's/DB_USERNAME=.*/DB_USERNAME=root/' .env
-        sed -i 's/DB_PASSWORD=.*/DB_PASSWORD=password/' .env
+        # Configure database for testing (using SQLite instead of MySQL)
+        sed -i 's/DB_CONNECTION=.*/DB_CONNECTION=sqlite/' .env
+        sed -i 's/DB_HOST=.*/# DB_HOST=127.0.0.1/' .env
+        sed -i 's/DB_PORT=.*/# DB_PORT=3306/' .env
+        sed -i 's/DB_DATABASE=.*/DB_DATABASE=:memory:/' .env
+        sed -i 's/DB_USERNAME=.*/# DB_USERNAME=root/' .env
+        sed -i 's/DB_PASSWORD=.*/# DB_PASSWORD=/' .env
         
         # Configure broadcast driver to prevent null argument errors
         echo "BROADCAST_DRIVER=log" >> .env
