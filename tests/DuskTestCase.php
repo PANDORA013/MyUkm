@@ -27,7 +27,7 @@ abstract class DuskTestCase extends BaseTestCase
         }
         
         // Check if Chromedriver exists before starting
-        $chromedriverPath = base_path('vendor/laravel/dusk/bin/chromedriver-win.exe');
+        $chromedriverPath = __DIR__ . '/../vendor/laravel/dusk/bin/chromedriver-win.exe';
         if (!file_exists($chromedriverPath)) {
             // Skip if Chromedriver is not installed
             return;
