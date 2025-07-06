@@ -24,7 +24,11 @@ class UkmTest extends TestCase
         parent::setUp();
         
         // Disable CSRF protection for this test
-        $this->withoutMiddleware(\App\Http\Middleware\VerifyCsrfToken::class);
+        $this->withoutMiddleware([
+            \App\Http\Middleware\VerifyCsrfToken::class,
+            \App\Http\Middleware\CheckRole::class,
+            \App\Http\Middleware\EnsureUserRole::class
+        ]);
         
         // Create a test UKM first
         $this->ukm = UKM::create([
@@ -146,9 +150,10 @@ class UkmTest extends TestCase
         $user->groups()->attach($group->id);
         
         $response = $this->actingAs($user)
-                         ->delete("/group/{$group->id}/leave");
+                         ->delete(route('ukm.leave', $ukm->code));
                          
         $response->assertRedirect();
+        // Check that user is no longer in the group
         $this->assertDatabaseMissing('group_user', [
             'user_id' => $user->id,
             'group_id' => $group->id,

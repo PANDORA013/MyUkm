@@ -15,11 +15,12 @@
                 </div>
 
                 <div class="card-body">
-                    @if (session('success'))
+                    <?php if(session('success')): ?>
                         <div class="alert alert-success" role="alert">
-                            {{ session('success') }}
+                            <?php echo e(session('success')); ?>
+
                         </div>
-                    @endif
+                    <?php endif; ?>
 
                     <div class="table-responsive">
                         <table class="table table-striped">
@@ -35,26 +36,27 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @forelse ($users as $user)
+                                <?php $__empty_1 = true; $__currentLoopData = $users; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $user): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                                     <tr>
-                                        <td>{{ $user->id }}</td>
-                                        <td>{{ $user->name }}</td>
-                                        <td>{{ $user->nim }}</td>
-                                        <td>{{ $user->email }}</td>
-                                        <td>{{ $user->role }}</td>
-                                        <td>{{ $user->ukm ? $user->ukm->name : 'No UKM' }}</td>
-                                        <td>{{ $user->created_at ? $user->created_at->format('Y-m-d') : '-' }}</td>
+                                        <td><?php echo e($user->id); ?></td>
+                                        <td><?php echo e($user->name); ?></td>
+                                        <td><?php echo e($user->nim); ?></td>
+                                        <td><?php echo e($user->email); ?></td>
+                                        <td><?php echo e($user->role); ?></td>
+                                        <td><?php echo e($user->ukm ? $user->ukm->name : 'No UKM'); ?></td>
+                                        <td><?php echo e($user->created_at ? $user->created_at->format('Y-m-d') : '-'); ?></td>
                                     </tr>
-                                @empty
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                                     <tr>
                                         <td colspan="7" class="text-center">No users found</td>
                                     </tr>
-                                @endforelse
+                                <?php endif; ?>
                             </tbody>
                         </table>
                     </div>
 
-                    {{ $users->links() }}
+                    <?php echo e($users->links()); ?>
+
                 </div>
             </div>
         </div>
@@ -62,3 +64,4 @@
 </div>
 </body>
 </html>
+<?php /**PATH C:\xampp\htdocs\MyUkm-main\resources\views/admin/users/index.blade.php ENDPATH**/ ?>

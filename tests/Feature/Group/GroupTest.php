@@ -53,7 +53,7 @@ class GroupTest extends TestCase
     /** @test */
     public function user_can_login_with_correct_nim_and_password()
     {
-        $response = $this->post('/login', [
+        $response = $this->post(route('login'), [
             'nim' => '12345678',
             'password' => 'password',
         ]);
@@ -98,7 +98,9 @@ class GroupTest extends TestCase
         $this->user->groups()->attach($this->group->id);
         
         $response = $this->actingAs($this->user)
-            ->delete(route('group.leave', $this->group->id));
+            ->post(route('group.leave'), [
+                'group_id' => $this->group->id
+            ]);
 
         $response->assertRedirect();
         $this->assertDatabaseMissing('group_user', [

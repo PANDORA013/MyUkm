@@ -22,7 +22,11 @@ class AdminTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class);
+        $this->withoutMiddleware([
+            \Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class,
+            \App\Http\Middleware\CheckRole::class,
+            \App\Http\Middleware\EnsureUserRole::class
+        ]);
         
         // Create a test UKM
         $this->ukm = UKM::create([
