@@ -26,7 +26,6 @@ class UserDeletionTest extends TestCase
         $this->adminWebsite = User::create([
             'name' => 'Admin Website',
             'nim' => 'ADMIN001',
-            'email' => 'admin@example.com',
             'password' => Hash::make('password'),
             'role' => 'admin_website'
         ]);
@@ -35,7 +34,6 @@ class UserDeletionTest extends TestCase
         $this->regularUser = User::create([
             'name' => 'Regular User',
             'nim' => 'USER001',
-            'email' => 'user@example.com',
             'password' => Hash::make('password'),
             'role' => 'member'
         ]);
@@ -61,7 +59,6 @@ class UserDeletionTest extends TestCase
             'deleted_user_id' => $this->regularUser->id,
             'deleted_user_name' => 'Regular User',
             'deleted_user_nim' => 'USER001',
-            'deleted_user_email' => 'user@example.com',
             'deleted_user_role' => 'member',
             'deletion_reason' => 'Dihapus oleh admin website',
             'deleted_by' => $this->adminWebsite->id
@@ -76,7 +73,6 @@ class UserDeletionTest extends TestCase
             'deleted_user_id' => $this->regularUser->id,
             'deleted_user_name' => $this->regularUser->name,
             'deleted_user_nim' => $this->regularUser->nim,
-            'deleted_user_email' => $this->regularUser->email,
             'deleted_user_role' => $this->regularUser->role,
             'deletion_reason' => 'Test deletion',
             'deleted_by' => $this->adminWebsite->id
@@ -104,7 +100,6 @@ class UserDeletionTest extends TestCase
             'deleted_user_id' => $this->regularUser->id,
             'deleted_user_name' => $this->regularUser->name,
             'deleted_user_nim' => $this->regularUser->nim,
-            'deleted_user_email' => $this->regularUser->email,
             'deleted_user_role' => $this->regularUser->role,
             'deletion_reason' => 'Test deletion',
             'deleted_by' => $this->adminWebsite->id
@@ -136,7 +131,6 @@ class UserDeletionTest extends TestCase
         $anotherAdmin = User::create([
             'name' => 'Another Admin',
             'nim' => 'ADMIN002',
-            'email' => 'admin2@example.com',
             'password' => Hash::make('password'),
             'role' => 'admin_website'
         ]);
@@ -167,7 +161,6 @@ class UserDeletionTest extends TestCase
         $anotherUser = User::create([
             'name' => 'Another User',
             'nim' => 'USER002',
-            'email' => 'user2@example.com',
             'password' => Hash::make('password'),
             'role' => 'member'
         ]);

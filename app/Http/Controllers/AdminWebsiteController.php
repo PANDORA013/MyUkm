@@ -130,7 +130,6 @@ class AdminWebsiteController extends Controller
                 'deleted_user_id' => $user->id,
                 'deleted_user_name' => $user->name,
                 'deleted_user_nim' => $user->nim,
-                'deleted_user_email' => $user->email,
                 'deleted_user_role' => $user->role,
                 'deletion_reason' => 'Dihapus oleh admin website',
                 'deleted_by' => $currentUser->id,
@@ -445,14 +444,12 @@ class AdminWebsiteController extends Controller
 
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $id,
-            'nim' => 'nullable|string|max:50',
+            'nim' => 'required|string|max:50|unique:users,nim,' . $id,
             'role' => 'required|in:admin_website,admin_grup,member',
         ]);
 
         $member->update([
             'name' => $request->name,
-            'email' => $request->email,
             'nim' => $request->nim,
             'role' => $request->role,
         ]);
@@ -727,7 +724,6 @@ class AdminWebsiteController extends Controller
                 'deleted_user_id' => $user->id,
                 'deleted_user_name' => $user->name,
                 'deleted_user_nim' => $user->nim,
-                'deleted_user_email' => $user->email,
                 'deleted_user_role' => $user->role,
                 'deletion_reason' => 'Force delete by admin website',
                 'deleted_by' => $currentUser->id,

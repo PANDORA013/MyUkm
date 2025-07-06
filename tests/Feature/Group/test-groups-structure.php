@@ -1,27 +1,13 @@
 <?php
 
-require __DIR__.'/vendor/autoload.php';
+require __DIR__.'/../../../vendor/autoload.php';
+use Illuminate\Support\Facades\DB;
 
-use Illuminate\Database\Capsule\Manager as DB;
+// Bootstrap Laravel
+$app = require_once __DIR__ . '/../../../bootstrap/app.php';
+$app->make('Illuminate\Contracts\Console\Kernel')->bootstrap();
 
-$db = new DB;
-
-$db->addConnection([
-    'driver'    => 'mysql',
-    'host'      => '127.0.0.1',
-    'database'  => 'myukm_test',
-    'username'  => 'root',
-    'password'  => '',
-    'charset'   => 'utf8mb4',
-    'collation' => 'utf8mb4_unicode_ci',
-    'prefix'    => '',
-]);
-
-// Make this Capsule instance available globally via static methods... (optional)
-$db->setAsGlobal();
-
-// Setup the Eloquent ORM... (optional; unless you've used setEventDispatcher())
-$db->bootEloquent();
+echo "=== Groups Structure Test ===\n\n";
 
 try {
     // Check groups table structure

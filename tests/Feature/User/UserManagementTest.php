@@ -49,7 +49,6 @@ class UserManagementTest extends TestCase
         $userData = [
             'name' => 'New User',
             'nim' => '87654321',
-            'email' => 'newuser@example.com',
             'password' => 'password123',
             'password_confirmation' => 'password123',
             'role' => 'member',
@@ -62,8 +61,7 @@ class UserManagementTest extends TestCase
         $response->assertRedirect();
         $this->assertDatabaseHas('users', [
             'name' => 'New User',
-            'nim' => '87654321',
-            'email' => 'newuser@example.com'
+            'nim' => '87654321'
         ]);
     }
 

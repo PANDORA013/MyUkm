@@ -1,28 +1,13 @@
 <?php
 
-require __DIR__.'/vendor/autoload.php';
+require __DIR__.'/../../../vendor/autoload.php';
+use Illuminate\Support\Facades\DB;
 
-use Illuminate\Database\Capsule\Manager as DB;
+// Bootstrap Laravel
+$app = require_once __DIR__ . '/../../../bootstrap/app.php';
+$app->make('Illuminate\Contracts\Console\Kernel')->bootstrap();
 
-// Setup database connection
-$db = new DB;
-
-$db->addConnection([
-    'driver'    => 'mysql',
-    'host'      => '127.0.0.1',
-    'database'  => 'myukm_test',
-    'username'  => 'root',
-    'password'  => '',
-    'charset'   => 'utf8mb4',
-    'collation' => 'utf8mb4_unicode_ci',
-    'prefix'    => '',
-]);
-
-// Make this Capsule instance available globally via static methods...
-$db->setAsGlobal();
-
-// Setup the Eloquent ORM...
-$db->bootEloquent();
+echo "=== Simple Chat Test ===\n\n";
 
 // Start transaction
 DB::beginTransaction();
@@ -31,9 +16,11 @@ try {
     // Create a test user
     $userId = DB::table('users')->insertGetId([
         'name' => 'Test User',
-        'email' => 'test@example.com',
+        'nim' => '12345678',
         'password' => password_hash('password', PASSWORD_DEFAULT),
         'role' => 'member',
+        'created_at' => now(),
+        'updated_at' => now(),
     ]);
     
     echo "Created user with ID: $userId\n";
@@ -41,16 +28,20 @@ try {
     // Create a test group
     $groupId = DB::table('groups')->insertGetId([
         'name' => 'Test Group',
-        'referral_code' => 'TEST123',
+        'referral_code' => 'TST1',
         'description' => 'Test Description',
+        'created_at' => now(),
+        'updated_at' => now(),
     ]);
     
-    echo "Created group with ID: $groupId and referral code: TEST123\n";
+    echo "Created group with ID: $groupId and referral code: TST1\n";
     
     // Add user to group
     DB::table('group_user')->insert([
         'user_id' => $userId,
         'group_id' => $groupId,
+        'created_at' => now(),
+        'updated_at' => now(),
     ]);
     
     echo "Added user to group\n";
@@ -60,6 +51,8 @@ try {
         'user_id' => $userId,
         'group_id' => $groupId,
         'message' => 'Hello World',
+        'created_at' => now(),
+        'updated_at' => now(),
     ]);
     
     echo "Created chat message with ID: $chatId\n";

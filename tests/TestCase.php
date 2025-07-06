@@ -75,7 +75,8 @@ abstract class TestCase extends BaseTestCase
     {
         return $this->createUser(array_merge([
             'name' => 'Admin User',
-            'email' => 'admin@example.com',
+            'nim' => '00000001',
+            'role' => 'admin',
             'is_admin' => true,
         ], $attributes));
     }
@@ -90,8 +91,9 @@ abstract class TestCase extends BaseTestCase
     {
         return \App\Models\User::factory()->create(array_merge([
             'name' => 'Test User',
-            'email' => $this->faker->unique()->safeEmail,
+            'nim' => $this->faker->unique()->numerify('########'),
             'password' => bcrypt('password'),
+            'role' => 'member',
             'is_admin' => false,
         ], $attributes));
     }

@@ -20,11 +20,16 @@ abstract class DuskTestCase extends BaseTestCase
     public static function prepare(): void
     {
         // Skip ChromeDriver setup in CI environment or testing environment
-        if (app()->environment('testing') || 
-            env('CI') || 
-            env('GITHUB_ACTIONS') || 
+        if (isset($_ENV['APP_ENV']) && $_ENV['APP_ENV'] === 'testing' ||
             isset($_ENV['CI']) || 
             isset($_ENV['GITHUB_ACTIONS'])) {
+            return;
+        }
+        
+        // Check if Chromedriver exists before starting
+        $chromedriverPath = base_path('vendor/laravel/dusk/bin/chromedriver-win.exe');
+        if (!file_exists($chromedriverPath)) {
+            // Skip if Chromedriver is not installed
             return;
         }
         
@@ -38,6 +43,11 @@ abstract class DuskTestCase extends BaseTestCase
      */
     protected function driver(): RemoteWebDriver
     {
+        // Check if we're in a testing environment where browser tests should be skipped
+        if (isset($_ENV['APP_ENV']) && $_ENV['APP_ENV'] === 'testing') {
+            $this->markTestSkipped('Browser tests are skipped in testing environment');
+        }
+        
         $options = (new ChromeOptions)->addArguments(collect([
             $this->shouldStartMaximized() ? '--start-maximized' : '--window-size=1920,1080',
             '--disable-search-engine-choice-screen',

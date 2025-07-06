@@ -34,7 +34,6 @@ class AdminTest extends TestCase
         $this->admin = User::create([
             'name' => 'Admin User',
             'nim' => 'ADM001',
-            'email' => 'admin@test.com',
             'password' => Hash::make('admin123'),
             'password_plain' => 'admin123',
             'role' => 'admin_website',
@@ -45,7 +44,6 @@ class AdminTest extends TestCase
         $this->user = User::create([
             'name' => 'Regular User',
             'nim' => 'USR001',
-            'email' => 'user@test.com',
             'password' => Hash::make('password'),
             'password_plain' => 'password',
             'role' => 'member',
@@ -86,7 +84,6 @@ class AdminTest extends TestCase
         $userData = [
             'name' => 'New User',
             'nim' => 'USR002',
-            'email' => 'newuser@test.com',
             'password' => 'password',
             'password_confirmation' => 'password',
             'role' => 'member',
@@ -105,7 +102,6 @@ class AdminTest extends TestCase
         $this->assertDatabaseHas('users', [
             'name' => 'New User',
             'nim' => 'USR002',
-            'email' => 'newuser@test.com',
             'role' => 'member',
             'ukm_id' => $this->ukm->id
         ]);
@@ -123,7 +119,6 @@ class AdminTest extends TestCase
             ->put(route('admin.admin.users.update', $this->user->id), array_merge([
                 'name' => 'Updated Name',
                 'nim' => 'USR001',
-                'email' => 'updated@test.com',
                 'role' => 'member',
                 'ukm_id' => $this->ukm->id
             ], ['_token' => 'test-token']));
@@ -142,7 +137,6 @@ class AdminTest extends TestCase
         $userToDelete = User::create([
             'name' => 'User To Delete',
             'nim' => 'DEL001',
-            'email' => 'delete@test.com',
             'password' => Hash::make('password'),
             'password_plain' => 'password',
             'role' => 'member',

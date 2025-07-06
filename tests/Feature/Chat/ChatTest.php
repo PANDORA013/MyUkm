@@ -36,7 +36,6 @@ class ChatTest extends TestCase
         $this->user = User::create([
             'name' => 'Test User',
             'nim' => '12345678',
-            'email' => 'test@example.com',
             'password' => Hash::make('password'),
             'password_plain' => 'password',
             'role' => 'member',

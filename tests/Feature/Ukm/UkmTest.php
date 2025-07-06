@@ -38,7 +38,6 @@ class UkmTest extends TestCase
         $this->admin = User::create([
             'name' => 'Admin User',
             'nim' => 'ADM001',
-            'email' => 'admin@test.com',
             'password' => Hash::make('admin123'),
             'password_plain' => 'admin123',
             'role' => 'admin_website',
@@ -49,7 +48,6 @@ class UkmTest extends TestCase
         $this->user = User::create([
             'name' => 'Regular User',
             'nim' => 'USR001',
-            'email' => 'user@test.com',
             'password' => Hash::make('password'),
             'password_plain' => 'password',
             'role' => 'member',

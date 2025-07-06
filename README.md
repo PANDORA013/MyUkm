@@ -51,6 +51,16 @@ instant-launch.bat
 - ⚡ Launch Laravel server
 - ⚡ **Open browser to http://localhost:8000 instantly**
 
+### 🚀 NEW: Real-time Features Ready!
+```bash
+# Universal launcher with real-time options
+start.bat
+```
+**Real-time Options:**
+- **[7] Laravel + Queue Worker (Chat Ready) ⭐ RECOMMENDED**
+- **[8] Complete Realtime Stack (All Services)**
+- **[9] Demo Real-time Features** - Guided demo
+
 ### 🖥️ Create Desktop Shortcuts (One-time Setup)
 ```bash
 # Create clickable desktop shortcuts

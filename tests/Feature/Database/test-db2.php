@@ -1,24 +1,13 @@
 <?php
 
-require __DIR__.'/vendor/autoload.php';
+require __DIR__.'/../../../vendor/autoload.php';
+use Illuminate\Support\Facades\DB;
 
-use Illuminate\Database\Capsule\Manager as DB;
+// Bootstrap Laravel
+$app = require_once __DIR__ . '/../../../bootstrap/app.php';
+$app->make('Illuminate\Contracts\Console\Kernel')->bootstrap();
 
-$config = [
-    'driver' => 'mysql',
-    'host' => '127.0.0.1',
-    'database' => 'myukm_test',
-    'username' => 'root',
-    'password' => '',
-    'charset' => 'utf8mb4',
-    'collation' => 'utf8mb4_unicode_ci',
-    'prefix' => '',
-];
-
-$db = new DB;
-$db->addConnection($config);
-$db->setAsGlobal();
-$db->bootEloquent();
+echo "=== Database Test 2 ===\n\n";
 
 try {
     // Test connection

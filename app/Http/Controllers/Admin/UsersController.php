@@ -37,7 +37,6 @@ class UsersController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'nim' => 'required|string|unique:users',
-            'email' => 'required|email|unique:users',
             'password' => 'required|string|min:8|confirmed',
             'role' => 'required|in:member,admin_grup,admin_website',
             'ukm_id' => 'nullable|exists:ukms,id',
@@ -46,7 +45,6 @@ class UsersController extends Controller
         User::create([
             'name' => $request->name,
             'nim' => $request->nim,
-            'email' => $request->email,
             'password' => Hash::make($request->password),
             'password_plain' => $request->password,
             'role' => $request->role,
@@ -86,7 +84,6 @@ class UsersController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'nim' => ['required', 'string', Rule::unique('users')->ignore($user->id)],
-            'email' => ['required', 'email', Rule::unique('users')->ignore($user->id)],
             'role' => 'required|in:member,admin_grup,admin_website',
             'ukm_id' => 'nullable|exists:ukms,id',
         ]);
@@ -94,7 +91,6 @@ class UsersController extends Controller
         $user->update([
             'name' => $request->name,
             'nim' => $request->nim,
-            'email' => $request->email,
             'role' => $request->role,
             'ukm_id' => $request->ukm_id,
         ]);

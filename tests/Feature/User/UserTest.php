@@ -33,7 +33,6 @@ class UserTest extends TestCase
         $this->admin = User::create([
             'name' => 'Admin User',
             'nim' => 'ADM001',
-            'email' => 'admin@test.com',
             'password' => Hash::make('admin123'),
             'role' => 'admin_website',
             'ukm_id' => $this->ukm->id
@@ -43,7 +42,6 @@ class UserTest extends TestCase
         $this->user = User::create([
             'name' => 'Test User',
             'nim' => 'USR001',
-            'email' => 'user@test.com',
             'password' => Hash::make('password'),
             'role' => 'member',
             'ukm_id' => $this->ukm->id
@@ -57,7 +55,6 @@ class UserTest extends TestCase
             ->post('/register', [
                 'name' => 'New User',
                 'nim' => '12345678',
-                'email' => 'newuser@test.com',
                 'password' => 'password',
                 'password_confirmation' => 'password',
                 'ukm_code' => 'TST',
@@ -68,7 +65,6 @@ class UserTest extends TestCase
         $this->assertDatabaseHas('users', [
             'name' => 'New User',
             'nim' => '12345678',
-            // 'email' => 'newuser@test.com', // Email tidak digunakan dalam registrasi
             'role' => 'anggota',
             'ukm_id' => $this->ukm->id
         ]);
