@@ -1,1 +1,0 @@
-'❌ Realtime queue error: ' . \$e- . PHP_EOL;

@@ -1,1 +1,0 @@
-'Queue Driver: ' . \$config- . PHP_EOL;
