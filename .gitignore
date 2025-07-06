@@ -36,3 +36,9 @@ temp/
 archive/ 
 testing/temp_* 
 *.tmp 
+
+# Organized project structure
+scripts/deprecated/
+*.tmp
+'Test
+'TEST123'])
