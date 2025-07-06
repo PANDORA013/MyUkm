@@ -59,4 +59,4 @@
 </div>
 </body>
 </html>
-<?php /**PATH C:\xampp\htdocs\MyUkm-main\resources\views/admin/groups/index.blade.php ENDPATH**/ ?>
+<?php /**PATH C:\xampp\htdocs\MyUkm-main\resources\views\admin\groups\index.blade.php ENDPATH**/ ?>

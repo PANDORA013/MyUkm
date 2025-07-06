@@ -2,16 +2,19 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
-use App\Models\UserDeletion;
+use App\Services\AuthService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Crypt;
-use App\Models\UserPassword;
 use Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
 {
+    protected $authService;
+
+    public function __construct(AuthService $authService)
+    {
+        $this->authService = $authService;
+    }
+
     public function showRegister()
     {
         return view('auth.register');
@@ -31,30 +34,15 @@ class AuthController extends Controller
             'ukm_code.exists' => 'Kode UKM tidak valid',
         ]);
 
-        // Find UKM if ukm_code is provided
-        $ukmId = null;
-        if ($request->ukm_code) {
-            $ukm = \App\Models\UKM::where('code', $request->ukm_code)->first();
-            $ukmId = $ukm ? $ukm->id : null;
+        $result = $this->authService->register($request->only([
+            'name', 'nim', 'password', 'ukm_code'
+        ]));
+
+        if ($result['success']) {
+            return redirect()->route('home');
         }
 
-        $user = User::create([
-            'name' => $request->name,
-            'nim' => $request->nim,
-            'password' => Hash::make($request->password),
-            'ukm_id' => $ukmId,
-            'role' => 'anggota', // Pastikan role konsisten sebagai 'anggota'
-        ]);
-
-        // Simpan password asli terenkripsi untuk admin
-        UserPassword::updateOrCreate(
-            ['user_id' => $user->id],
-            ['password_enc' => Crypt::encryptString($request->password)]
-        );
-
-        Auth::login($user);
-
-        return redirect()->route('home');
+        return back()->withErrors(['general' => $result['message']])->withInput();
     }
 
     public function showLogin()
@@ -69,35 +57,31 @@ class AuthController extends Controller
             'password' => 'required|string',
         ]);
 
-        // Cek apakah user dengan NIM ini pernah dihapus
-        $isUserDeleted = UserDeletion::where('deleted_user_nim', $credentials['nim'])->exists();
-        
-        if ($isUserDeleted) {
-            return back()->withErrors(['nim' => 'Akun ini telah dihapus oleh admin dan tidak dapat digunakan lagi.'])->onlyInput('nim');
-        }
+        $result = $this->authService->authenticateUser($credentials);
 
-        if (Auth::attempt(['nim' => $credentials['nim'], 'password' => $credentials['password']])) {
-            if ($request->hasSession()) {
-                $request->session()->regenerate();
-            }
+        if ($result['success']) {
+            $request->session()->regenerate();
             $user = Auth::user();
-            if ($user->role === 'admin_website') {
-                return redirect('/admin/dashboard');
-            }
-            if ($user->role === 'admin_grup') {
-                return redirect('/grup/dashboard');
-            }
-            return redirect()->route('home');
+            
+            // Redirect based on user role
+            $redirectRoute = $this->authService->getRedirectRoute($user);
+            return redirect($redirectRoute);
         }
 
-        return back()->withErrors(['nim' => 'NIM atau password salah'])->onlyInput('nim');
+        // Handle specific error messages
+        $errorField = isset($result['is_deleted']) ? 'nim' : 'nim';
+        return back()->withErrors([$errorField => $result['message']])->onlyInput('nim');
     }
 
     public function logout(Request $request)
     {
-        Auth::logout();
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
-        return redirect('/');
+        $result = $this->authService->logout();
+        
+        if ($result['success']) {
+            return redirect('/');
+        }
+        
+        // If logout failed for some reason, still redirect to home
+        return redirect('/')->with('error', $result['message']);
     }
 }

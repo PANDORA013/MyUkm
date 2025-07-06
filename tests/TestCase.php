@@ -18,6 +18,7 @@ use Tests\TestHelpers\TestResponseMacros;
 abstract class TestCase extends BaseTestCase
 {
     use CreatesApplication, RefreshDatabase, WithFaker;
+    use \Tests\Concerns\DisablesCsrf;
 
     /**
      * Indicates whether the default seeder should run before each test.
@@ -36,11 +37,8 @@ abstract class TestCase extends BaseTestCase
     {
         parent::setUp();
         
-        // Disable CSRF protection for testing
-        $this->withoutMiddleware([
-            \Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class,
-            \App\Http\Middleware\VerifyCsrfToken::class
-        ]);
+        // Setup CSRF disabling using trait
+        $this->setUpDisablesCsrf();
         
         // Remove exception handling to see full errors - comment out for production tests
         // $this->withoutExceptionHandling();
@@ -106,7 +104,7 @@ abstract class TestCase extends BaseTestCase
      * @param string $connection
      * @return $this
      */
-    protected function assertDatabaseHasRow(string $table, array $data, string $connection = null)
+    protected function assertDatabaseHasRow(string $table, array $data, ?string $connection = null)
     {
         $this->assertDatabaseHas($table, $data, $connection);
         return $this;

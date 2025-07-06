@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Group;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 
 class UkmController extends Controller
@@ -57,7 +58,7 @@ class UkmController extends Controller
     public function join(Request $request)
     {
         $request->validate([
-            'group_code' => 'required|string|size:4'
+            'group_code' => 'required|numeric|digits:4' // 4 digit angka
         ]);
 
         $code = $request->group_code;

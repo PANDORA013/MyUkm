@@ -4,6 +4,7 @@ namespace Tests\Feature\Ukm;
 
 use App\Models\UKM;
 use App\Models\User;
+use App\Models\Group;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Http\UploadedFile;
@@ -108,17 +109,14 @@ class UkmTest extends TestCase
         // Create a group for this UKM first
         $group = \App\Models\Group::create([
             'name' => 'Test Group',
-            'referral_code' => 'TST1',
+            'referral_code' => '1234', // 4-digit numeric code
             'ukm_id' => $this->ukm->id,
             'is_active' => true
         ]);
 
-        $response = $this->actingAs($this->user)
-                         ->withSession(['_token' => 'test-token'])
-                         ->post(route('ukm.join'), [
-                             '_token' => 'test-token',
-                             'group_code' => 'TST1'
-                         ]);
+        $response = $this->authenticatedPost($this->user, route('ukm.join'), [
+            'group_code' => '1234' // 4 digit angka
+        ]);
                          
         $response->assertStatus(302); // Any redirect is fine
         $this->assertDatabaseHas('group_user', [
@@ -137,7 +135,7 @@ class UkmTest extends TestCase
         // Create a group first to avoid foreign key constraint issues
         $group = \App\Models\Group::create([
             'name' => 'Test Group for Leave',
-            'referral_code' => 'LV1',
+            'referral_code' => '9999', // 4 digit angka
             'ukm_id' => $ukm->id,
             'is_active' => true
         ]);
@@ -155,23 +153,37 @@ class UkmTest extends TestCase
         $this->assertDatabaseMissing('group_user', [
             'user_id' => $user->id,
             'group_id' => $group->id,
+            'deleted_at' => null
         ]);
     }
 
     /** @test */
     public function admin_can_delete_ukm()
     {
-        $admin = $this->createAdminUser();
+        // Use the existing admin user created in setUp()
+        $admin = $this->admin;
         $ukm = Ukm::factory()->create();
         
+        // Verify the UKM exists before deletion
+        $this->assertDatabaseHas('ukms', [
+            'id' => $ukm->id,
+            'deleted_at' => null
+        ]);
+        
         $response = $this->actingAs($admin)
-            ->withSession(['_token' => 'test-token'])
-            ->delete(route('admin.hapus-ukm', $ukm->id), [
-                '_token' => 'test-token'
-            ]);
+            ->delete(route('admin.hapus-ukm', $ukm->id));
                          
         $response->assertRedirect();
-        $this->assertDatabaseMissing('ukms', ['id' => $ukm->id]);
+        
+        // For soft deletes, check that the UKM still exists but with deleted_at set
+        $this->assertDatabaseHas('ukms', [
+            'id' => $ukm->id
+        ]);
+        
+        // Verify it's soft deleted by checking the model
+        $deletedUkm = Ukm::withTrashed()->find($ukm->id);
+        $this->assertNotNull($deletedUkm, 'UKM should still exist after soft delete');
+        $this->assertNotNull($deletedUkm->deleted_at, 'UKM should be soft deleted');
     }
 
     /** @test */

@@ -13,7 +13,7 @@ class UkmFactory extends Factory
     {
         return [
             'name' => $this->faker->company,
-            'code' => strtoupper($this->faker->unique()->lexify('???')), // Generate 3 letter code
+            'code' => $this->faker->unique()->numerify('####'), // Generate 4 digit number
             'description' => $this->faker->paragraph,
             'created_at' => now(),
             'updated_at' => now(),

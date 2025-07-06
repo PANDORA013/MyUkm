@@ -6,46 +6,38 @@ use App\Models\User;
 use App\Models\UKM;
 use App\Models\Group;
 use App\Models\UserDeletion;
+use App\Services\AdminDashboardService;
+use App\Services\UserManagementService;
+use App\Services\UkmManagementService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\Auth as AuthFacade;
 
 class AdminWebsiteController extends Controller
 {
+    public function __construct(
+        private AdminDashboardService $dashboardService,
+        private UserManagementService $userService,
+        private UkmManagementService $ukmService
+    ) {}
+
+    /**
+     * Show admin dashboard with statistics
+     */
     public function dashboard()
     {
-        // Hitung total anggota unik di seluruh group
-        $totalMembers = DB::table('group_user')->distinct('user_id')->count('user_id');
+        $stats = $this->dashboardService->getDashboardStats();
         
-        // Hitung total UKM
-        $totalUkms = UKM::count();
-        
-        // Hitung total admin grup
-        $totalAdmins = User::where('role', 'admin_grup')->count();
-        
-        // Hitung total pengguna aktif bulan ini
-        $activeUsersThisMonth = DB::table('sessions')
-            ->where('last_activity', '>=', now()->subMonth())
-            ->distinct('user_id')
-            ->count('user_id');
-            
-        // Hitung total pengguna baru bulan ini
-        $newUsersThisMonth = User::where('created_at', '>=', now()->startOfMonth())->count();
-        
-        // Hitung total akun yang sudah dihapus
-        $totalDeletedAccounts = UserDeletion::count();
-        
-        return view('admin.dashboard', compact(
-            'totalMembers', 
-            'totalUkms', 
-            'totalAdmins',
-            'activeUsersThisMonth',
-            'newUsersThisMonth',
-            'totalDeletedAccounts'
-        ));
+        return view('admin.dashboard', [
+            'totalMembers' => $stats['total_members'],
+            'totalUkms' => $stats['total_ukms'],
+            'totalAdmins' => $stats['total_admins'],
+            'activeUsersThisMonth' => $stats['active_users_this_month'],
+            'newUsersThisMonth' => $stats['new_users_this_month'],
+            'totalDeletedAccounts' => $stats['total_deleted_accounts'],
+        ]);
     }
 
     /**
@@ -59,18 +51,16 @@ class AdminWebsiteController extends Controller
         try {
             $user = User::findOrFail($id);
             
-            // Cek apakah user sudah menjadi admin_grup
-            if ($user->role === 'admin_grup') {
-                return back()->with('info', 'User sudah menjadi admin grup');
-            }
+            $success = $this->userService->promoteToGlobalAdmin($user);
             
-            // Cek apakah user adalah admin_website
-            if ($user->role === 'admin_website') {
-                return back()->with('error', 'Tidak dapat mengubah role admin website');
+            if (!$success) {
+                if ($user->role === 'admin_grup') {
+                    return back()->with('info', 'User sudah menjadi admin grup');
+                }
+                if ($user->role === 'admin_website') {
+                    return back()->with('error', 'Tidak dapat mengubah role admin website');
+                }
             }
-            
-            $user->role = 'admin_grup';
-            $user->save();
             
             return back()->with('success', 'User berhasil dijadikan admin grup');
             
@@ -239,26 +229,12 @@ class AdminWebsiteController extends Controller
 
     public function hapusUKM($id)
     {
-        try {
-            $ukm = UKM::findOrFail($id);
-            
-            // Cari group terkait berdasarkan referral_code
-            $group = Group::where('referral_code', $ukm->code)->first();
-            
-            if ($group) {
-                // Hapus semua anggota dari group
-                $group->users()->detach();
-                // Hapus group
-                $group->delete();
-            }
-            
-            // Hapus UKM
-            $ukm->delete();
-            
-            return back()->with('success', 'UKM "' . $ukm->name . '" berhasil dihapus beserta semua anggotanya.');
-            
-        } catch (\Exception $e) {
-            return back()->with('error', 'Terjadi kesalahan saat menghapus UKM: ' . $e->getMessage());
+        $result = $this->ukmService->deleteUkmById($id);
+        
+        if ($result['success']) {
+            return back()->with('success', $result['message']);
+        } else {
+            return back()->with('error', $result['message']);
         }
     }
 
@@ -348,7 +324,7 @@ class AdminWebsiteController extends Controller
         }])->findOrFail($userId);
         
         // For admin website, show the actual password (not recommended for production)
-        $authUser = AuthFacade::user();
+        $authUser = Auth::user();
         if ($authUser && $authUser->role === 'admin_website') {
             try {
                 // Cek dulu kolom yang ada di tabel users

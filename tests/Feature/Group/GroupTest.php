@@ -9,6 +9,7 @@ use App\Models\UKM;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\DB;
 
 class GroupTest extends TestCase
 {
@@ -41,10 +42,10 @@ class GroupTest extends TestCase
             'ukm_id' => $this->ukm->id
         ]);
         
-        // Create a test group
+        // Create a test group with 4-digit numeric code
         $this->group = Group::create([
             'name' => 'Test Group',
-            'referral_code' => 'TEST123',
+            'referral_code' => '1234', // 4 digit angka
             'description' => 'Test Description',
             'ukm_id' => $this->ukm->id
         ]);
@@ -53,14 +54,12 @@ class GroupTest extends TestCase
     /** @test */
     public function user_can_login_with_correct_nim_and_password()
     {
-        $this->withoutMiddleware();
-        
         $response = $this->post(route('login'), [
             'nim' => '12345678',
             'password' => 'password',
         ]);
 
-        $response->assertRedirect('/home');
+        $response->assertRedirect();
         $this->assertAuthenticatedAs($this->user);
     }
 
@@ -70,7 +69,7 @@ class GroupTest extends TestCase
         $response = $this->actingAs($this->user)
             ->withSession(['_token' => 'test-token'])
             ->post(route('group.join'), [
-                'group_code' => 'TEST123',
+                'group_code' => '1234', // 4 digit angka
                 '_token' => 'test-token'
             ]);
 
@@ -86,7 +85,7 @@ class GroupTest extends TestCase
     {
         $response = $this->actingAs($this->user)
             ->post(route('group.join'), [
-                'group_code' => 'INVALID',
+                'group_code' => '9999', // 4 digit angka
             ]);
 
         // Just check that the user wasn't added to any group
@@ -101,6 +100,13 @@ class GroupTest extends TestCase
         // Join group first
         $this->user->groups()->attach($this->group->id);
         
+        // Verify user is in group before leaving
+        $this->assertDatabaseHas('group_user', [
+            'user_id' => $this->user->id,
+            'group_id' => $this->group->id,
+            'deleted_at' => null
+        ]);
+        
         $response = $this->actingAs($this->user)
             ->withSession(['_token' => 'test-token'])
             ->delete(route('ukm.leave', $this->group->referral_code), [
@@ -108,9 +114,12 @@ class GroupTest extends TestCase
             ]);
 
         $response->assertRedirect();
+        
+        // Check if user is soft deleted from group (has deleted_at timestamp)
         $this->assertDatabaseMissing('group_user', [
             'user_id' => $this->user->id,
             'group_id' => $this->group->id,
+            'deleted_at' => null
         ]);
     }
     

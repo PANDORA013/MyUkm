@@ -22,8 +22,8 @@ class VerifyCsrfToken extends Middleware
      */
     public function handle($request, \Closure $next)
     {        
-        // Skip CSRF verification completely in testing environment
-        if (app()->environment('testing')) {
+        // Skip CSRF verification completely in testing environment - FORCE OVERRIDE
+        if (app()->environment('testing') || config('app.env') === 'testing') {
             return $next($request);
         }
         

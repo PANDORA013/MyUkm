@@ -5,11 +5,16 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Group;
 use App\Models\User;
+use App\Services\GroupAdminService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class AdminGrupController extends Controller
 {
+    public function __construct(
+        private GroupAdminService $groupAdminService
+    ) {}
+
     /**
      * Display admin grup dashboard
      */
@@ -18,78 +23,36 @@ class AdminGrupController extends Controller
         /** @var User $user */
         $user = Auth::user();
         
-        // Get selected group ID from query parameter or session
         $selectedGroupId = $request->input('group_id');
-        
-        // Get all groups where user is admin
-        $managedGroups = $user->adminGroups()->get();
+        $dashboardData = $this->groupAdminService->getDashboardStats($user);
         
         // If no group is selected but user has managed groups, select the first one
-        if (!$selectedGroupId && $managedGroups->count() > 0) {
-            $selectedGroupId = $managedGroups->first()->id;
+        if (!$selectedGroupId && $dashboardData['managed_groups']->count() > 0) {
+            $selectedGroupId = $dashboardData['managed_groups']->first()->id;
         }
         
-        // If a group is selected, get its details and members
-        $selectedGroup = null;
-        $members = collect();
-        $stats = [
-            'total_anggota' => 0,
-            'anggota_aktif' => 0,
-            'anggota_muted' => 0
-        ];
-        
+        // Get specific group details if selected
+        $groupDetails = [];
         if ($selectedGroupId) {
-            $selectedGroup = $managedGroups->where('id', $selectedGroupId)->first();
-            
-            // Make sure user is admin of this group
-            if ($selectedGroup) {
-                // Get group members with their roles in this group
-                $members = $selectedGroup->users()
-                    ->withPivot('is_admin', 'is_muted', 'muted_until', 'created_at')
-                    ->orderBy('pivot_is_admin', 'desc')
-                    ->get();
-                
-                // Calculate stats
-                $stats = [
-                    'total_anggota' => $members->count(),
-                    'anggota_aktif' => $members->where('pivot.is_muted', false)->count(),
-                    'anggota_muted' => $members->where('pivot.is_muted', true)->count()
-                ];
-            }
+            $result = $this->groupAdminService->getGroupDetails($user, $selectedGroupId);
+            $groupDetails = [
+                'selectedGroup' => $result['group'],
+                'group' => $result['group'], // Add alias for backward compatibility
+                'members' => $result['members'],
+                'anggota' => $result['members'], // Add alias for Indonesian naming convention
+                'stats' => $result['stats']
+            ];
+        } else {
+            $groupDetails = [
+                'selectedGroup' => null,
+                'group' => null,
+                'members' => collect(),
+                'anggota' => collect(),
+                'stats' => ['total_anggota' => 0, 'anggota_aktif' => 0, 'anggota_muted' => 0]
+            ];
         }
         
-        return view('grup.dashboard', [
-            'managedGroups' => $managedGroups,
-            'selectedGroup' => $selectedGroup,
-            'group' => $selectedGroup, // Add alias for backward compatibility
-            'members' => $members,
-            'anggota' => $members, // Add alias for Indonesian naming convention
-            'stats' => $stats
-        ]);
-    }
-    
-    /**
-     * Display admin grup UKM index page listing all UKMs
-     */
-    public function index()
-    {
-        /** @var User $user */
-        $user = Auth::user();
-        
-        // Get all groups where user is admin
-        $managedGroups = $user->adminGroups()->get();
-        
-        // Get other groups the user is a member of
-        $memberGroups = $user->groups()
-            ->whereNotIn('groups.id', $managedGroups->pluck('id')->toArray())
-            ->withPivot('role')
-            ->get();
-            
-        return view('grup.ukm_index', [
-            'managedGroups' => $managedGroups,
-            'memberGroups' => $memberGroups,
-            'joinedGroups' => $memberGroups // Add alias for backward compatibility
-        ]);
+        return view('grup.dashboard', array_merge($dashboardData, $groupDetails));
     }
     
     /**
@@ -100,41 +63,34 @@ class AdminGrupController extends Controller
         /** @var User $user */
         $user = Auth::user();
         
-        // Get selected group ID from query parameter
         $selectedGroupId = $request->input('group_id');
-        
-        // Get all groups where user is admin
-        $managedGroups = $user->adminGroups()->get();
+        $dashboardData = $this->groupAdminService->getDashboardStats($user);
         
         // If no group is selected but user has managed groups, select the first one
-        if (!$selectedGroupId && $managedGroups->count() > 0) {
-            $selectedGroupId = $managedGroups->first()->id;
+        if (!$selectedGroupId && $dashboardData['managed_groups']->count() > 0) {
+            $selectedGroupId = $dashboardData['managed_groups']->first()->id;
         }
         
-        // If a group is selected, get its details and members
-        $selectedGroup = null;
-        $members = collect();
-        
+        // Get specific group details if selected
+        $groupDetails = [];
         if ($selectedGroupId) {
-            $selectedGroup = $managedGroups->where('id', $selectedGroupId)->first();
-            
-            // Make sure user is admin of this group
-            if ($selectedGroup) {
-                // Get group members with their roles in this group
-                $members = $selectedGroup->users()
-                    ->withPivot('is_admin', 'is_muted', 'muted_until', 'created_at')
-                    ->orderBy('pivot_is_admin', 'desc')
-                    ->get();
-            }
+            $result = $this->groupAdminService->getGroupDetails($user, $selectedGroupId);
+            $groupDetails = [
+                'selectedGroup' => $result['group'],
+                'group' => $result['group'],
+                'members' => $result['members'],
+                'anggota' => $result['members']
+            ];
+        } else {
+            $groupDetails = [
+                'selectedGroup' => null,
+                'group' => null,
+                'members' => collect(),
+                'anggota' => collect()
+            ];
         }
         
-        return view('grup.anggota', [
-            'managedGroups' => $managedGroups,
-            'selectedGroup' => $selectedGroup,
-            'group' => $selectedGroup, // Add alias for backward compatibility
-            'members' => $members,
-            'anggota' => $members // Add alias for Indonesian naming convention
-        ]);
+        return view('grup.anggota', array_merge($dashboardData, $groupDetails));
     }
     
     /**
@@ -150,54 +106,13 @@ class AdminGrupController extends Controller
             return back()->with('error', 'ID grup tidak ditemukan');
         }
         
-        // Make sure the user is admin of this group
-        $group = $user->adminGroups()->where('groups.id', $groupId)->first();
+        $result = $this->groupAdminService->removeMember($user, $groupId, $id);
         
-        if (!$group) {
-            return back()->with('error', 'Anda tidak memiliki akses ke grup ini');
+        if ($result['success']) {
+            return back()->with('success', $result['message']);
+        } else {
+            return back()->with('error', $result['error']);
         }
-        
-        // Don't allow removing self
-        if ($id == $user->id) {
-            return back()->with('error', 'Anda tidak dapat mengeluarkan diri sendiri');
-        }
-        
-        // Get the target user
-        $targetUser = User::find($id);
-        
-        if (!$targetUser) {
-            return back()->with('error', 'User tidak ditemukan');
-        }
-        
-        // Check if the target user is in this group
-        if (!$targetUser->groups()->where('group_id', $groupId)->exists()) {
-            return back()->with('error', 'User tidak tergabung dalam grup ini');
-        }
-        
-        // Check if the target user is an admin_website (cannot be removed)
-        if ($targetUser->role === 'admin_website') {
-            return back()->with('error', 'Tidak dapat mengeluarkan admin website');
-        }
-        
-        // Remove the user from group
-        $targetUser->groups()->detach($groupId);
-        
-        // Check if user was admin_grup and if this was their last managed group
-        if ($targetUser->role === 'admin_grup' && !$targetUser->adminGroups()->exists()) {
-            $targetUser->role = 'member';
-            $targetUser->save();
-            
-            // If user is currently logged in, log them out
-            if (Auth::id() === $targetUser->id) {
-                Auth::logout();
-                $request->session()->invalidate();
-                $request->session()->regenerateToken();
-                return redirect()->route('login')
-                    ->with('info', 'Status admin Anda telah dicabut karena Anda tidak lagi menjadi admin di grup manapun');
-            }
-        }
-        
-        return back()->with('success', "Berhasil mengeluarkan {$targetUser->name} dari grup");
     }
     
     /**
@@ -208,81 +123,28 @@ class AdminGrupController extends Controller
         /** @var User $user */
         $user = Auth::user();
         $groupId = $request->input('group_id');
-        $duration = (int) $request->input('duration', 60); // Convert to integer
+        $duration = (int) $request->input('duration', 60);
+        
+        if (!$groupId) {
+            return back()->with('error', 'ID grup tidak ditemukan');
+        }
         
         // Validate duration is positive
         if ($duration <= 0) {
             $duration = 60; // Default to 60 minutes if invalid
         }
         
-        if (!$groupId) {
-            return back()->with('error', 'ID grup tidak ditemukan');
-        }
+        $result = $this->groupAdminService->toggleMuteStatus($user, $groupId, $id, $duration);
         
-        // Make sure the user is admin of this group
-        $group = $user->adminGroups()->where('groups.id', $groupId)->first();
-        
-        if (!$group) {
-            return back()->with('error', 'Anda tidak memiliki akses ke grup ini');
-        }
-        
-        // Don't allow muting self
-        if ($id == $user->id) {
-            return back()->with('error', 'Anda tidak dapat membisukan diri sendiri');
-        }
-        
-        // Get the target user
-        $targetUser = User::find($id);
-        
-        if (!$targetUser) {
-            return back()->with('error', 'User tidak ditemukan');
-        }
-        
-        // Check if the target user is in this group
-        if (!$targetUser->groups()->where('group_id', $groupId)->exists()) {
-            return back()->with('error', 'User tidak tergabung dalam grup ini');
-        }
-        
-        // Check if the target user is an admin_website or admin_grup (cannot be muted)
-        if (in_array($targetUser->role, ['admin_website', 'admin_grup'])) {
-            return back()->with('error', 'Tidak dapat membisukan admin');
-        }
-        
-        // Get current mute status
-        $currentPivot = DB::table('group_user')
-            ->where('user_id', $id)
-            ->where('group_id', $groupId)
-            ->first();
-            
-        if ($currentPivot && $currentPivot->is_muted) {
-            // Unmute the user
-            DB::table('group_user')
-                ->where('user_id', $id)
-                ->where('group_id', $groupId)
-                ->update([
-                    'is_muted' => false,
-                    'muted_until' => null
-                ]);
-                
-            return back()->with('success', "Berhasil unmute {$targetUser->name}");
+        if ($result['success']) {
+            return back()->with('success', $result['message']);
         } else {
-            // Mute the user
-            $expiryTime = now()->addMinutes($duration);
-            
-            DB::table('group_user')
-                ->where('user_id', $id)
-                ->where('group_id', $groupId)
-                ->update([
-                    'is_muted' => true,
-                    'muted_until' => $expiryTime
-                ]);
-                
-            return back()->with('success', "Berhasil membisukan {$targetUser->name} untuk {$duration} menit");
+            return back()->with('error', $result['error']);
         }
     }
     
     /**
-     * Update the group description
+     * Update group description
      */
     public function updateDescription(Request $request)
     {
@@ -295,17 +157,13 @@ class AdminGrupController extends Controller
             return back()->with('error', 'ID grup tidak ditemukan');
         }
         
-        // Make sure the user is admin of this group
-        $group = $user->adminGroups()->where('groups.id', $groupId)->first();
+        $result = $this->groupAdminService->updateGroupDescription($user, $groupId, $description);
         
-        if (!$group) {
-            return back()->with('error', 'Anda tidak memiliki akses ke grup ini');
+        if ($result['success']) {
+            return back()->with('success', $result['message']);
+        } else {
+            return back()->with('error', $result['error']);
         }
-        
-        $group->description = $description;
-        $group->save();
-        
-        return back()->with('success', "Deskripsi grup berhasil diperbarui");
     }
     
     /**
@@ -316,22 +174,16 @@ class AdminGrupController extends Controller
         /** @var User $user */
         $user = Auth::user();
         
-        // Make sure the user is admin of this group
-        $group = $user->adminGroups()->where('groups.id', $id)->first();
+        $result = $this->groupAdminService->getGroupDetails($user, $id);
         
-        if (!$group) {
-            return back()->with('error', 'Anda tidak memiliki akses ke grup ini');
+        if (!$result['success']) {
+            return back()->with('error', $result['error']);
         }
         
-        // Get group members
-        $members = $group->users()
-            ->withPivot('is_admin', 'is_muted', 'muted_until', 'created_at')
-            ->orderBy('pivot_is_admin', 'desc')
-            ->get();
-            
         return view('grup.manage', [
-            'group' => $group,
-            'members' => $members
+            'group' => $result['group'],
+            'members' => $result['members'],
+            'stats' => $result['stats']
         ]);
     }
     
@@ -343,35 +195,13 @@ class AdminGrupController extends Controller
         /** @var User $user */
         $user = Auth::user();
         
-        // Make sure the user is admin of this group
-        $group = $user->adminGroups()->where('groups.id', $id)->first();
+        $result = $this->groupAdminService->removeMember($user, $id, $userId);
         
-        if (!$group) {
-            return back()->with('error', 'Anda tidak memiliki akses ke grup ini');
+        if ($result['success']) {
+            return back()->with('success', $result['message']);
+        } else {
+            return back()->with('error', $result['error']);
         }
-        
-        // Don't allow removing self
-        if ($userId == $user->id) {
-            return back()->with('error', 'Anda tidak dapat mengeluarkan diri sendiri');
-        }
-        
-        // Get the target user
-        $targetUser = User::find($userId);
-        
-        if (!$targetUser) {
-            return back()->with('error', 'User tidak ditemukan');
-        }
-        
-        // Remove the user from group
-        $targetUser->groups()->detach($id);
-        
-        // If target user is admin_grup and this was their last managed group, demote them
-        if ($targetUser->role === 'admin_grup' && !$targetUser->adminGroups()->exists()) {
-            $targetUser->role = 'member';
-            $targetUser->save();
-        }
-        
-        return back()->with('success', "{$targetUser->name} berhasil dikeluarkan dari grup");
     }
     
     /**
@@ -381,62 +211,42 @@ class AdminGrupController extends Controller
     {
         /** @var User $user */
         $user = Auth::user();
-        $duration = (int) $request->input('duration', 60); // Convert to integer
+        $duration = (int) $request->input('duration', 60);
         
         // Validate duration is positive
         if ($duration <= 0) {
             $duration = 60; // Default to 60 minutes if invalid
         }
         
-        // Make sure the user is admin of this group
-        $group = $user->adminGroups()->where('groups.id', $id)->first();
+        $result = $this->groupAdminService->toggleMuteStatus($user, $id, $userId, $duration);
         
-        if (!$group) {
-            return back()->with('error', 'Anda tidak memiliki akses ke grup ini');
-        }
-        
-        // Don't allow muting self
-        if ($userId == $user->id) {
-            return back()->with('error', 'Anda tidak dapat membisukan diri sendiri');
-        }
-        
-        // Get the target user
-        $targetUser = User::find($userId);
-        
-        if (!$targetUser) {
-            return back()->with('error', 'User tidak ditemukan');
-        }
-        
-        // Get current mute status
-        $currentPivot = DB::table('group_user')
-            ->where('user_id', $userId)
-            ->where('group_id', $id)
-            ->first();
-            
-        if ($currentPivot && $currentPivot->is_muted) {
-            // Unmute the user
-            DB::table('group_user')
-                ->where('user_id', $userId)
-                ->where('group_id', $id)
-                ->update([
-                    'is_muted' => false,
-                    'muted_until' => null
-                ]);
-                
-            return back()->with('success', "{$targetUser->name} berhasil di-unmute");
+        if ($result['success']) {
+            return back()->with('success', $result['message']);
         } else {
-            // Mute the user
-            $expiryTime = now()->addMinutes($duration);
-            
-            DB::table('group_user')
-                ->where('user_id', $userId)
-                ->where('group_id', $id)
-                ->update([
-                    'is_muted' => true,
-                    'muted_until' => $expiryTime
-                ]);
-                
-            return back()->with('success', "{$targetUser->name} berhasil dibisukan untuk {$duration} menit");
+            return back()->with('error', $result['error']);
         }
+    }
+
+    /**
+     * Display admin grup UKM index page listing all UKMs
+     */
+    public function index()
+    {
+        /** @var User $user */
+        $user = Auth::user();
+        
+        $dashboardData = $this->groupAdminService->getDashboardStats($user);
+        
+        // Get other groups the user is a member of
+        $memberGroups = $user->groups()
+            ->whereNotIn('groups.id', $dashboardData['managed_groups']->pluck('id')->toArray())
+            ->withPivot('role')
+            ->get();
+            
+        return view('grup.ukm_index', [
+            'managedGroups' => $dashboardData['managed_groups'],
+            'memberGroups' => $memberGroups,
+            'joinedGroups' => $memberGroups // Add alias for backward compatibility
+        ]);
     }
 }

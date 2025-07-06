@@ -6,6 +6,7 @@ use App\Helpers\BroadcastHelper;
 use App\Models\Chat;
 use App\Models\Group;
 use App\Models\User;
+use App\Services\ChatService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
@@ -26,8 +27,9 @@ class ChatController extends BaseController
     private const TYPING_TIMEOUT = 3; // seconds
     private const CACHE_TTL = 3600; // 1 hour
 
-    public function __construct()
-    {
+    public function __construct(
+        private ChatService $chatService
+    ) {
         $this->middleware('auth');
         // Allow all authenticated users to access chat features
         // Role-based access will be controlled in individual methods based on group membership
@@ -54,23 +56,13 @@ class ChatController extends BaseController
         }
 
         $group = Group::findOrFail($activeGroupId);
-        // Ambil chat terbaru langsung dari relasi
-        $chats = $group->chats()->with('user')->orderBy('created_at', 'desc')->limit(self::MESSAGE_HISTORY_LIMIT)->get()->reverse();
         
-        // Check if user is muted
-        $userMembership = $group->users()->where('user_id', $user->id)->first();
-        $isMuted = $userMembership && $userMembership->pivot->is_muted;
-
-
-        return view("chat", [
-            "chats" => $chats,
-            "groupName" => $group->name,
-            "memberCount" => $group->members()->count(),
-            "groupCode" => $group->referral_code,
-            "groupId" => $group->id,
+        // Use ChatService to get chat data
+        $chatData = $this->chatService->getChatData($user, $group);
+        
+        return view("chat", array_merge($chatData, [
             "typingTimeout" => self::TYPING_TIMEOUT,
-            "isMuted" => $isMuted,
-        ]);
+        ]));
     }
 
     public function showChat($code)
@@ -79,21 +71,12 @@ class ChatController extends BaseController
         $group = Group::where("referral_code", $code)->firstOrFail();
         Session::put("active_group_id", $group->id);
 
-        $chats = $group->chats()->with('user')->orderBy('created_at', 'desc')->limit(self::MESSAGE_HISTORY_LIMIT)->get()->reverse();
+        // Use ChatService to get chat data
+        $chatData = $this->chatService->getChatData($user, $group);
         
-        // Check if user is muted
-        $userMembership = $group->users()->where('user_id', $user->id)->first();
-        $isMuted = $userMembership && $userMembership->pivot->is_muted;
-
-        return view("chat", [
-            "chats" => $chats,
-            "groupName" => $group->name,
-            "memberCount" => $group->members()->count(),
-            "groupCode" => $code,
-            "groupId" => $group->id,
+        return view("chat", array_merge($chatData, [
             "typingTimeout" => self::TYPING_TIMEOUT,
-            "isMuted" => $isMuted,
-        ]);
+        ]));
     }
 
     /**
@@ -122,21 +105,6 @@ class ChatController extends BaseController
         return $this->sendMessage($request, $groupCode);
     }
 
-    /**
-     * Filter pesan chat (XSS, emoji, link)
-     */
-    private function filterMessage(string $message): string
-    {
-        $message = htmlspecialchars($message, ENT_QUOTES, "UTF-8");
-        $message = preg_replace(
-            "/(https?:\/\/[^\s<]+)/i",
-            "<a href=\"$1\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"text-blue-500 hover:underline\">$1</a>",
-            $message
-        );
-        $emojis = [":)" => "😊", ":(" => "😢", ":D" => "😀", ";)" => "😉", "<3" => "❤️", ":p" => "😛", ":P" => "😛", ":o" => "😮", ":O" => "😮"];
-        return str_replace(array_keys($emojis), array_values($emojis), $message);
-    }
-
     public function logoutGroup()
     {
         Session::forget("active_group_id");
@@ -146,21 +114,25 @@ class ChatController extends BaseController
     public function getUnreadCount(Request $request)
     {
         try {
+            $user = Auth::user();
             $groupId = $request->input('group_id');
-            $count = Chat::where('group_id', $groupId)
-                ->where('user_id', '!=', Auth::id())
-                ->whereNull('read_at')
-                ->count();
-
+            
+            $result = $this->chatService->getUnreadCount($user, $groupId);
+            
             return response()->json([
                 'status' => 'success',
-                'count' => $count
+                'count' => $result['count']
             ]);
         } catch (\Exception $e) {
-            report($e);
+            Log::error('Error getting unread count', [
+                'user_id' => Auth::id(),
+                'group_id' => $request->input('group_id'),
+                'error' => $e->getMessage()
+            ]);
+            
             return response()->json([
                 'status' => 'error',
-                'message' => 'Gagal mengambil jumlah pesan belum dibaca'
+                'message' => 'Failed to get unread count'
             ], 500);
         }
     }

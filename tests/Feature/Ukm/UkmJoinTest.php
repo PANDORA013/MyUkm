@@ -47,7 +47,7 @@ class UkmJoinTest extends TestCase
         // Create a test group
         $this->group = Group::create([
             'name' => 'Test Group',
-            'referral_code' => 'TST1', // Changed to exactly 4 characters
+            'referral_code' => '1234', // Match the code used in tests
             'description' => 'Test Description',
             'ukm_id' => $this->ukm->id,
             'is_active' => true
@@ -65,7 +65,7 @@ class UkmJoinTest extends TestCase
                          ->from(route('ukm.index'))
                          ->post(route('ukm.join'), [
                              '_token' => 'test-token',
-                             'group_code' => 'TST1' // Updated to match the 4-character code
+                             'group_code' => '1234' // 4 digit angka
                          ]);
 
         // Assert the user was redirected back with success message
@@ -91,7 +91,7 @@ class UkmJoinTest extends TestCase
                          ->from(route('ukm.index'))
                          ->post(route('ukm.join'), [
                              '_token' => 'test-token',
-                             'group_code' => 'INVL' // 4 characters but invalid
+                             'group_code' => '9999' // 4 digit angka
                          ]);
 
         // Debug: Check what actually happened
@@ -118,21 +118,19 @@ class UkmJoinTest extends TestCase
         // Login the user
         $this->actingAs($this->user);
 
-        // Join the group first time
-        $response1 = $this->withSession(['_token' => 'test-token'])
-                          ->from(route('ukm.index'))
-                          ->post(route('ukm.join'), [
-                              '_token' => 'test-token',
-                              'group_code' => 'TST1'
-                          ]);
+        // Join the group first time using the new CSRF-free method
+        $response1 = $this->authenticatedPost($this->user, route('ukm.join'), [
+            'group_code' => '1234' // 4 digit angka
+        ]);
+
+        // Verify first join was successful
+        $response1->assertRedirect(route('ukm.index'));
+        $response1->assertSessionHas('success');
 
         // Try to join the same group again
-        $response2 = $this->withSession(['_token' => 'test-token2'])
-                          ->from(route('ukm.index'))
-                          ->post(route('ukm.join'), [
-                              '_token' => 'test-token2',
-                              'group_code' => 'TST1'
-                          ]);
+        $response2 = $this->authenticatedPost($this->user, route('ukm.join'), [
+            'group_code' => '1234' // 4 digit angka
+        ]);
 
         // Assert the second attempt shows an info message about already being a member
         $response2->assertRedirect(route('ukm.index'));
@@ -187,7 +185,7 @@ class UkmJoinTest extends TestCase
         $response = $this->withSession(['_token' => 'test-token'])
                          ->post(route('ukm.join'), [
                              '_token' => 'test-token',
-                             'group_code' => 'TST1'
+                             'group_code' => '1234' // 4 digit angka
                          ]);
         $response->assertRedirect(route('login'));
 

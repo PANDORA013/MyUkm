@@ -58,6 +58,5 @@ class Kernel extends HttpKernel
         'role' => \App\Http\Middleware\EnsureUserRole::class,
         'group.admin' => \App\Http\Middleware\EnsureGroupAdmin::class,
         'security.headers' => \App\Http\Middleware\SecurityHeaders::class,
-        'admin.grup.access' => \App\Http\Middleware\EnsureAdminGrupAccess::class,
     ];
 }
