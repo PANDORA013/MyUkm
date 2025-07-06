@@ -238,7 +238,7 @@ if /i "%test_choice%"=="6" (
     goto TEST_MENU
 )
 if /i "%test_choice%"=="7" (
-    php scripts/test/test-realtime-complete.php
+    php scripts\test\test-realtime-complete.php
     pause
     goto TEST_MENU
 )
@@ -298,7 +298,7 @@ if /i "%util_choice%"=="3" (
     goto UTILITIES_MENU
 )
 if /i "%util_choice%"=="4" (
-    php scripts/utilities/check-status.bat
+    .\scripts\utilities\check-status.bat
     pause
     goto UTILITIES_MENU
 )
@@ -318,12 +318,12 @@ if /i "%util_choice%"=="6" (
     goto UTILITIES_MENU
 )
 if /i "%util_choice%"=="7" (
-    php scripts/utilities/check-group-urls.php
+    php scripts\utilities\check-group-urls.php
     pause
     goto UTILITIES_MENU
 )
 if /i "%util_choice%"=="8" (
-    php scripts/utilities/organize-files.php
+    php scripts\utilities\organize-files.php
     pause
     goto UTILITIES_MENU
 )
