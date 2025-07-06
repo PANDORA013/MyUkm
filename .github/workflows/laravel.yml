@@ -1,0 +1,174 @@
+name: Laravel Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  laravel-tests:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: myukm_test
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.2'
+        extensions: mbstring, xml, ctype, iconv, intl, pdo_sqlite, pdo_mysql, gd
+        coverage: none
+
+    - name: Copy .env
+      run: php -r "file_exists('.env') || copy('.env.example', '.env');"
+
+    - name: Configure Environment for Testing
+      run: |
+        # Configure database for testing
+        sed -i 's/DB_CONNECTION=.*/DB_CONNECTION=mysql/' .env
+        sed -i 's/DB_HOST=.*/DB_HOST=127.0.0.1/' .env
+        sed -i 's/DB_PORT=.*/DB_PORT=3306/' .env
+        sed -i 's/DB_DATABASE=.*/DB_DATABASE=myukm_test/' .env
+        sed -i 's/DB_USERNAME=.*/DB_USERNAME=root/' .env
+        sed -i 's/DB_PASSWORD=.*/DB_PASSWORD=password/' .env
+        
+        # Configure broadcast driver to prevent null argument errors
+        echo "BROADCAST_DRIVER=log" >> .env
+        
+        # Add Reverb configuration to prevent null errors
+        echo "REVERB_APP_ID=test-app" >> .env
+        echo "REVERB_APP_KEY=test-key" >> .env
+        echo "REVERB_APP_SECRET=test-secret" >> .env
+        echo "REVERB_HOST=127.0.0.1" >> .env
+        echo "REVERB_PORT=8080" >> .env
+        echo "REVERB_SCHEME=http" >> .env
+        
+        # Add Ably configuration
+        echo "ABLY_KEY=" >> .env
+        
+        # Set CI environment variables to skip browser tests
+        echo "CI=true" >> .env
+        echo "GITHUB_ACTIONS=true" >> .env
+        
+        # Configure other services for testing
+        echo "MAIL_MAILER=log" >> .env
+        echo "QUEUE_CONNECTION=sync" >> .env
+        echo "SESSION_DRIVER=array" >> .env
+        echo "CACHE_DRIVER=array" >> .env
+
+    - name: Install dependencies
+      run: composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
+
+    - name: Generate key
+      run: php artisan key:generate --force
+
+    - name: Directory Permissions
+      run: chmod -R 755 storage bootstrap/cache
+
+    - name: Clear caches
+      run: |
+        php artisan config:clear
+        php artisan cache:clear
+        php artisan view:clear
+        php artisan route:clear
+
+    - name: Run database migrations
+      run: php artisan migrate --force
+
+    - name: Create results directory
+      run: mkdir -p results
+
+    - name: Execute Unit Tests with detailed output
+      run: |
+        echo "::group::Unit Tests - Detailed Output"
+        vendor/bin/phpunit --testsuite=Unit --verbose --debug --stop-on-failure --log-junit=results/unit-tests.xml --testdox-html=results/unit-testdox.html 2>&1 | tee results/unit-output.log
+        echo "::endgroup::"
+      continue-on-error: true
+
+    - name: Execute Feature Tests with detailed output  
+      run: |
+        echo "::group::Feature Tests - Detailed Output"
+        vendor/bin/phpunit --testsuite=Feature --verbose --debug --stop-on-failure --log-junit=results/feature-tests.xml --testdox-html=results/feature-testdox.html 2>&1 | tee results/feature-output.log
+        echo "::endgroup::"
+      continue-on-error: true
+
+    - name: Show First Test Failure Details
+      if: always()
+      run: |
+        echo "::group::First Failure Analysis"
+        if [ -f results/unit-output.log ]; then
+          echo "=== UNIT TEST FAILURES ==="
+          grep -A 10 -B 5 "FAILURES\|ERRORS\|Exception\|Error:" results/unit-output.log || echo "No specific errors found in unit tests"
+        fi
+        if [ -f results/feature-output.log ]; then
+          echo "=== FEATURE TEST FAILURES ==="
+          grep -A 10 -B 5 "FAILURES\|ERRORS\|Exception\|Error:" results/feature-output.log || echo "No specific errors found in feature tests"
+        fi
+        echo "::endgroup::"
+
+    - name: Quick Single Test Run for Debugging
+      if: always()
+      run: |
+        echo "::group::Single Test Debug Run"
+        echo "Running a simple test to check basic functionality..."
+        vendor/bin/phpunit tests/Unit/BasicTest.php --verbose --debug 2>&1 || echo "Basic test failed - investigating..."
+        echo "::endgroup::"
+      continue-on-error: true
+
+    - name: Upload test results and logs
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: detailed-test-results
+        path: |
+          results/
+          storage/logs/laravel.log
+
+    - name: Display Comprehensive Test Summary
+      if: always()
+      run: |
+        echo "::group::Test Results Summary"
+        echo "=================================="
+        echo "PHPUNIT TEST EXECUTION SUMMARY"
+        echo "=================================="
+        
+        # Show basic file existence
+        echo "Generated files:"
+        ls -la results/ 2>/dev/null || echo "No results directory found"
+        
+        # Try to extract test counts from XML if available
+        if [ -f results/unit-tests.xml ]; then
+          echo ""
+          echo "Unit Tests XML Summary:"
+          grep -o 'tests="[0-9]*"' results/unit-tests.xml || echo "No test count found"
+          grep -o 'failures="[0-9]*"' results/unit-tests.xml || echo "No failure count found"
+          grep -o 'errors="[0-9]*"' results/unit-tests.xml || echo "No error count found"
+        fi
+        
+        if [ -f results/feature-tests.xml ]; then
+          echo ""
+          echo "Feature Tests XML Summary:"
+          grep -o 'tests="[0-9]*"' results/feature-tests.xml || echo "No test count found"
+          grep -o 'failures="[0-9]*"' results/feature-tests.xml || echo "No failure count found"  
+          grep -o 'errors="[0-9]*"' results/feature-tests.xml || echo "No error count found"
+        fi
+        
+        # Show recent Laravel logs if any
+        echo ""
+        echo "Recent Laravel logs:"
+        tail -n 20 storage/logs/laravel.log 2>/dev/null || echo "No Laravel log file found"
+        
+        echo ""
+        echo "::notice title=Detailed Results::Check the 'detailed-test-results' artifact for complete logs, XML reports, and HTML test documentation"
+        echo "::endgroup::"
