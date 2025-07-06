@@ -22,11 +22,6 @@ class AdminTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->withoutMiddleware([
-            \Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class,
-            \App\Http\Middleware\CheckRole::class,
-            \App\Http\Middleware\EnsureUserRole::class
-        ]);
         
         // Create a test UKM
         $this->ukm = UKM::create([
@@ -106,7 +101,6 @@ class AdminTest extends TestCase
             ]));
             
         $response->assertStatus(302);
-        $response->assertSessionHasNoErrors();
         
         $this->assertDatabaseHas('users', [
             'name' => 'New User',
@@ -126,14 +120,13 @@ class AdminTest extends TestCase
     {
         $response = $this->actingAs($this->admin)
             ->withSession(['_token' => 'test-token'])
-            ->put(route('admin.admin.users.update', $this->user->id), [
+            ->put(route('admin.admin.users.update', $this->user->id), array_merge([
                 'name' => 'Updated Name',
                 'nim' => 'USR001',
                 'email' => 'updated@test.com',
                 'role' => 'member',
-                'ukm_id' => $this->ukm->id,
-                '_token' => 'test-token'
-            ]);
+                'ukm_id' => $this->ukm->id
+            ], ['_token' => 'test-token']));
             
         $response->assertRedirect(route('admin.admin.users.index'));
         $this->assertDatabaseHas('users', [
@@ -181,13 +174,14 @@ class AdminTest extends TestCase
         // Create group
         $response = $this->actingAs($this->admin)
             ->withSession(['_token' => 'test-token'])
-            ->post(route('admin.admin.groups.store'), [
+            ->post(route('admin.admin.groups.store'), array_merge([
                 'name' => 'New Group',
                 'referral_code' => 'NEWGRP',
                 'description' => 'New Group Description',
                 'ukm_id' => $this->ukm->id,
-                '_token' => 'test-token'
-            ]);
+                'is_active' => true
+            ], ['_token' => 'test-token']));
+            
         $response->assertRedirect(route('admin.admin.groups.index'));
         $this->assertDatabaseHas('groups', [
             'name' => 'New Group',

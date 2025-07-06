@@ -77,7 +77,9 @@ class AuthController extends Controller
         }
 
         if (Auth::attempt(['nim' => $credentials['nim'], 'password' => $credentials['password']])) {
-            $request->session()->regenerate();
+            if ($request->hasSession()) {
+                $request->session()->regenerate();
+            }
             $user = Auth::user();
             if ($user->role === 'admin_website') {
                 return redirect('/admin/dashboard');

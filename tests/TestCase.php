@@ -37,7 +37,10 @@ abstract class TestCase extends BaseTestCase
         parent::setUp();
         
         // Disable CSRF protection for testing
-        $this->withoutMiddleware(\App\Http\Middleware\VerifyCsrfToken::class);
+        $this->withoutMiddleware([
+            \Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class,
+            \App\Http\Middleware\VerifyCsrfToken::class
+        ]);
         
         // Remove exception handling to see full errors - comment out for production tests
         // $this->withoutExceptionHandling();

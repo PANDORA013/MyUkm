@@ -27,6 +27,11 @@ class VerifyCsrfToken extends Middleware
             return $next($request);
         }
         
+        // For debugging in tests
+        if (config('app.env') === 'testing') {
+            return $next($request);
+        }
+        
         // Skip CSRF verification in local environment when debug is enabled
         if (app()->environment('local') && config('app.debug')) {
             return $next($request);

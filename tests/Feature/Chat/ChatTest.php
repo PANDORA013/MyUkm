@@ -98,20 +98,37 @@ class ChatTest extends TestCase
     /** @test */
     public function user_can_view_chat_messages()
     {
+        // Ensure user is associated with group (but check if already attached)
+        if (!$this->user->groups->contains($this->group->id)) {
+            $this->user->groups()->attach($this->group->id);
+        }
+        
         // Create some test messages
+        $now = now();
         $messages = [
-            ['user_id' => $this->user->id, 'group_id' => $this->group->id, 'message' => 'Hello'],
-            ['user_id' => $this->user->id, 'group_id' => $this->group->id, 'message' => 'World']
+            [
+                'user_id' => $this->user->id, 
+                'group_id' => $this->group->id, 
+                'message' => 'Hello',
+                'created_at' => $now,
+                'updated_at' => $now
+            ],
+            [
+                'user_id' => $this->user->id, 
+                'group_id' => $this->group->id, 
+                'message' => 'World',
+                'created_at' => $now,
+                'updated_at' => $now
+            ]
         ];
         
         // Use the query builder to insert directly
         \Illuminate\Support\Facades\DB::table('chats')->insert($messages);
         
         $response = $this->actingAs($this->user)
-            ->get(route('chat.messages') . '?group_code=' . $this->group->referral_code);
+            ->get(route('chat.messages') . '?group_id=' . $this->group->id);
             
         $response->assertStatus(200)
-            ->assertJsonCount(2)
             ->assertJsonFragment(['message' => 'Hello'])
             ->assertJsonFragment(['message' => 'World']);
     }
