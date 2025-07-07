@@ -8,13 +8,27 @@ echo            MyUKM Test Suite Runner
 echo ===============================================
 echo.
 
-REM Check if we're in correct directory
-if not exist "artisan" (
-    echo [ERROR] Laravel project not found in current directory!
+
+REM Find Laravel root (where artisan exists)
+setlocal enabledelayedexpansion
+set ROOT_DIR=%cd%
+set FOUND=0
+for %%F in (1 2 3 4 5) do (
+    if exist "!ROOT_DIR!\artisan" (
+        set FOUND=1
+        goto :found_root
+    )
+    cd ..
+    set ROOT_DIR=%cd%
+)
+:found_root
+if not !FOUND! == 1 (
+    echo [ERROR] Laravel project not found in parent directories!
     echo Please navigate to your Laravel project root and try again.
     pause
     exit /b 1
 )
+cd !ROOT_DIR!
 
 echo [1/3] Preparing test environment...
 REM Ensure test database is ready
