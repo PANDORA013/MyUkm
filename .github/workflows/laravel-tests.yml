@@ -50,7 +50,16 @@ jobs:
         # Set CI environment variables to skip browser tests
         echo "CI=true" >> .env
         echo "GITHUB_ACTIONS=true" >> .env
-        
+
+        # Set Pusher config to avoid null errors
+        echo "PUSHER_APP_ID=test-app" >> .env
+        echo "PUSHER_APP_KEY=test-key" >> .env
+        echo "PUSHER_APP_SECRET=test-secret" >> .env
+        echo "PUSHER_HOST=127.0.0.1" >> .env
+        echo "PUSHER_PORT=6001" >> .env
+        echo "PUSHER_SCHEME=http" >> .env
+        echo "PUSHER_APP_CLUSTER=mt1" >> .env
+
         # Configure other services for testing
         echo "MAIL_MAILER=log" >> .env
         echo "QUEUE_CONNECTION=sync" >> .env
