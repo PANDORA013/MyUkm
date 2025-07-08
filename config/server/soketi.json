@@ -1,0 +1,16 @@
+{
+    "debug":  true,
+    "port":  6001,
+    "metrics":  false,
+    "apps":  [
+                 {
+                     "id":  "1744559",
+                     "secret":  "3ab9b82a3b7ed01ae43f",
+                     "enableStats":  false,
+                     "key":  "e8f72e2d70451c47f4b2",
+                     "enableClientMessages":  true,
+                     "maxConnections":  -1
+                 }
+             ],
+    "host":  "127.0.0.1"
+}

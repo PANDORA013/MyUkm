@@ -1,0 +1,153 @@
+<?php
+
+namespace Tests\Feature\Group;
+
+use Tests\TestCase;
+use App\Models\User;
+use App\Models\Group;
+use App\Models\UKM;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\DB;
+
+class GroupTest extends TestCase
+{
+    use RefreshDatabase;
+    
+    protected $user;
+    protected $group;
+    protected $ukm;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class);
+        
+        // Create a test UKM
+        $this->ukm = UKM::create([
+            'name' => 'Test UKM',
+            'code' => 'TST',
+            'description' => 'Test UKM Description'
+        ]);
+        
+        // Create a test user
+        $this->user = User::create([
+            'name' => 'Test User',
+            'nim' => '12345678',
+            'password' => Hash::make('password'),
+            'password_plain' => 'password',
+            'role' => 'member',
+            'ukm_id' => $this->ukm->id
+        ]);
+        
+        // Create a test group with 4-digit numeric code
+        $this->group = Group::create([
+            'name' => 'Test Group',
+            'referral_code' => '1234', // 4 digit angka
+            'description' => 'Test Description',
+            'ukm_id' => $this->ukm->id
+        ]);
+    }
+    
+    /** @test */
+    public function user_can_login_with_correct_nim_and_password()
+    {
+        $response = $this->post(route('login'), [
+            'nim' => '12345678',
+            'password' => 'password',
+        ]);
+
+        $response->assertRedirect();
+        $this->assertAuthenticatedAs($this->user);
+    }
+
+    /** @test */
+    public function user_can_join_group_with_valid_code()
+    {
+        $response = $this->actingAs($this->user)
+            ->withSession(['_token' => 'test-token'])
+            ->post(route('group.join'), [
+                'group_code' => '1234', // 4 digit angka
+                '_token' => 'test-token'
+            ]);
+
+        $response->assertRedirect();
+        $this->assertDatabaseHas('group_user', [
+            'user_id' => $this->user->id,
+            'group_id' => $this->group->id,
+        ]);
+    }
+
+    /** @test */
+    public function user_cannot_join_group_with_invalid_code()
+    {
+        $response = $this->actingAs($this->user)
+            ->post(route('group.join'), [
+                'group_code' => '9999', // 4 digit angka
+            ]);
+
+        // Just check that the user wasn't added to any group
+        $this->assertDatabaseMissing('group_user', [
+            'user_id' => $this->user->id,
+        ]);
+    }
+
+    /** @test */
+    public function user_can_leave_group()
+    {
+        // Join group first
+        $this->user->groups()->attach($this->group->id);
+        
+        // Verify user is in group before leaving
+        $this->assertDatabaseHas('group_user', [
+            'user_id' => $this->user->id,
+            'group_id' => $this->group->id,
+            'deleted_at' => null
+        ]);
+        
+        $response = $this->actingAs($this->user)
+            ->withSession(['_token' => 'test-token'])
+            ->delete(route('ukm.leave', $this->group->referral_code), [
+                '_token' => 'test-token'
+            ]);
+
+        $response->assertRedirect();
+        
+        // Check if user is soft deleted from group (has deleted_at timestamp)
+        $this->assertDatabaseMissing('group_user', [
+            'user_id' => $this->user->id,
+            'group_id' => $this->group->id,
+            'deleted_at' => null
+        ]);
+    }
+    
+    /** @test */
+    public function admin_can_create_group()
+    {
+        $this->withoutMiddleware();
+        
+        $admin = User::create([
+            'name' => 'Admin User',
+            'nim' => 'ADM001',
+            'password' => Hash::make('admin123'),
+            'role' => 'admin_website',
+            'ukm_id' => $this->ukm->id
+        ]);
+        
+        $response = $this->actingAs($admin)
+            ->post(route('admin.admin.groups.store'), [
+                'name' => 'New Group',
+                'referral_code' => 'NEWGRP',
+                'description' => 'New Group Description',
+                'ukm_id' => $this->ukm->id
+            ]);
+            
+        $response->assertRedirect(route('admin.admin.groups.index'));
+        $this->assertDatabaseHas('groups', [
+            'name' => 'New Group',
+            'referral_code' => 'NEWGRP',
+            'ukm_id' => $this->ukm->id
+        ]);
+    }
+}
