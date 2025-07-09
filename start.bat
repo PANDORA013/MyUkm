@@ -222,14 +222,35 @@ pause
 goto MAIN_MENU
 
 :FULL_DEV
+echo [0/5] Memastikan admin website default tersedia...
+php artisan db:seed --class=AdminWebsiteSeeder
+if %errorlevel% neq 0 (
+    echo Gagal menjalankan seeder AdminWebsiteSeeder. Pastikan database terkoneksi!
+    pause
+    goto MAIN_MENU
+)
+echo Membersihkan cache Laravel...
+php artisan cache:clear
+php artisan config:clear
+php artisan route:clear
+php artisan view:clear
+echo ✓ Admin website default (NIM: TH.171004, Password: AR.171004) sudah tersedia!
 echo.
 echo ===============================================
 echo        Starting Full Development Stack
 echo ===============================================
 echo.
+
 echo [1/5] Checking dependencies...
-composer install
-npm install
+if not exist "vendor\autoload.php" (
+    echo Composer dependencies belum terinstall, menjalankan composer install...
+    composer install
+)
+if not exist "node_modules" (
+    echo Node.js dependencies belum terinstall, menjalankan npm install...
+    npm install
+)
+
 
 echo [2/5] Setting up environment...
 if not exist ".env" (
