@@ -226,10 +226,10 @@ class AdminWebsiteController extends Controller
         }
     }
 
-    public function hapusUKM($id)
+    public function hapusUKM($id, Request $request)
     {
-        $result = $this->ukmService->deleteUkmById($id);
-        
+        $reason = $request->input('deletion_reason', 'Dihapus oleh admin website');
+        $result = $this->ukmService->deleteUkmById($id, $reason);
         if ($result['success']) {
             return back()->with('success', $result['message']);
         } else {
@@ -751,13 +751,54 @@ class AdminWebsiteController extends Controller
     public function riwayatPenghapusan()
     {
         try {
-            // Ambil semua riwayat penghapusan dengan informasi admin yang menghapus
-            $deletions = UserDeletion::with('deletedBy')
-                ->orderBy('created_at', 'desc')
-                ->paginate(20);
-            
+            // Ambil semua riwayat penghapusan user
+            $userDeletions = \App\Models\UserDeletion::with('deletedBy')->get();
+            // Ambil semua riwayat penghapusan UKM
+            $ukmDeletions = \App\Models\UkmDeletion::with('deletedBy')->get();
+
+            // Gabungkan dan urutkan berdasarkan waktu penghapusan (created_at)
+            $allDeletions = collect();
+            foreach ($userDeletions as $ud) {
+                $allDeletions->push((object)[
+                    'type' => 'user',
+                    'deleted_user_name' => $ud->deleted_user_name,
+                    'deleted_user_id' => $ud->deleted_user_id,
+                    'deleted_user_nim' => $ud->deleted_user_nim,
+                    'deleted_user_email' => $ud->deleted_user_email ?? '-',
+                    'deleted_user_role' => $ud->deleted_user_role,
+                    'deletion_reason' => $ud->deletion_reason,
+                    'deletedBy' => $ud->deletedBy,
+                    'created_at' => $ud->created_at,
+                    'deletion_notes' => $ud->deletion_notes ?? '-',
+                ]);
+            }
+            foreach ($ukmDeletions as $ud) {
+                $allDeletions->push((object)[
+                    'type' => 'ukm',
+                    'deleted_user_name' => $ud->ukm_name,
+                    'deleted_user_id' => $ud->ukm_id,
+                    'deleted_user_nim' => $ud->ukm_code,
+                    'deleted_user_email' => '-',
+                    'deleted_user_role' => 'UKM',
+                    'deletion_reason' => $ud->deletion_reason,
+                    'deletedBy' => $ud->deletedBy,
+                    'created_at' => $ud->created_at,
+                    'deletion_notes' => '-',
+                ]);
+            }
+            // Urutkan berdasarkan waktu penghapusan terbaru
+            $sorted = $allDeletions->sortByDesc('created_at')->values();
+
+            // Manual pagination (karena gabungan collection)
+            $perPage = 20;
+            $page = request()->get('page', 1);
+            $paged = $sorted->slice(($page - 1) * $perPage, $perPage)->all();
+            $deletions = new \Illuminate\Pagination\LengthAwarePaginator($paged, $sorted->count(), $perPage, $page, [
+                'path' => request()->url(),
+                'query' => request()->query(),
+            ]);
+
             return view('admin.riwayat-penghapusan', compact('deletions'));
-            
         } catch (\Exception $e) {
             return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
@@ -778,5 +819,97 @@ class AdminWebsiteController extends Controller
         ];
         
         return response()->json($stats);
+    }
+    
+    /**
+     * Tampilkan daftar user admin grup UKM
+     */
+    public function adminGroupUsers()
+    {
+        $adminGroupUsers = User::where('role', 'admin_grup')->with(['groups', 'ukm'])->get();
+        return view('admin.members.admins', compact('adminGroupUsers'));
+    }
+    
+    /**
+     * Tampilkan daftar pengguna aktif bulan ini
+     */
+    public function activeUsers()
+    {
+        $startOfMonth = now()->startOfMonth();
+        $activeUsers = \App\Models\User::where('last_seen_at', '>=', $startOfMonth)
+            ->whereNull('deleted_at')
+            ->get();
+        return view('admin.members.active', compact('activeUsers'));
+    }
+    
+    /**
+     * Tampilkan daftar pengguna baru bulan ini
+     */
+    public function newUsers()
+    {
+        $startOfMonth = now()->startOfMonth();
+        $newUsers = \App\Models\User::where('created_at', '>=', $startOfMonth)
+            ->whereNull('deleted_at')
+            ->get();
+        return view('admin.members.new', compact('newUsers'));
+    }
+    
+    /**
+     * Tampilkan halaman rata-rata anggota per UKM (bulan ini) beserta grafik
+     */
+    public function averageMembers()
+    {
+        $startOfMonth = now()->startOfMonth();
+        $ukms = \App\Models\UKM::withCount(['users' => function($query) use ($startOfMonth) {
+            $query->where('users.created_at', '>=', $startOfMonth);
+        }])->get();
+        $labels = $ukms->pluck('name');
+        $data = $ukms->pluck('users_count');
+        $average = $ukms->count() > 0 ? round($ukms->sum('users_count') / $ukms->count(), 1) : 0;
+        return view('admin.ukms.average', compact('ukms', 'labels', 'data', 'average'));
+    }
+
+
+    /**
+     * Tampilkan detail aktivitas UKM tertentu (grafik & tabel pesan bulanan)
+     */
+    public function ukmActivityDetail($ukmId)
+    {
+        $ukm = \App\Models\UKM::findOrFail($ukmId);
+        // Ambil semua group milik UKM ini
+        $groupIds = $ukm->groups()->pluck('id');
+        // Ambil statistik jumlah pesan per bulan (12 bulan terakhir)
+        $activity = \App\Models\Chat::whereIn('group_id', $groupIds)
+            ->selectRaw('DATE_FORMAT(created_at, "%Y-%m") as month, COUNT(*) as count')
+            ->where('created_at', '>=', now()->subMonths(11)->startOfMonth())
+            ->groupBy('month')
+            ->orderBy('month')
+            ->get();
+
+        // Siapkan data untuk grafik dan tabel
+        $months = collect(range(0, 11))->map(function($i) {
+            return now()->subMonths(11 - $i)->format('Y-m');
+        });
+        $activityData = $months->map(function($month) use ($activity) {
+            $row = $activity->firstWhere('month', $month);
+            return $row ? (int)$row->count : 0;
+        });
+        $activityLabels = $months->map(function($month) {
+            return \Carbon\Carbon::createFromFormat('Y-m', $month)->translatedFormat('F Y');
+        });
+        $activityTable = $months->map(function($month, $i) use ($activityData) {
+            return [
+                'month' => \Carbon\Carbon::createFromFormat('Y-m', $month)->translatedFormat('F Y'),
+                'count' => $activityData[$i],
+            ];
+        });
+        $period = $months->first().' - '.$months->last();
+        return view('admin.ukms.activity', [
+            'ukm' => $ukm,
+            'activityLabels' => $activityLabels,
+            'activityData' => $activityData,
+            'activityTable' => $activityTable,
+            'period' => $period,
+        ]);
     }
 }

@@ -147,6 +147,22 @@ Route::middleware(['auth', 'ensure.role'])->group(function () {
         Route::get('/ukm', [AdminWebsiteController::class, 'ukms'])->name('ukm.index'); // Add this route for tests
         Route::get('/ukm-members/{ukm}', [AdminWebsiteController::class, 'ukmMembers'])->name('ukm.members');
         
+        // Daftar Admin Grup UKM
+        Route::get('/users/admins', [AdminWebsiteController::class, 'adminGroupUsers'])->name('users.admins');
+        
+        // Daftar Pengguna Aktif Bulan Ini
+        Route::get('/users/active', [AdminWebsiteController::class, 'activeUsers'])->name('users.active');
+        
+        // Daftar Pengguna Baru Bulan Ini
+        Route::get('/users/new', [AdminWebsiteController::class, 'newUsers'])->name('users.new');
+        
+        // Rata-rata anggota per UKM (grafik)
+        Route::get('/ukms/average', [AdminWebsiteController::class, 'averageMembers'])->name('ukms.average');
+        // Detail aktivitas UKM tertentu
+        Route::get('/ukms/activity/{ukmId}', [AdminWebsiteController::class, 'ukmActivityDetail'])->name('ukms.activity');
+        // Detail aktivitas UKM tertentu
+        Route::get('/ukms/{ukm}/activity', [AdminWebsiteController::class, 'ukmActivityDetail'])->name('ukms.activity');
+        
         // Additional admin functions for absolute control
         Route::get('/statistics', [AdminWebsiteController::class, 'getStatistics'])->name('statistics');
         Route::get('/riwayat-penghapusan', [AdminWebsiteController::class, 'riwayatPenghapusan'])->name('riwayat-penghapusan');

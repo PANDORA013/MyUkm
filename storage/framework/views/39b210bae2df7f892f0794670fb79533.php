@@ -66,79 +66,82 @@
     <div class="row mb-4">
         <!-- Total Anggota -->
         <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card stat-card blue h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-uppercase mb-1">Total Anggota</div>
-                            <div class="h5 mb-0 font-weight-bold"><?php echo e(number_format($totalMembers)); ?></div>
-                            <div class="text-xs mt-1 opacity-75">Seluruh UKM</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-users fa-2x opacity-75"></i>
+            <a href="<?php echo e(route('admin.members')); ?>" style="text-decoration: none;">
+                <div class="card stat-card blue h-100 py-2" style="cursor:pointer;">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-uppercase mb-1">Total Anggota</div>
+                                <div class="h5 mb-0 font-weight-bold"><?php echo e(number_format($totalMembers)); ?></div>
+                                <div class="text-xs mt-1 opacity-75">Seluruh UKM</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-users fa-2x opacity-75"></i>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            </a>
         </div>
 
         <!-- Total UKM -->
         <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card stat-card green h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-uppercase mb-1">Total UKM</div>
-                            <div class="h5 mb-0 font-weight-bold"><?php echo e(number_format($totalUkms)); ?></div>
-                            <div class="text-xs mt-1 opacity-75">Terdaftar</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-building fa-2x opacity-75"></i>
+            <a href="<?php echo e(route('admin.ukms')); ?>" style="text-decoration: none;">
+                <div class="card stat-card green h-100 py-2" style="cursor:pointer;">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-uppercase mb-1">Total UKM</div>
+                                <div class="h5 mb-0 font-weight-bold"><?php echo e(number_format($totalUkms)); ?></div>
+                                <div class="text-xs mt-1 opacity-75">Terdaftar</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-building fa-2x opacity-75"></i>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            </a>
         </div>
 
         <!-- Riwayat Penghapusan -->
         <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card stat-card red h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-uppercase mb-1">Akun Dihapus</div>
-                            <div class="h5 mb-0 font-weight-bold"><?php echo e($totalDeletedAccounts); ?></div>
-                            <div class="text-xs mt-1 opacity-75">Riwayat Penghapusan</div>
+            <a href="<?php echo e(route('admin.user-deletions.index')); ?>" style="text-decoration: none;">
+                <div class="card stat-card red h-100 py-2" style="cursor:pointer;">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-uppercase mb-1">Akun Dihapus</div>
+                                <div class="h5 mb-0 font-weight-bold"><?php echo e($totalDeletedAccounts); ?></div>
+                                <div class="text-xs mt-1 opacity-75">Riwayat Penghapusan</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-history fa-2x opacity-75"></i>
+                            </div>
                         </div>
-                        <div class="col-auto">
-                            <i class="fas fa-history fa-2x opacity-75"></i>
-                        </div>
-                    </div>
-                    <div class="mt-2">
-                        <a href="<?php echo e(route('admin.user-deletions.index')); ?>" class="btn btn-light btn-sm">
-                            <i class="fas fa-eye me-1"></i>Lihat Riwayat
-                        </a>
                     </div>
                 </div>
-            </div>
+            </a>
         </div>
 
         <!-- Admin Grup -->
         <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card stat-card purple h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-uppercase mb-1">Admin Grup</div>
-                            <div class="h5 mb-0 font-weight-bold"><?php echo e($totalAdmins); ?></div>
-                            <div class="text-xs mt-1 opacity-75">Aktif</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-user-shield fa-2x opacity-75"></i>
+            <a href="<?php echo e(route('admin.users.admins')); ?>" style="text-decoration: none;">
+                <div class="card stat-card purple h-100 py-2" style="cursor:pointer;">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-uppercase mb-1">Admin Grup</div>
+                                <div class="h5 mb-0 font-weight-bold"><?php echo e($totalAdmins); ?></div>
+                                <div class="text-xs mt-1 opacity-75">Aktif</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-user-shield fa-2x opacity-75"></i>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            </a>
         </div>
     </div>
 
@@ -146,56 +149,62 @@
     <div class="row mb-4">
         <!-- Pengguna Aktif -->
         <div class="col-xl-4 col-md-6 mb-4">
-            <div class="card stat-card amber h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-uppercase mb-1">Pengguna Aktif</div>
-                            <div class="h5 mb-0 font-weight-bold"><?php echo e(number_format($activeUsersThisMonth)); ?></div>
-                            <div class="text-xs mt-1 opacity-75">Bulan Ini</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-user-clock fa-2x opacity-75"></i>
+            <a href="<?php echo e(route('admin.users.active')); ?>" style="text-decoration: none;">
+                <div class="card stat-card amber h-100 py-2" style="cursor:pointer;">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-uppercase mb-1">Pengguna Aktif</div>
+                                <div class="h5 mb-0 font-weight-bold"><?php echo e(number_format($activeUsersThisMonth)); ?></div>
+                                <div class="text-xs mt-1 opacity-75">Bulan Ini</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-user-clock fa-2x opacity-75"></i>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            </a>
         </div>
 
         <!-- Pengguna Baru -->
         <div class="col-xl-4 col-md-6 mb-4">
-            <div class="card stat-card teal h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-uppercase mb-1">Pengguna Baru</div>
-                            <div class="h5 mb-0 font-weight-bold">+<?php echo e(number_format($newUsersThisMonth)); ?></div>
-                            <div class="text-xs mt-1 opacity-75">Bulan Ini</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-user-plus fa-2x opacity-75"></i>
+            <a href="<?php echo e(route('admin.users.new')); ?>" style="text-decoration: none;">
+                <div class="card stat-card teal h-100 py-2" style="cursor:pointer;">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-uppercase mb-1">Pengguna Baru</div>
+                                <div class="h5 mb-0 font-weight-bold">+<?php echo e(number_format($newUsersThisMonth)); ?></div>
+                                <div class="text-xs mt-1 opacity-75">Bulan Ini</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-user-plus fa-2x opacity-75"></i>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            </a>
         </div>
 
         <!-- Rata-rata Keanggotaan -->
         <div class="col-xl-4 col-md-6 mb-4">
-            <div class="card stat-card indigo h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-uppercase mb-1">Rata-rata</div>
-                            <div class="h5 mb-0 font-weight-bold"><?php echo e($totalUkms > 0 ? number_format($totalMembers / $totalUkms, 1) : 0); ?></div>
-                            <div class="text-xs mt-1 opacity-75">Anggota per UKM</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-chart-bar fa-2x opacity-75"></i>
+            <a href="<?php echo e(route('admin.ukms.average')); ?>" style="text-decoration: none;">
+                <div class="card stat-card indigo h-100 py-2" style="cursor:pointer;">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-uppercase mb-1">Rata-rata</div>
+                                <div class="h5 mb-0 font-weight-bold"><?php echo e($totalUkms > 0 ? number_format($totalMembers / $totalUkms, 1) : 0); ?></div>
+                                <div class="text-xs mt-1 opacity-75">Anggota per UKM</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-chart-bar fa-2x opacity-75"></i>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            </a>
         </div>
     </div>
 

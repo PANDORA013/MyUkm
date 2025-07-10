@@ -1,4 +1,4 @@
-<?php $__env->startSection('title', 'Riwayat Penghapusan UKM/Anggota'); ?>
+<?php $__env->startSection('title', 'Riwayat Penghapusan User'); ?>
 
 <?php $__env->startSection('content'); ?>
 <div class="container-fluid">
@@ -8,7 +8,7 @@
                 <div class="card-header">
                     <h3 class="card-title">
                         <i class="fas fa-trash-alt mr-2"></i>
-                        Riwayat Penghapusan UKM/Anggota
+                        Riwayat Penghapusan User
                     </h3>
                 </div>
                 <div class="card-body">
@@ -34,10 +34,10 @@
                                 <thead class="table-dark">
                                     <tr>
                                         <th>No</th>
-                                        <th>Nama</th>
-                                        <th>NIM/Kode UKM</th>
+                                        <th>Nama User</th>
+                                        <th>NIM</th>
                                         <th>Email</th>
-                                        <th>Role/Tipe</th>
+                                        <th>Role</th>
                                         <th>Alasan Penghapusan</th>
                                         <th>Dihapus Oleh</th>
                                         <th>Waktu Penghapusan</th>
@@ -55,9 +55,7 @@
                                             <td><?php echo e($deletion->deleted_user_nim); ?></td>
                                             <td><?php echo e($deletion->deleted_user_email ?? '-'); ?></td>
                                             <td>
-                                                <?php if($deletion->type === 'ukm'): ?>
-                                                    <span class="badge bg-primary">UKM</span>
-                                                <?php elseif($deletion->deleted_user_role === 'admin_website'): ?>
+                                                <?php if($deletion->deleted_user_role === 'admin_website'): ?>
                                                     <span class="badge bg-danger">Admin Website</span>
                                                 <?php elseif($deletion->deleted_user_role === 'admin_grup'): ?>
                                                     <span class="badge bg-warning">Admin Grup</span>
@@ -91,6 +89,7 @@
                                 </tbody>
                             </table>
                         </div>
+                        
                         <!-- Pagination -->
                         <div class="d-flex justify-content-center mt-3">
                             <?php echo e($deletions->links()); ?>
@@ -101,8 +100,8 @@
                             <div class="mb-3">
                                 <i class="fas fa-info-circle fa-3x text-muted"></i>
                             </div>
-                            <h5 class="text-muted">Belum ada riwayat penghapusan UKM/anggota</h5>
-                            <p class="text-muted">Riwayat penghapusan akan muncul di sini ketika admin website menghapus UKM atau user.</p>
+                            <h5 class="text-muted">Belum ada riwayat penghapusan user</h5>
+                            <p class="text-muted">Riwayat penghapusan akan muncul di sini ketika admin website menghapus user.</p>
                         </div>
                     <?php endif; ?>
                 </div>
@@ -147,4 +146,4 @@ $(document).ready(function() {
 <?php $__env->stopPush(); ?>
 <?php $__env->stopSection(); ?>
 
-<?php echo $__env->make('layouts.admin', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\MyUkm-main\resources\views/admin/riwayat-penghapusan.blade.php ENDPATH**/ ?>
+<?php echo $__env->make('layouts.admin', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\MyUkm-main\resources\views\admin\riwayat-penghapusan.blade.php ENDPATH**/ ?>

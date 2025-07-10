@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', 'Riwayat Penghapusan User')
+@section('title', 'Riwayat Penghapusan UKM/Anggota')
 
 @section('content')
 <div class="container-fluid">
@@ -10,7 +10,7 @@
                 <div class="card-header">
                     <h3 class="card-title">
                         <i class="fas fa-trash-alt mr-2"></i>
-                        Riwayat Penghapusan User
+                        Riwayat Penghapusan UKM/Anggota
                     </h3>
                 </div>
                 <div class="card-body">
@@ -34,10 +34,10 @@
                                 <thead class="table-dark">
                                     <tr>
                                         <th>No</th>
-                                        <th>Nama User</th>
-                                        <th>NIM</th>
+                                        <th>Nama</th>
+                                        <th>NIM/Kode UKM</th>
                                         <th>Email</th>
-                                        <th>Role</th>
+                                        <th>Role/Tipe</th>
                                         <th>Alasan Penghapusan</th>
                                         <th>Dihapus Oleh</th>
                                         <th>Waktu Penghapusan</th>
@@ -55,7 +55,9 @@
                                             <td>{{ $deletion->deleted_user_nim }}</td>
                                             <td>{{ $deletion->deleted_user_email ?? '-' }}</td>
                                             <td>
-                                                @if($deletion->deleted_user_role === 'admin_website')
+                                                @if($deletion->type === 'ukm')
+                                                    <span class="badge bg-primary">UKM</span>
+                                                @elseif($deletion->deleted_user_role === 'admin_website')
                                                     <span class="badge bg-danger">Admin Website</span>
                                                 @elseif($deletion->deleted_user_role === 'admin_grup')
                                                     <span class="badge bg-warning">Admin Grup</span>
@@ -88,7 +90,6 @@
                                 </tbody>
                             </table>
                         </div>
-                        
                         <!-- Pagination -->
                         <div class="d-flex justify-content-center mt-3">
                             {{ $deletions->links() }}
@@ -98,8 +99,8 @@
                             <div class="mb-3">
                                 <i class="fas fa-info-circle fa-3x text-muted"></i>
                             </div>
-                            <h5 class="text-muted">Belum ada riwayat penghapusan user</h5>
-                            <p class="text-muted">Riwayat penghapusan akan muncul di sini ketika admin website menghapus user.</p>
+                            <h5 class="text-muted">Belum ada riwayat penghapusan UKM/anggota</h5>
+                            <p class="text-muted">Riwayat penghapusan akan muncul di sini ketika admin website menghapus UKM atau user.</p>
                         </div>
                     @endif
                 </div>

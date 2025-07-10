@@ -118,22 +118,23 @@ class UkmManagementService
      * @param UKM $ukm
      * @return bool
      */
-    public function deleteUkm(UKM $ukm): bool
+    use \App\Http\Controllers\Traits\UkmDeletionLogger;
+
+    public function deleteUkm(UKM $ukm, $reason = null): bool
     {
         DB::beginTransaction();
 
         try {
             // Find and delete corresponding group
             $group = Group::where('referral_code', $ukm->code)->first();
-            
             if ($group) {
-                // Remove all members from group
                 $group->users()->detach();
-                // Delete group
                 $group->delete();
             }
 
-            // Delete UKM
+            // Log deletion before actually deleting
+            $this->logUkmDeletion($ukm, $reason);
+
             $ukmName = $ukm->name;
             $ukm->delete();
 
@@ -147,12 +148,10 @@ class UkmManagementService
             return true;
         } catch (\Exception $e) {
             DB::rollBack();
-            
             Log::error('Failed to delete UKM', [
                 'ukm_id' => $ukm->id,
                 'error' => $e->getMessage()
             ]);
-            
             return false;
         }
     }
@@ -296,21 +295,17 @@ class UkmManagementService
      * @param int $id
      * @return array
      */
-    public function deleteUkmById(int $id): array
+    public function deleteUkmById(int $id, $reason = null): array
     {
         $findResult = $this->findUkmById($id);
-        
         if (!$findResult['success']) {
             return $findResult;
         }
-        
         if ($findResult['is_deleted']) {
             return $findResult;
         }
-        
         $ukm = $findResult['ukm'];
-        $success = $this->deleteUkm($ukm);
-        
+        $success = $this->deleteUkm($ukm, $reason);
         if ($success) {
             return [
                 'success' => true,
