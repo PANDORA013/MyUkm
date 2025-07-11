@@ -292,10 +292,13 @@ class AdminWebsiteController extends Controller
             Group::where('referral_code', $oldCode)->delete();
         }
 
-        // Sinkronkan ke table groups (buat atau perbarui)
+        // Sinkronkan ke table groups (buat atau perbarui, termasuk deskripsi)
         Group::updateOrCreate(
             ['referral_code' => $ukm->code],
-            ['name' => $ukm->name]
+            [
+                'name' => $ukm->name,
+                'description' => $ukm->description,
+            ]
         );
         return redirect('/admin/dashboard')->with('success', 'UKM diperbarui');
     }

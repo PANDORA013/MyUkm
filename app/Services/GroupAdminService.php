@@ -39,13 +39,17 @@ class GroupAdminService
             }
             $ukm->description = $description;
             $ukm->save();
-            Log::info('UKM description updated', [
+
+            // Sinkronkan juga ke tabel groups yang terkait ukm_id
+            \App\Models\Group::where('ukm_id', $ukmId)->update(['description' => $description]);
+
+            Log::info('UKM description updated & synced to groups', [
                 'admin_id' => $admin->id,
                 'ukm_id' => $ukmId
             ]);
             return [
                 'success' => true,
-                'message' => 'Deskripsi UKM berhasil diperbarui'
+                'message' => 'Deskripsi UKM berhasil diperbarui dan sinkron ke grup'
             ];
         } catch (\Exception $e) {
             Log::error('Error updating UKM description', [
