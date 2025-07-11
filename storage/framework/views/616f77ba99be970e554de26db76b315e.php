@@ -1,1 +1,0 @@
-<?php /**PATH C:\xampp\htdocs\MyUkm-main\resources\views\admin\banned_nims\index.blade.php ENDPATH**/ ?>

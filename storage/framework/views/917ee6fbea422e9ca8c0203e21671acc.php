@@ -1,5 +1,3 @@
-
-
 <?php $__env->startSection('title', 'Rata-rata Anggota per UKM Bulan Ini'); ?>
 
 <?php $__env->startPush('scripts'); ?>
@@ -81,4 +79,4 @@ document.addEventListener('DOMContentLoaded', function() {
 </div>
 <?php $__env->stopSection(); ?>
 
-<?php echo $__env->make('layouts.admin', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\MyUkm-main\resources\views/admin/ukms/average.blade.php ENDPATH**/ ?>
+<?php echo $__env->make('layouts.admin', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\NganTeen\MyUkm\resources\views/admin/ukms/average.blade.php ENDPATH**/ ?>

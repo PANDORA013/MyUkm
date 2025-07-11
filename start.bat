@@ -27,6 +27,23 @@ echo [Q] Quit
 echo.
 set /p choice="Enter your choice: "
 
+:: --- Composer Dependency Check & Auto Install ---
+if not exist "vendor\autoload.php" (
+    echo.
+    echo ===============================================
+    echo   [!] Composer dependencies not found!
+    echo   [!] Installing dependencies with composer...
+    echo ===============================================
+    composer install
+    if %errorlevel% neq 0 (
+        echo Composer install failed. Please check your PHP/composer setup.
+        pause
+        exit /b 1
+    )
+    echo ✓ Composer dependencies installed!
+    echo.
+)
+
 if /i "%choice%"=="1" goto DEV_SERVER
 if /i "%choice%"=="2" goto PRODUCTION_SERVER
 if /i "%choice%"=="3" goto QUEUE_WORKER
@@ -371,6 +388,7 @@ echo [5] Fix File Permissions
 echo [6] Optimize Application
 echo [7] Check Group URLs
 echo [8] Organize Files
+echo [9] Hapus Semua Data Dummy UKM
 echo.
 echo [B] Back to Main Menu
 echo.
@@ -426,6 +444,13 @@ if /i "%util_choice%"=="7" (
 )
 if /i "%util_choice%"=="8" (
     php scripts\utilities\organize-files.php
+    pause
+    goto UTILITIES_MENU
+)
+if /i "%util_choice%"=="9" (
+    echo Menghapus semua data dummy UKM...
+    php artisan tinker --execute="DB::statement('SET FOREIGN_KEY_CHECKS=0;'); DB::table('chats')->truncate(); DB::table('groups')->truncate(); DB::table('ukms')->truncate(); DB::statement('SET FOREIGN_KEY_CHECKS=1;');"
+    echo ✓ Semua data dummy UKM, group, dan chat berhasil dihapus!
     pause
     goto UTILITIES_MENU
 )

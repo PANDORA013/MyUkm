@@ -1,5 +1,3 @@
-
-
 <?php $__env->startSection('title', 'Daftar Admin Grup UKM'); ?>
 
 <?php $__env->startSection('content'); ?>
@@ -44,4 +42,4 @@
 </div>
 <?php $__env->stopSection(); ?>
 
-<?php echo $__env->make('layouts.admin', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\MyUkm-main\resources\views/admin/members/admins.blade.php ENDPATH**/ ?>
+<?php echo $__env->make('layouts.admin', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\NganTeen\MyUkm\resources\views/admin/members/admins.blade.php ENDPATH**/ ?>
