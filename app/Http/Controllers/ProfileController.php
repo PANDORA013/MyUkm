@@ -43,14 +43,41 @@ class ProfileController extends Controller
         return back()->withErrors(['error' => $result['message']]);
     }
 
-    public function updatePhoto(Request $request): RedirectResponse
+    public function updatePhoto(Request $request)
     {
+        // Handle photo removal
+        if ($request->input('remove_photo')) {
+            $user = Auth::user();
+            $result = $this->profileService->removePhoto($user);
+            
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => $result['success'],
+                    'message' => $result['message']
+                ]);
+            }
+            
+            if ($result['success']) {
+                return back()->with('success', $result['message']);
+            }
+            return back()->withErrors(['error' => $result['message']]);
+        }
+        
+        // Handle photo upload
         $validated = $request->validate([
-            'photo' => ['required', 'image', 'max:2048', 'mimes:jpeg,png,jpg']
+            'photo' => ['required', 'image', 'max:5120', 'mimes:jpeg,png,jpg,gif'] // Increased to 5MB
         ]);
 
         $user = Auth::user();
         $result = $this->profileService->updatePhoto($user, $request->file('photo'));
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => $result['success'],
+                'message' => $result['message'],
+                'photo_url' => $result['success'] ? $result['photo_url'] : null
+            ]);
+        }
 
         if ($result['success']) {
             return back()->with('success', $result['message']);

@@ -78,10 +78,12 @@
                                     <div class="card member-card h-100">
                                         <div class="card-body">
                                             <div class="d-flex align-items-start">
-                                                <div class="member-avatar me-3">
-                                                    {{ strtoupper(substr($member->name, 0, 1)) }}
-                                                </div>
-                                                <div class="flex-grow-1">
+                                                @include('components.user-avatar', [
+                                                    'user' => $member, 
+                                                    'size' => 'md', 
+                                                    'isGroupAdmin' => $member->pivot->is_admin
+                                                ])
+                                                <div class="flex-grow-1 ms-3">
                                                     <h6 class="mb-1">{{ $member->name }}</h6>
                                                     <p class="text-muted mb-2 small">{{ $member->nim }}</p>
                                                     <div class="d-flex gap-1 flex-wrap">

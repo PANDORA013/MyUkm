@@ -19,6 +19,22 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Temporary workaround for fileinfo issue in Laravel Ignition
+        // Disable file context collection in Flare/Ignition to avoid MIME type detection
+        if (config('app.debug') && class_exists(\Spatie\LaravelIgnition\FlareMiddleware\AddContext::class)) {
+            app()->bind(\Spatie\FlareClient\Context\RequestContextProvider::class, function () {
+                return new class {
+                    public function toArray() { 
+                        return [
+                            'method' => request()->method(),
+                            'url' => request()->url(),
+                            'headers' => [],
+                            'body' => [],
+                            'files' => [] // Skip files to avoid MIME detection
+                        ]; 
+                    }
+                };
+            });
+        }
     }
 }

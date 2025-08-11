@@ -28,9 +28,7 @@
                         <div>
                             <button @click="open = ! open" class="flex items-center text-sm bg-blue-600 text-white px-4 py-2 rounded-full hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-500 transition" aria-label="Buka menu profil" title="Buka menu profil pengguna">
                                 <div class="flex items-center space-x-2">
-                                    <div class="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
-                                        <span class="text-sm font-medium text-white">{{ substr(Auth::user()->name, 0, 1) }}</span>
-                                    </div>
+                                    @include('components.user-avatar', ['user' => Auth::user(), 'size' => 'sm'])
                                     <span class="text-sm font-medium">{{ Auth::user()->name }}</span>
                                 </div>
                             </button>

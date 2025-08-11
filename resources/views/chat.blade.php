@@ -67,6 +67,13 @@
         font-size: 0.75rem;
         margin-bottom: 2px;
         color: #6c757d;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .message-sender-avatar {
+        display: inline-block;
+        vertical-align: middle;
     }
     .message-time {
         font-size: 0.7rem;
@@ -994,21 +1001,26 @@
         
         // Message template function - OPTIMIZED untuk tracking message ID
         function appendMessage(data) {
+            // Handle data structure compatibility between Pusher and API
+            const messageData = data.chat || data; // Pusher sends nested chat data
+            const userData = data.user || { id: data.user_id, name: data.name, role: data.role };
+            
             // TAMBAHAN: Update lastMessageId untuk tracking pesan terbaru
-            if (data.id && data.id > lastMessageId) {
-                lastMessageId = data.id;
+            const messageId = messageData.id || data.id;
+            if (messageId && messageId > lastMessageId) {
+                lastMessageId = messageId;
             }
             
             // Cek apakah pesan sudah ada untuk menghindari duplikasi
-            const existingMessage = document.querySelector(`[data-message-id="${data.id}"]`);
+            const existingMessage = document.querySelector(`[data-message-id="${messageId}"]`);
             if (existingMessage) {
                 return; // Skip jika pesan sudah ada
             }
             
-            const isCurrentUser = data.user_id === {{ Auth::id() }};
+            const isCurrentUser = (userData.id || data.user_id) === {{ Auth::id() }};
             const messageContainer = document.createElement('div');
             messageContainer.className = 'message-container';
-            messageContainer.setAttribute('data-message-id', data.id); // TAMBAHAN: ID tracking
+            messageContainer.setAttribute('data-message-id', messageId); // TAMBAHAN: ID tracking
             
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${isCurrentUser ? 'message-outgoing' : 'message-incoming'}`;
@@ -1016,18 +1028,44 @@
             if (!isCurrentUser) {
                 const senderDiv = document.createElement('div');
                 senderDiv.className = 'message-sender';
-                senderDiv.textContent = data.name;
+                
+                // Create avatar for sender
+                const avatarDiv = document.createElement('div');
+                avatarDiv.className = 'message-sender-avatar';
+                
+                // Determine if sender is admin based on role
+                const isAdmin = userData.role === 'admin' || userData.role === 'admin_grup';
+                const avatarClass = isAdmin ? 'admin-avatar' : 'user-avatar';
+                const iconPath = isAdmin ? 
+                    'M5 3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3zm0 6a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V9zm0 6a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-2z' :
+                    'M8 9l3-3 3 3m-6 0l3 3 3-3';
+                
+                avatarDiv.innerHTML = `
+                    <div class="avatar-container ${avatarClass}" style="width: 20px; height: 20px; position: relative;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="avatar-icon">
+                            <path d="${iconPath}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="currentColor"/>
+                        </svg>
+                        ${isAdmin ? '<div class="admin-badge" style="position: absolute; top: -2px; right: -2px; width: 8px; height: 8px;"><span class="badge-star" style="font-size: 8px;">★</span></div>' : ''}
+                    </div>
+                `;
+                
+                senderDiv.appendChild(avatarDiv);
+                
+                const nameSpan = document.createElement('span');
+                nameSpan.textContent = userData.name || data.name;
+                senderDiv.appendChild(nameSpan);
+                
                 messageDiv.appendChild(senderDiv);
             }
             
             const contentDiv = document.createElement('div');
             contentDiv.className = 'message-content';
-            contentDiv.innerHTML = data.message;
+            contentDiv.innerHTML = messageData.message || data.message;
             messageDiv.appendChild(contentDiv);
             
             const timeDiv = document.createElement('div');
             timeDiv.className = 'message-time';
-            timeDiv.textContent = formatTime(data.created_at || new Date());
+            timeDiv.textContent = formatTime(messageData.created_at || data.created_at || new Date());
             messageDiv.appendChild(timeDiv);
             
             messageContainer.appendChild(messageDiv);

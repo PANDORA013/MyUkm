@@ -73,6 +73,7 @@ class ChatMessageSent implements ShouldBroadcastNow
             'user' => [
                 'id' => $this->user->id,
                 'name' => $this->user->name,
+                'role' => $this->user->role,
             ],
             'time' => $this->time
         ];

@@ -15,7 +15,7 @@ use App\Http\Controllers\GroupAdminController;
 Route::get('/', function () {
     if (Auth::check()) {
         $user = Auth::user();
-        if ($user->role === 'admin_website') {
+        if ($user->role === 'admin_website' || $user->role === 'admin') {
             return redirect('/admin/dashboard');
         }
         if ($user->role === 'admin_grup') {
@@ -77,7 +77,7 @@ Route::middleware(['auth', 'ensure.role'])->group(function () {
     Route::post('/group/leave', [UkmController::class, 'leave'])->name('group.leave');
 
     // Admin Website routes
-    Route::middleware(['role:admin_website'])->prefix('admin')->name('admin.')->group(function () {
+    Route::middleware(['role:admin_website,admin'])->prefix('admin')->name('admin.')->group(function () {
         // Dashboard
         Route::get('/dashboard', [AdminWebsiteController::class, 'dashboard'])->name('dashboard');
         

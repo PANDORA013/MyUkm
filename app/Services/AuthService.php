@@ -227,6 +227,7 @@ class AuthService
     {
         switch ($user->role) {
             case 'admin_website':
+            case 'admin':
                 return '/admin/dashboard';
             case 'admin_grup':
                 return '/grup/dashboard';

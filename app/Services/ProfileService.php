@@ -150,7 +150,8 @@ class ProfileService
 
             return [
                 'success' => true,
-                'message' => 'Foto profil berhasil diperbarui'
+                'message' => 'Foto profil berhasil diperbarui',
+                'photo_url' => Storage::url($path)
             ];
 
         } catch (\Exception $e) {
@@ -164,6 +165,63 @@ class ProfileService
             return [
                 'success' => false,
                 'message' => 'Gagal memperbarui foto profil. Silakan coba lagi.'
+            ];
+        }
+    }
+
+    /**
+     * Remove user profile photo
+     *
+     * @param User $user
+     * @return array
+     */
+    public function removePhoto(User $user): array
+    {
+        try {
+            DB::beginTransaction();
+
+            // Delete photo file if exists
+            if ($user->photo && Storage::disk('public')->exists($user->photo)) {
+                try {
+                    Storage::disk('public')->delete($user->photo);
+                    Log::info('Profile photo file deleted', [
+                        'user_id' => $user->id,
+                        'photo_path' => $user->photo
+                    ]);
+                } catch (\Exception $e) {
+                    Log::warning('Failed to delete profile photo file', [
+                        'user_id' => $user->id,
+                        'photo_path' => $user->photo,
+                        'error' => $e->getMessage()
+                    ]);
+                }
+            }
+
+            // Remove photo reference from database
+            $user->update(['photo' => null]);
+
+            DB::commit();
+
+            Log::info('Profile photo removed successfully', [
+                'user_id' => $user->id
+            ]);
+
+            return [
+                'success' => true,
+                'message' => 'Foto profil berhasil dihapus'
+            ];
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            Log::error('Error removing profile photo', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage()
+            ]);
+
+            return [
+                'success' => false,
+                'message' => 'Gagal menghapus foto profil. Silakan coba lagi.'
             ];
         }
     }
